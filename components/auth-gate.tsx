@@ -1,0 +1,28 @@
+import { LockKeyhole } from "lucide-react";
+import { Brand } from "@/components/brand";
+import Link from "next/link";
+
+export function AuthGate({
+  title = "Sign in to continue",
+  body = "Use your Google account to securely access your Ruminate workspace.",
+}: {
+  title?: string;
+  body?: string;
+}) {
+  return (
+    <main className="auth-screen">
+      <div className="auth-card">
+        <Brand />
+        <span className="auth-icon">
+          <LockKeyhole />
+        </span>
+        <h1>{title}</h1>
+        <p>{body}</p>
+        <Link className="button button-primary" href="/api/auth/signin/google">
+          <span className="google-g">G</span>Continue with Google
+        </Link>
+        <small>Access is protected and scoped to your assigned role.</small>
+      </div>
+    </main>
+  );
+}
