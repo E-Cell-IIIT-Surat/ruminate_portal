@@ -4,14 +4,20 @@ import { Badge, ButtonLink, EmptyState } from "@/components/ui";
 import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { registrationState } from "@/lib/domain/program";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const program = hasDatabaseConfig()
-    ? await db.program.findUnique({
-        where: { slug, archivedAt: null },
+    ? await db.program.findFirst({
+        where: {
+          slug,
+          archivedAt: null,
+          visibility: { in: ["PUBLIC", "UNLISTED"] },
+          status: { notIn: ["DRAFT", "ARCHIVED"] },
+        },
         select: {
           id: true,
           name: true,
@@ -28,6 +34,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           participationMode: true,
           teamMinSize: true,
           teamMaxSize: true,
+          waitlistEnabled: true,
         },
       })
     : null;
@@ -52,6 +59,13 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
       </div>
     );
   const state = registrationState(program);
+  const session = await auth();
+  const existing = session?.user?.id
+    ? await db.application.findUnique({
+        where: { programId_userId: { programId: program.id, userId: session.user.id } },
+        select: { id: true, status: true },
+      })
+    : null;
   const format = (value: Date | null) =>
     value
       ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(value)
@@ -65,8 +79,20 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           <h1>{program.name}</h1>
           <p>{program.shortDescription}</p>
           <div className="hero-actions">
-            {state === "OPEN" ? (
-              <ButtonLink href={`/applications/start?program=${program.id}`}>Apply now</ButtonLink>
+            {existing ? (
+              <ButtonLink href={`/applications/${existing.id}`}>
+                {existing.status === "WAITLISTED"
+                  ? "Waitlisted · view application"
+                  : existing.status === "CONFIRMED"
+                    ? "Confirmed · view registration"
+                    : ["DRAFT", "CHANGES_REQUESTED"].includes(existing.status)
+                      ? "Continue application"
+                      : "View submission"}
+              </ButtonLink>
+            ) : state === "OPEN" ? (
+              <ButtonLink href={`/applications/start?program=${program.id}`}>
+                {program.waitlistEnabled ? "Apply / join waitlist" : "Apply now"}
+              </ButtonLink>
             ) : (
               <ButtonLink href="/programs" variant="secondary">
                 Explore other programs

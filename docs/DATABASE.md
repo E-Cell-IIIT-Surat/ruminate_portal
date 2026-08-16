@@ -16,7 +16,7 @@ Ruminate Portal uses PostgreSQL through Prisma. Foreign keys, uniqueness constra
 
 ## Applications and teams
 
-`Application` has a unique public reference, owner, program, form version, stage, status, and submission timestamps. `ApplicationAnswer` stores one typed JSON value per related field, preserving queryability without adding SQL columns for every question. `ApplicationRevision` snapshots each submission/resubmission. `ApplicationStatusHistory` and `ApplicationStageHistory` provide timelines. `Team` and `TeamMember` store program-scoped teams.
+`Application` has a unique public reference, owner, program, form version, stage, status, and submission timestamps. `ApplicationAnswer` stores one typed JSON value per related field, preserving queryability without adding SQL columns for every question. `ApplicationRevision` snapshots each submission/resubmission. `ApplicationStatusHistory` and `ApplicationStageHistory` provide timelines. `Team` and ordered `TeamMember` rows store program-scoped teams, contact details, leadership, and team roles.
 
 ## Private documents
 
@@ -28,7 +28,7 @@ Ruminate Portal uses PostgreSQL through Prisma. Foreign keys, uniqueness constra
 
 ## Communication and governance
 
-`Announcement` supports program or portal communication. `Notification` targets a user and optional application. `EmailDelivery` tracks provider delivery without storing full sensitive content. `AuditLog` records actor, action, entity, program scope, and minimal metadata. `RateLimitBucket` protects expensive or sensitive endpoints across server instances.
+`Announcement` stores a program message and its audience type/value. `Notification` targets each eligible user and optional application. `EmailDelivery` is a bounded-retry queue containing the recipient, template key, subject, text body, attempt metadata, and provider result; retention should be limited operationally. `AuditLog` records actor, action, entity, program scope, and minimal metadata. `RateLimitBucket` protects expensive or sensitive endpoints across server instances.
 
 ## Transaction boundaries
 

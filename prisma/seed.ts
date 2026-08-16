@@ -1,7 +1,12 @@
 import { PrismaClient, RoleName, ProgramType, ProgramStatus, ParticipationMode, FieldType } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { permissions, rolePermissionMap } from "../lib/permissions";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({
+    connectionString: process.env.DATABASE_URL ?? "postgresql://invalid:invalid@127.0.0.1:5432/invalid",
+  }),
+});
 
 async function assign(userId: string, roleName: RoleName) {
   const role = await prisma.role.findUniqueOrThrow({ where: { name: roleName } });

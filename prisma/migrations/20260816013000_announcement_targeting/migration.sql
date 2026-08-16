@@ -1,0 +1,3 @@
+ALTER TABLE "Announcement"
+ADD COLUMN "targetType" TEXT NOT NULL DEFAULT 'ALL_APPLICANTS',
+ADD COLUMN "targetValue" TEXT;

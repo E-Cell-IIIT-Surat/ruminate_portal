@@ -22,7 +22,7 @@ Auth.js uses Google OAuth and database sessions. Passwords are not stored. Produ
 
 ## Private files
 
-The R2 bucket must be private. Credentials exist only on the server and are scoped to the single bucket. Object keys start with the owning application and field IDs plus a random UUID. Upload URLs expire after five minutes; download URLs after two. Finalization uses `HeadObject` to compare content length and MIME metadata. Database metadata stores ownership, field relationship, original name, MIME type, size, uploader, and timestamps.
+The R2 bucket must be private. Credentials exist only on the server and are scoped to the single bucket. Object keys start with the owning application and field IDs plus a random UUID. Upload URLs expire after five minutes; download URLs after two. Finalization verifies the application/form-field relationship, R2 metadata, content length, configured MIME allowlist, and common file signatures before recording the file. Database metadata stores ownership, field relationship, original name, MIME type, size, uploader, and timestamps.
 
 Never log signed URLs, credentials, form answers, document bytes, OAuth tokens, or full audit payloads. Malicious-file scanning is a recommended production extension before reviewers download newly uploaded documents.
 
@@ -32,7 +32,9 @@ Use the hosting platform’s encrypted secret store. Do not commit `.env`. Rotat
 
 ## Rate limiting and validation
 
-Sensitive routes use PostgreSQL-backed rate-limit buckets so limits apply across instances. Zod validates request shapes. Dynamic answers are validated again at submission against the immutable `FormVersion`. Deadline, capacity, team size, edit-window, and transition checks all run on the server.
+Sensitive routes use atomic PostgreSQL-backed rate-limit buckets so limits apply across instances. Mutation requests are rejected when browser origin signals show a cross-site request. Zod validates request shapes and payload limits. Dynamic answers are validated again at submission against the immutable `FormVersion`. Deadline, capacity, team size, edit-window, and transition checks all run on the server. Capacity and final submission use serializable transactions plus PostgreSQL advisory locks to prevent concurrent oversubscription.
+
+Decision statuses remain masked from participants until an authorized manager publishes results. Blind-review programs can mark individual form fields as hidden from reviewers. Email delivery uses a database queue, bounded retries, and a separate scheduler secret; development defaults to suppression rather than sending.
 
 ## IDOR test cases
 

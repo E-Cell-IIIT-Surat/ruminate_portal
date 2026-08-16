@@ -1,10 +1,24 @@
 import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
+import { registrationState } from "@/lib/domain/program";
 
-export async function publicPrograms() {
+export async function publicPrograms(filters: { type?: string; state?: string; year?: number } = {}) {
   if (!hasDatabaseConfig()) return [];
-  return db.program.findMany({
-    where: { visibility: "PUBLIC", archivedAt: null, status: { notIn: ["DRAFT", "ARCHIVED"] } },
+  const programs = await db.program.findMany({
+    where: {
+      visibility: "PUBLIC",
+      archivedAt: null,
+      status: { notIn: ["DRAFT", "ARCHIVED"] },
+      ...(filters.type ? { type: filters.type as never } : {}),
+      ...(filters.year
+        ? {
+            startAt: {
+              gte: new Date(`${filters.year}-01-01T00:00:00.000Z`),
+              lt: new Date(`${filters.year + 1}-01-01T00:00:00.000Z`),
+            },
+          }
+        : {}),
+    },
     select: {
       id: true,
       slug: true,
@@ -19,6 +33,7 @@ export async function publicPrograms() {
       participationMode: true,
     },
     orderBy: [{ registrationCloseAt: "asc" }, { createdAt: "desc" }],
-    take: 30,
+    take: 100,
   });
+  return filters.state ? programs.filter((program) => registrationState(program) === filters.state) : programs;
 }

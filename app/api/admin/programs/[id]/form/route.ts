@@ -40,6 +40,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
               helpText: item.helpText,
               placeholder: item.placeholder,
               required: item.required,
+              hideFromReviewers: item.hideFromReviewers,
               minLength: item.minLength,
               maxLength: item.maxLength,
               minNumber: item.minNumber,
@@ -92,6 +93,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     if (!draft || draft.sections.length === 0 || draft.sections.every((section) => section.fields.length === 0))
       return Response.json({ error: "Add at least one field before publishing" }, { status: 422 });
     const version = await db.$transaction(async (tx) => {
+      await tx.formVersion.updateMany({
+        where: { formId: draft.formId, status: "PUBLISHED", id: { not: draft.id } },
+        data: { status: "RETIRED" },
+      });
       const published = await tx.formVersion.update({
         where: { id: draft.id },
         data: { status: "PUBLISHED", publishedAt: new Date(), publishedById: actor.id },

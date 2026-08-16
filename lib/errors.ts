@@ -1,3 +1,6 @@
+import { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
+
 export class AppError extends Error {
   constructor(
     message: string,
@@ -16,6 +19,26 @@ export function safeError(error: unknown) {
   if (error instanceof AppError) {
     return Response.json({ error: error.message, code: error.code }, { status: error.status });
   }
-  console.error(error);
-  return Response.json({ error: "Something went wrong", code: "INTERNAL_ERROR" }, { status: 500 });
+  if (error instanceof ZodError) {
+    return Response.json(
+      {
+        error: "Please check the submitted information",
+        code: "VALIDATION_ERROR",
+        fields: error.flatten().fieldErrors,
+      },
+      { status: 422 },
+    );
+  }
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2002")
+      return Response.json({ error: "A record with this value already exists", code: "CONFLICT" }, { status: 409 });
+    if (error.code === "P2025")
+      return Response.json({ error: "The requested record was not found", code: "NOT_FOUND" }, { status: 404 });
+  }
+  const requestId = crypto.randomUUID();
+  console.error(`[${requestId}]`, error);
+  return Response.json(
+    { error: "Something went wrong", code: "INTERNAL_ERROR", requestId },
+    { status: 500, headers: { "cache-control": "no-store" } },
+  );
 }

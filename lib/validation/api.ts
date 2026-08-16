@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-export const answersInput = z.record(z.string(), z.unknown());
+export const answersInput = z.record(z.string(), z.unknown()).superRefine((value, context) => {
+  if (Object.keys(value).length > 200) context.addIssue({ code: "custom", message: "Too many answer fields" });
+  if (JSON.stringify(value).length > 1_000_000)
+    context.addIssue({ code: "custom", message: "Application draft is too large" });
+});
 
 export const uploadInput = z.object({
   applicationId: z.string().cuid(),
@@ -19,7 +23,7 @@ export const evaluationInput = z.object({
     .array(
       z.object({ criterionId: z.string().cuid(), score: z.number().min(0), comment: z.string().max(2000).optional() }),
     )
-    .min(1),
+    .max(100),
   internalNotes: z.string().max(10000).optional(),
   feedback: z.string().max(10000).optional(),
 });
@@ -40,4 +44,5 @@ export const statusInput = z.object({
     "ARCHIVED",
   ]),
   reason: z.string().min(3).max(2000),
+  stageId: z.string().cuid().nullable().optional(),
 });

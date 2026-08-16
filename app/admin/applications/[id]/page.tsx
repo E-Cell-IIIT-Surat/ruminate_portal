@@ -4,6 +4,8 @@ import { StatusControl } from "@/components/status-control";
 import { Badge, PageHeader } from "@/components/ui";
 import { userAuthorization } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { ReviewerAssignment } from "@/components/reviewer-assignment";
+import { ApplicationComments } from "@/components/application-comments";
 
 export const dynamic = "force-dynamic";
 export default async function AdminApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -17,11 +19,16 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
       program: true,
       user: true,
       stage: true,
-      team: { include: { members: true } },
+      team: { include: { members: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] } } },
       answers: { include: { field: { include: { section: true } } } },
       files: { where: { deletedAt: null } },
       reviewerAssignments: { include: { reviewer: { select: { name: true, email: true } }, evaluation: true } },
       statusHistory: { include: { changedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
+      stageHistory: {
+        include: { toStage: true, changedBy: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+      },
+      comments: { include: { author: { select: { name: true, email: true } } }, orderBy: { createdAt: "desc" } },
     },
   });
   if (!application)
@@ -31,6 +38,27 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
         body="Program managers can open only applications within their assigned programs."
       />
     );
+  const [reviewers, rubrics, stages] = await Promise.all([
+    db.user.findMany({
+      where: {
+        archivedAt: null,
+        roles: { some: { role: { name: { in: ["REVIEWER", "FACULTY_REVIEWER", "SUPER_ADMIN"] } } } },
+      },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" },
+      take: 200,
+    }),
+    db.rubric.findMany({
+      where: { programId: application.programId, active: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    db.programStage.findMany({
+      where: { programId: application.programId },
+      select: { id: true, name: true },
+      orderBy: { order: "asc" },
+    }),
+  ]);
   return (
     <>
       <PageHeader
@@ -76,6 +104,7 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
                     </strong>
                     <small>
                       {member.email} · {member.institution ?? "Institution not provided"}
+                      {member.role ? ` · ${member.role}` : ""}
                     </small>
                   </div>
                 ))}
@@ -96,6 +125,24 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
                 </div>
               ))}
             </div>
+            <ReviewerAssignment applicationId={application.id} reviewers={reviewers} rubrics={rubrics} />
+          </div>
+          <div className="panel" id="comments">
+            <div className="panel-header">
+              <h2>Comments</h2>
+            </div>
+            <div className="compact-list">
+              {application.comments.map((comment) => (
+                <div key={comment.id}>
+                  <strong>{comment.author.name ?? comment.author.email}</strong>
+                  <small>
+                    {comment.visibility} · {comment.createdAt.toLocaleString("en-IN")}
+                  </small>
+                  <p>{comment.body}</p>
+                </div>
+              ))}
+            </div>
+            <ApplicationComments applicationId={application.id} allowApplicant />
           </div>
         </section>
         <aside>
@@ -103,7 +150,12 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
             <div className="panel-header">
               <h2>Change status</h2>
             </div>
-            <StatusControl applicationId={application.id} current={application.status} />
+            <StatusControl
+              applicationId={application.id}
+              current={application.status}
+              currentStageId={application.stageId}
+              stages={stages}
+            />
           </div>
           <div className="panel" id="documents">
             <div className="panel-header">
@@ -128,6 +180,14 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
               {application.statusHistory.map((event) => (
                 <div key={event.id}>
                   <strong>{event.toStatus.replaceAll("_", " ")}</strong>
+                  <small>
+                    {event.changedBy?.name ?? "System"} · {event.createdAt.toLocaleString("en-IN")}
+                  </small>
+                </div>
+              ))}
+              {application.stageHistory.map((event) => (
+                <div key={event.id}>
+                  <strong>Moved to {event.toStage.name}</strong>
                   <small>
                     {event.changedBy?.name ?? "System"} · {event.createdAt.toLocaleString("en-IN")}
                   </small>

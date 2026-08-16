@@ -163,23 +163,41 @@ export function RubricEditor({ programId, stages }: { programId: string; stages:
   );
 }
 
-export function AnnouncementEditor({ programId }: { programId: string }) {
+export function AnnouncementEditor({
+  programId,
+  stages,
+}: {
+  programId: string;
+  stages: { id: string; name: string }[];
+}) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [targetType, setTargetType] = useState("ALL_APPLICANTS");
+  const [targetStatus, setTargetStatus] = useState("SHORTLISTED");
+  const [targetStageId, setTargetStageId] = useState(stages[0]?.id ?? "");
   const [state, setState] = useState("");
+  const [busy, setBusy] = useState(false);
   async function publish() {
+    if (busy) return;
+    setBusy(true);
     setState("Publishing…");
-    const response = await fetch(`/api/admin/programs/${programId}/announcements`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ title, body }),
-    });
-    const result = await response.json();
-    setState(response.ok ? "Announcement published" : result.error);
-    if (response.ok) {
-      setTitle("");
-      setBody("");
-      location.reload();
+    try {
+      const response = await fetch(`/api/admin/programs/${programId}/announcements`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, body, targetType, targetStatus, targetStageId }),
+      });
+      const result = await response.json();
+      setState(response.ok ? `Announcement published to ${result.recipients} participant(s)` : result.error);
+      if (response.ok) {
+        setTitle("");
+        setBody("");
+        location.reload();
+      }
+    } catch {
+      setState("Could not reach the server");
+    } finally {
+      setBusy(false);
     }
   }
   return (
@@ -187,16 +205,62 @@ export function AnnouncementEditor({ programId }: { programId: string }) {
       <div className="form-grid">
         <div className="field field-full">
           <label htmlFor="announcement-title">Title</label>
-          <input id="announcement-title" className="input" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <input
+            id="announcement-title"
+            className="input"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
         </div>
+        <div className="field">
+          <label htmlFor="announcement-audience">Audience</label>
+          <select
+            id="announcement-audience"
+            className="select"
+            value={targetType}
+            onChange={(event) => setTargetType(event.target.value)}
+          >
+            <option value="ALL_APPLICANTS">All active applicants</option>
+            <option value="SUBMITTED_APPLICANTS">Submitted applicants</option>
+            <option value="STATUS">Specific status</option>
+            <option value="STAGE">Specific stage</option>
+          </select>
+        </div>
+        {targetType === "STATUS" && (
+          <div className="field">
+            <label htmlFor="announcement-status">Application status</label>
+            <select id="announcement-status" className="select" value={targetStatus} onChange={(event) => setTargetStatus(event.target.value)}>
+              {["SUBMITTED", "UNDER_REVIEW", "CHANGES_REQUESTED", "SHORTLISTED", "SELECTED", "REJECTED", "APPROVED", "WAITLISTED", "CONFIRMED"].map((status) => (
+                <option key={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {targetType === "STAGE" && (
+          <div className="field">
+            <label htmlFor="announcement-stage">Program stage</label>
+            <select id="announcement-stage" className="select" value={targetStageId} onChange={(event) => setTargetStageId(event.target.value)}>
+              {stages.map((stage) => <option value={stage.id} key={stage.id}>{stage.name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="field field-full">
           <label htmlFor="announcement-message">Message</label>
-          <textarea id="announcement-message" className="textarea" value={body} onChange={(event) => setBody(event.target.value)} />
+          <textarea
+            id="announcement-message"
+            className="textarea"
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+          />
         </div>
         <div className="form-actions">
           <span className="config-state">{state}</span>
-          <button className="button button-primary" onClick={publish} disabled={title.length < 3 || body.length < 5}>
-            Publish announcement
+          <button
+            className="button button-primary"
+            onClick={publish}
+            disabled={busy || title.length < 3 || body.length < 5 || (targetType === "STAGE" && !targetStageId)}
+          >
+            {busy ? "Publishing…" : "Publish announcement"}
           </button>
         </div>
       </div>

@@ -30,7 +30,10 @@ export const programInput = z
     requiresReview: z.boolean().default(false),
     allowsDrafts: z.boolean().default(true),
     allowsEditAfterSubmit: z.boolean().default(false),
+    allowsWithdrawal: z.boolean().default(true),
+    editDeadline: z.coerce.date().nullable().optional(),
     requiresAuth: z.boolean().default(true),
+    blindReview: z.boolean().default(false),
     allowedEmailDomains: z.array(z.string().min(3)).default([]),
   })
   .superRefine((value, context) => {
@@ -50,5 +53,11 @@ export const programInput = z
         code: "custom",
         path: ["teamMaxSize"],
         message: "Maximum team size must be at least the minimum",
+      });
+    if (value.editDeadline && value.registrationCloseAt && value.editDeadline < value.registrationCloseAt)
+      context.addIssue({
+        code: "custom",
+        path: ["editDeadline"],
+        message: "The edit deadline cannot be before registration closes",
       });
   });

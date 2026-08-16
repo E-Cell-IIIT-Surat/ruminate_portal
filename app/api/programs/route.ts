@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     const input = programInput.parse(await request.json());
     const program = await db.$transaction(async (tx) => {
       const created = await tx.program.create({ data: { ...input, createdById: actor.id } });
+      await tx.programManager.create({ data: { programId: created.id, userId: actor.id } });
       await tx.form.create({ data: { programId: created.id, name: `${created.name} application` } });
       await tx.programStage.create({ data: { programId: created.id, name: "Application", order: 1, isInitial: true } });
       await tx.auditLog.create({

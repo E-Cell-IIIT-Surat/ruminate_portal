@@ -9,6 +9,7 @@ export function AuthGate({
   title?: string;
   body?: string;
 }) {
+  const setupRequired = title.toLowerCase().includes("setup required");
   return (
     <main className="auth-screen">
       <div className="auth-card">
@@ -18,10 +19,20 @@ export function AuthGate({
         </span>
         <h1>{title}</h1>
         <p>{body}</p>
-        <Link className="button button-primary" href="/api/auth/signin/google">
-          <span className="google-g">G</span>Continue with Google
-        </Link>
-        <small>Access is protected and scoped to your assigned role.</small>
+        {setupRequired ? (
+          <Link className="button button-secondary" href="/">
+            Back to homepage
+          </Link>
+        ) : (
+          <Link className="button button-primary" href="/api/auth/signin/google">
+            <span className="google-g">G</span>Continue with Google
+          </Link>
+        )}
+        <small>
+          {setupRequired
+            ? "The interface is available, but protected actions stay disabled until configuration is complete."
+            : "Access is protected and scoped to your assigned role."}
+        </small>
       </div>
     </main>
   );

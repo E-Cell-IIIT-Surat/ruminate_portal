@@ -1,9 +1,11 @@
 import { db } from "@/lib/db";
 import { Badge, ButtonLink, Metric, PageHeader } from "@/components/ui";
+import { requirePermission } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 export default async function ProgramOverview({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  await requirePermission("application:view", id);
   const program = await db.program.findUnique({
     where: { id },
     include: {

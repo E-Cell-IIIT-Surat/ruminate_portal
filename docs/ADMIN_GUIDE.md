@@ -1,5 +1,21 @@
 # Ruminate Portal Admin Guide
 
+## Conducting a normal event
+
+Create a program, set dates and eligibility, choose individual/team participation, build the form from the Basic Registration or Workshop template, publish the form, open registration, monitor submissions, send targeted announcements, export the authorized list, complete the event, and archive the program.
+
+## Conducting UdbhAV
+
+Duplicate the previous UdbhAV configuration. Update its name, slug, dates, descriptions, and team bounds. Review the copied startup form and pitch-deck field, configure Round 1/Round 2/Final stages, create stage rubrics, grant reviewer roles, assign two or more reviewers per application, monitor normalized average scores, shortlist into the next stage, record decisions, publish results, and archive after completion. Applications, files, teams, and historical reviews are never copied.
+
+## Conducting SSIP
+
+Create or duplicate an SSIP configuration. Build proposal and private-document fields, configure Submission, Initial Review, Revision, Faculty Review, and Decision stages, and create the relevant rubrics. Move a reviewed proposal to Changes Requested with applicant-visible feedback. The participant edits and resubmits, creating another immutable revision. Assign a faculty reviewer, then approve or reject and publish results.
+
+## Conducting an industry visit
+
+Create an individual program with evaluation disabled, set the seat capacity and enable the waitlist, apply the Industry Visit form template, publish the form, and open registration. Available places become Confirmed automatically under the capacity lock; later registrations become Waitlisted. Managers can promote waitlisted participants through the application status control, send status/stage announcements, export the confirmed list, and close the program.
+
 ## Creating a program
 
 Open **Programs → Create program**. Add the name, URL slug, dates, participation mode, capacity, team bounds, review requirement, and waitlist rule. Save it as a draft while configuration is incomplete.

@@ -11,7 +11,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     if (!file) return Response.json({ error: "File not found" }, { status: 404 });
     const access = await requireApplicationAccess(file.applicationId, "read");
     await enforceRateLimit(`file-download:${access.current.id}`, 30, 60);
-    return Response.json(await createDownloadUrl(id));
+    const { url } = await createDownloadUrl(id);
+    return Response.redirect(url, 302);
   } catch (error) {
     return safeError(error);
   }

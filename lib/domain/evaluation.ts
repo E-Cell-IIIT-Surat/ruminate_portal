@@ -1,3 +1,5 @@
+import { AppError } from "@/lib/errors";
+
 export type ScoredCriterion = { score: number; maxScore: number; weight: number };
 
 export function calculateWeightedScore(criteria: ScoredCriterion[]) {
@@ -11,7 +13,7 @@ export function calculateWeightedScore(criteria: ScoredCriterion[]) {
       criterion.score < 0 ||
       criterion.score > criterion.maxScore
     ) {
-      throw new Error("Invalid rubric score");
+      throw new AppError("A rubric score is outside its allowed range", 422, "INVALID_SCORE");
     }
     weighted += (criterion.score / criterion.maxScore) * criterion.weight;
     totalWeight += criterion.weight;

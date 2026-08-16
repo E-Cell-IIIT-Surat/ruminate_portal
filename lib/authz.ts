@@ -2,6 +2,9 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { forbidden, unauthorized } from "@/lib/errors";
 import type { PermissionKey } from "@/lib/permissions";
+import { canEditSubmitted } from "@/lib/domain/program";
+import { AppError } from "@/lib/errors";
+import { canAccessApplication } from "@/lib/domain/access";
 
 export async function requireUser() {
   const session = await auth();
@@ -49,6 +52,8 @@ export async function requireApplicationAccess(applicationId: string, mode: "rea
       userId: true,
       programId: true,
       status: true,
+      editOverrideUntil: true,
+      program: { select: { allowsEditAfterSubmit: true, editDeadline: true } },
       reviewerAssignments: { where: { reviewerId: current.id }, select: { id: true } },
     },
   });
@@ -56,8 +61,13 @@ export async function requireApplicationAccess(applicationId: string, mode: "rea
   const owns = application.userId === current.id;
   const manages = authorization.isSuperAdmin || authorization.managedProgramIds.has(application.programId);
   const assigned = application.reviewerAssignments.length > 0;
-  const allowed =
-    mode === "edit" ? owns || manages : mode === "review" ? assigned || manages : owns || assigned || manages;
+  const allowed = canAccessApplication(mode, { owns, manages, assigned });
   if (!allowed) throw forbidden();
+  if (
+    mode === "edit" &&
+    !["DRAFT", "CHANGES_REQUESTED"].includes(application.status) &&
+    !canEditSubmitted(application.program, application.editOverrideUntil)
+  )
+    throw new AppError("This application can no longer be edited", 409, "EDIT_LOCKED");
   return { current, authorization, application, owns, manages, assigned };
 }

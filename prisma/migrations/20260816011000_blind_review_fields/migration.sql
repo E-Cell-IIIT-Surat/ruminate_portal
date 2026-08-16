@@ -1,0 +1,1 @@
+ALTER TABLE "FormField" ADD COLUMN "hideFromReviewers" BOOLEAN NOT NULL DEFAULT false;

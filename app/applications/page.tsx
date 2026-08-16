@@ -5,6 +5,7 @@ import { Badge, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { ClipboardList } from "lucide-react";
+import { participantVisibleStatus } from "@/lib/domain/status";
 
 export const dynamic = "force-dynamic";
 export default async function ApplicationsPage() {
@@ -13,7 +14,10 @@ export default async function ApplicationsPage() {
   if (!session?.user) return <AuthGate />;
   const applications = await db.application.findMany({
     where: { userId: session.user.id, archivedAt: null },
-    include: { program: { select: { name: true, slug: true } }, team: { select: { name: true } } },
+    include: {
+      program: { select: { name: true, slug: true, resultsPublishedAt: true } },
+      team: { select: { name: true } },
+    },
     orderBy: { updatedAt: "desc" },
   });
   return (
@@ -47,7 +51,9 @@ export default async function ApplicationsPage() {
                     <td>{item.team?.name ?? session.user.name ?? session.user.email}</td>
                     <td>{item.updatedAt.toLocaleDateString("en-IN")}</td>
                     <td>
-                      <Badge tone="orange">{item.status.replaceAll("_", " ")}</Badge>
+                      <Badge tone="orange">
+                        {participantVisibleStatus(item.status, item.program.resultsPublishedAt).replaceAll("_", " ")}
+                      </Badge>
                     </td>
                   </tr>
                 ))}

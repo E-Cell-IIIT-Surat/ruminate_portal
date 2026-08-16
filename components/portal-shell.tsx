@@ -28,7 +28,9 @@ const navSets = {
     ["Reviews", "/admin/reviews", FileCheck2],
     ["Participants", "/admin/participants", UsersRound],
     ["Announcements", "/admin/announcements", Megaphone],
+    ["Analytics", "/admin/analytics", Gauge],
     ["Users & Roles", "/admin/users", ShieldCheck],
+    ["Audit Logs", "/admin/audit-logs", FileCheck2],
     ["Settings", "/admin/settings", Settings],
   ],
   reviewer: [

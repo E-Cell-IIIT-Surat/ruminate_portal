@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "client"
 }
 
 datasource db {
@@ -374,6 +375,7 @@ model FormField {
   helpText           String?
   placeholder        String?
   required           Boolean   @default(false)
+  hideFromReviewers  Boolean   @default(false)
   minLength          Int?
   maxLength          Int?
   minNumber          Decimal?
@@ -523,6 +525,8 @@ model TeamMember {
   email       String
   phone       String?
   institution String?
+  role        String?
+  order       Int      @default(0)
   isLeader    Boolean  @default(false)
   createdAt   DateTime @default(now())
 
@@ -530,6 +534,7 @@ model TeamMember {
   user User? @relation(fields: [userId], references: [id])
 
   @@unique([teamId, email])
+  @@index([teamId, order])
   @@index([userId])
 }
 
@@ -668,6 +673,8 @@ model Announcement {
   body        String
   publishedAt DateTime?
   expiresAt   DateTime?
+  targetType  String   @default("ALL_APPLICANTS")
+  targetValue String?
   createdById String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -719,9 +726,13 @@ model EmailDelivery {
   programId      String?
   recipientEmail String
   templateKey    String
+  subject        String
+  textBody       String
   providerId     String?
   status         EmailStatus @default(QUEUED)
   errorCode      String?
+  attempts       Int         @default(0)
+  lastAttemptAt  DateTime?
   createdAt      DateTime    @default(now())
   sentAt         DateTime?
 

@@ -53,6 +53,8 @@ Required in production:
 
 Optional/provider-specific: `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, and `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. No server secret uses the `NEXT_PUBLIC_` prefix.
 
+`CRON_SECRET` is required when a scheduler calls the protected email-queue processor. Generate a random value of at least 32 characters and send it as `Authorization: Bearer <CRON_SECRET>` to `POST /api/internal/email/process`.
+
 ## PostgreSQL and Prisma migrations
 
 `DATABASE_URL` must use a least-privilege PostgreSQL account in production. Use `npm run db:migrate` locally when changing the schema and commit the resulting `prisma/migrations` directory. Deploy existing migrations with `npm run db:deploy`; never run the development migration command in production.
@@ -102,7 +104,11 @@ The pure-domain suite covers deadlines, team bounds, edit overrides, weighted sc
 
 ## Production build and deployment
 
-Run migrations before starting the new release, then run `npm run build`. Configure all secrets in the hosting platform, keep PostgreSQL and R2 private, force HTTPS, and set `APP_URL` to the canonical portal origin. Google OAuth callback URLs must match exactly. Use a pooled PostgreSQL endpoint compatible with the deployment runtime. Back up PostgreSQL, enable R2 object-versioning/retention as policy requires, and forward application logs without confidential answer or file content.
+Run `npm run db:deploy` before starting the new release, then run `npm run build`. Configure all secrets in the hosting platform, keep PostgreSQL and R2 private, force HTTPS, and set `APP_URL` to the canonical portal origin. Google OAuth callback URLs must match exactly. Use a pooled PostgreSQL endpoint compatible with the deployment runtime. The Prisma client uses its JavaScript engine with the PostgreSQL driver adapter and the Worker build enables `nodejs_compat`, avoiding a native query-engine binary in Cloudflare. Back up PostgreSQL, enable R2 object-versioning/retention as policy requires, and forward application logs without confidential answer or file content.
+
+Use `GET /api/health` as the deployment readiness probe. It returns `200` only when PostgreSQL is configured and reachable. Configure a scheduler to call the protected email processor regularly; failed deliveries are retried up to five times.
+
+Before releasing, run `npm audit --omit=dev`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`. Apply dependency security patches before production deployment.
 
 ## Security notes
 
@@ -111,9 +117,9 @@ Every mutation is server-authorized. Participant ownership, program-manager scop
 ## Important routes
 
 - Public: `/`, `/programs`, `/programs/[slug]`, `/signin`
-- Participant: `/dashboard`, `/applications`, `/applications/[id]`
+- Participant: `/dashboard`, `/applications`, `/applications/[id]`, `/teams`, `/notifications`, `/profile`
 - Reviewer: `/reviewer`, `/reviewer/reviews/[id]`
-- Admin: `/admin`, `/admin/programs`, `/admin/programs/new`, `/admin/programs/[id]`, `/admin/programs/[id]/form`, `/admin/applications`, `/admin/applications/[id]`
+- Admin: `/admin`, `/admin/programs`, program form/stages/reviewers/evaluation/announcements/analytics/settings, `/admin/applications`, `/admin/reviews`, `/admin/participants`, `/admin/users`, and `/admin/audit-logs`
 - Auth/API: `/api/auth/*`, `/api/programs/*`, `/api/applications/*`, `/api/files/*`, `/api/reviews/*`
 
 ## Core-member workflow

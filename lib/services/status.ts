@@ -1,21 +1,7 @@
 import type { ApplicationStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { AppError, notFound } from "@/lib/errors";
-
-const transitions: Record<ApplicationStatus, ApplicationStatus[]> = {
-  DRAFT: ["SUBMITTED", "WITHDRAWN", "ARCHIVED"],
-  SUBMITTED: ["UNDER_REVIEW", "CHANGES_REQUESTED", "SHORTLISTED", "REJECTED", "WAITLISTED", "WITHDRAWN", "ARCHIVED"],
-  UNDER_REVIEW: ["CHANGES_REQUESTED", "SHORTLISTED", "SELECTED", "REJECTED", "APPROVED", "WAITLISTED", "ARCHIVED"],
-  CHANGES_REQUESTED: ["SUBMITTED", "REJECTED", "WITHDRAWN", "ARCHIVED"],
-  SHORTLISTED: ["UNDER_REVIEW", "SELECTED", "REJECTED", "WAITLISTED", "ARCHIVED"],
-  SELECTED: ["CONFIRMED", "REJECTED", "ARCHIVED"],
-  REJECTED: ["UNDER_REVIEW", "ARCHIVED"],
-  APPROVED: ["CONFIRMED", "ARCHIVED"],
-  WAITLISTED: ["CONFIRMED", "REJECTED", "WITHDRAWN", "ARCHIVED"],
-  CONFIRMED: ["WITHDRAWN", "ARCHIVED"],
-  WITHDRAWN: ["DRAFT", "ARCHIVED"],
-  ARCHIVED: ["DRAFT"],
-};
+import { canTransitionApplication, isPrivateDecision } from "@/lib/domain/status";
 
 export async function transitionApplication(
   applicationId: string,
@@ -23,29 +9,59 @@ export async function transitionApplication(
   actorId: string,
   reason: string,
   override = false,
+  stageId?: string | null,
 ) {
-  const application = await db.application.findUnique({ where: { id: applicationId } });
+  const application = await db.application.findUnique({
+    where: { id: applicationId },
+    include: { user: { select: { email: true } }, program: { select: { name: true, resultsPublishedAt: true } } },
+  });
   if (!application) throw notFound("Application");
-  if (!override && !transitions[application.status].includes(status))
+  if (!override && !canTransitionApplication(application.status, status))
     throw new AppError(`Cannot move ${application.status} to ${status}`, 409, "INVALID_TRANSITION");
+  if (stageId && !(await db.programStage.findFirst({ where: { id: stageId, programId: application.programId } })))
+    throw new AppError("The selected stage does not belong to this program", 422, "INVALID_STAGE");
   return db.$transaction(async (tx) => {
     const updated = await tx.application.update({
       where: { id: applicationId },
-      data: { status, withdrawnAt: status === "WITHDRAWN" ? new Date() : undefined },
+      data: { status, stageId: stageId ?? undefined, withdrawnAt: status === "WITHDRAWN" ? new Date() : undefined },
     });
     await tx.applicationStatusHistory.create({
       data: { applicationId, fromStatus: application.status, toStatus: status, changedById: actorId, reason },
     });
-    await tx.notification.create({
-      data: {
-        userId: application.userId,
-        applicationId,
-        type: status === "CHANGES_REQUESTED" ? "CHANGES_REQUESTED" : "APPLICATION_STATUS",
-        title: "Application status updated",
-        body: `Your application is now ${status.toLowerCase().replaceAll("_", " ")}.`,
-        href: `/applications/${applicationId}`,
-      },
-    });
+    if (stageId && stageId !== application.stageId)
+      await tx.applicationStageHistory.create({
+        data: {
+          applicationId,
+          programId: application.programId,
+          fromStageId: application.stageId,
+          toStageId: stageId,
+          changedById: actorId,
+          reason,
+        },
+      });
+    const visible = !isPrivateDecision(status) || application.program.resultsPublishedAt !== null;
+    if (visible) {
+      const statusLabel = status.toLowerCase().replaceAll("_", " ");
+      await tx.notification.create({
+        data: {
+          userId: application.userId,
+          applicationId,
+          type: status === "CHANGES_REQUESTED" ? "CHANGES_REQUESTED" : "APPLICATION_STATUS",
+          title: "Application status updated",
+          body: `Your application is now ${statusLabel}.`,
+          href: `/applications/${applicationId}`,
+        },
+      });
+      await tx.emailDelivery.create({
+        data: {
+          programId: application.programId,
+          recipientEmail: application.user.email,
+          templateKey: "application.status",
+          subject: `${application.program.name}: application update`,
+          textBody: `Your application is now ${statusLabel}. Sign in to Ruminate Portal for details.`,
+        },
+      });
+    }
     await tx.auditLog.create({
       data: {
         actorId,

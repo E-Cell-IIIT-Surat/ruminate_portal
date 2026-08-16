@@ -2,9 +2,12 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
-import { superAdminEmails } from "@/lib/env";
+import { ensureUserRoles } from "@/lib/services/bootstrap";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret:
+    process.env.AUTH_SECRET ??
+    (process.env.NODE_ENV !== "production" ? "ruminate-local-development-secret-not-for-production" : undefined),
   adapter: PrismaAdapter(db),
   providers: [
     Google({
@@ -15,6 +18,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "database" },
   pages: { signIn: "/signin", error: "/signin" },
   callbacks: {
+    async signIn({ user }) {
+      if (!user.id) return true;
+      const account = await db.user.findUnique({ where: { id: user.id }, select: { archivedAt: true } });
+      if (account?.archivedAt) {
+        console.warn("auth.signin.denied", { userId: user.id, reason: "account_disabled" });
+        return false;
+      }
+      return true;
+    },
     async session({ session, user }) {
       if (session.user) session.user.id = user.id;
       return session;
@@ -22,28 +34,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   events: {
     async createUser({ user }) {
-      if (!user.email || !user.id) return;
-      const participant = await db.role.findUnique({ where: { name: "PARTICIPANT" } });
-      if (participant) {
-        await db.userRole.upsert({
-          where: { userId_roleId: { userId: user.id, roleId: participant.id } },
-          create: { userId: user.id, roleId: participant.id },
-          update: {},
-        });
-      }
-      if (superAdminEmails().has(user.email.toLowerCase())) {
-        const admin = await db.role.findUnique({ where: { name: "SUPER_ADMIN" } });
-        if (admin) {
-          await db.userRole.upsert({
-            where: { userId_roleId: { userId: user.id, roleId: admin.id } },
-            create: { userId: user.id, roleId: admin.id },
-            update: {},
-          });
-        }
-      }
+      await ensureUserRoles(user);
+    },
+    async signIn({ user }) {
+      await ensureUserRoles(user);
     },
   },
-  trustHost: true,
+  trustHost: process.env.AUTH_TRUST_HOST === "true" || process.env.NODE_ENV !== "production",
 });
 
 declare module "next-auth" {

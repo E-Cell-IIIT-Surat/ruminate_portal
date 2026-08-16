@@ -16,8 +16,14 @@ function date(value: Date | null) {
     : "To be announced";
 }
 
-export default async function ProgramsPage() {
-  const programs = await publicPrograms();
+export default async function ProgramsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string; state?: string; year?: string }>;
+}) {
+  const filters = await searchParams;
+  const year = filters.year && /^\d{4}$/.test(filters.year) ? Number(filters.year) : undefined;
+  const programs = await publicPrograms({ type: filters.type, state: filters.state, year });
   return (
     <div className="public-page">
       <PublicHeader />
@@ -27,6 +33,39 @@ export default async function ProgramsPage() {
           title="Programs at Ruminate"
           description="Explore open registrations, upcoming opportunities, and initiatives across entrepreneurship, innovation, and industry."
         />
+        <form className="filter-bar">
+          <select name="type" defaultValue={filters.type ?? ""} aria-label="Program type">
+            <option value="">All types</option>
+            {[
+              "EVENT",
+              "WORKSHOP",
+              "INDUSTRY_VISIT",
+              "HACKATHON",
+              "STARTUP_COMPETITION",
+              "SSIP",
+              "MENTORSHIP",
+              "PITCH_EVENT",
+              "OTHER",
+            ].map((item) => (
+              <option key={item}>{item}</option>
+            ))}
+          </select>
+          <select name="state" defaultValue={filters.state ?? ""} aria-label="Registration state">
+            <option value="">All states</option>
+            <option value="OPEN">Open</option>
+            <option value="UPCOMING">Upcoming</option>
+            <option value="CLOSED">Closed</option>
+          </select>
+          <input
+            name="year"
+            inputMode="numeric"
+            pattern="\d{4}"
+            defaultValue={filters.year ?? ""}
+            placeholder="Year"
+            aria-label="Program year"
+          />
+          <button className="button button-secondary">Filter</button>
+        </form>
         {!hasDatabaseConfig() && (
           <div className="setup-note">
             The portal is ready for its PostgreSQL connection. Programs will appear here as soon as the environment is

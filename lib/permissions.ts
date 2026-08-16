@@ -23,7 +23,9 @@ export const rolePermissionMap = {
   FACULTY_REVIEWER: ["review:view-assigned", "review:submit"],
   CONTENT_MANAGER: ["announcement:create"],
   PROGRAM_MANAGER: [
+    "program:create",
     "program:update",
+    "program:archive",
     "form:manage",
     "application:view",
     "application:update-status",

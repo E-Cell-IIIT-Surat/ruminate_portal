@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; status?: string; programId?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) return null;
@@ -20,6 +20,7 @@ export default async function AdminApplicationsPage({
   const scope = authorization.isSuperAdmin ? {} : { id: { in: [...authorization.managedProgramIds] } };
   const where = {
     program: scope,
+    ...(query.programId ? { programId: query.programId } : {}),
     archivedAt: null,
     ...(query.status ? { status: query.status as never } : {}),
     ...(q
@@ -62,6 +63,7 @@ export default async function AdminApplicationsPage({
         description={`${total} authorized records · server-side pagination`}
       />
       <form className="filter-bar">
+        {query.programId && <input type="hidden" name="programId" value={query.programId} />}
         <label>
           <Search size={15} />
           <input name="q" defaultValue={q} placeholder="Reference, applicant, email, or team" />
@@ -159,7 +161,7 @@ export default async function AdminApplicationsPage({
         <nav className="pagination" aria-label="Pagination">
           <a
             aria-disabled={page === 1}
-            href={`?page=${page - 1}&q=${encodeURIComponent(q)}&status=${query.status ?? ""}`}
+            href={`?page=${page - 1}&q=${encodeURIComponent(q)}&status=${query.status ?? ""}&programId=${query.programId ?? ""}`}
           >
             Previous
           </a>
@@ -168,7 +170,7 @@ export default async function AdminApplicationsPage({
           </span>
           <a
             aria-disabled={page * take >= total}
-            href={`?page=${page + 1}&q=${encodeURIComponent(q)}&status=${query.status ?? ""}`}
+            href={`?page=${page + 1}&q=${encodeURIComponent(q)}&status=${query.status ?? ""}&programId=${query.programId ?? ""}`}
           >
             Next
           </a>

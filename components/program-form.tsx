@@ -30,9 +30,12 @@ export function ProgramForm() {
       teamMaxSize: Number(data.get("teamMaxSize") || 1),
       waitlistEnabled: data.get("waitlistEnabled") === "on",
       requiresReview: data.get("requiresReview") === "on",
-      allowsDrafts: true,
+      allowsDrafts: data.get("allowsDrafts") === "on",
       allowsEditAfterSubmit: data.get("allowsEditAfterSubmit") === "on",
-      requiresAuth: true,
+      allowsWithdrawal: data.get("allowsWithdrawal") === "on",
+      editDeadline: data.get("editDeadline") || null,
+      requiresAuth: data.get("requiresAuth") === "on",
+      blindReview: data.get("blindReview") === "on",
       allowedEmailDomains: String(data.get("allowedEmailDomains") ?? "")
         .split(",")
         .map((item) => item.trim())
@@ -67,11 +70,13 @@ export function ProgramForm() {
           <label htmlFor="type">Program type</label>
           <select className="select" id="type" name="type">
             <option value="STARTUP_COMPETITION">Startup competition</option>
+            <option value="EVENT">Event</option>
             <option value="SSIP">SSIP</option>
             <option value="WORKSHOP">Workshop</option>
             <option value="INDUSTRY_VISIT">Industry visit</option>
             <option value="HACKATHON">Hackathon</option>
             <option value="MENTORSHIP">Mentorship</option>
+            <option value="PITCH_EVENT">Pitch event</option>
             <option value="OTHER">Other</option>
           </select>
         </div>
@@ -123,6 +128,10 @@ export function ProgramForm() {
           <input className="input" type="datetime-local" id="endAt" name="endAt" />
         </div>
         <div className="field">
+          <label htmlFor="editDeadline">Post-submission edit deadline</label>
+          <input className="input" type="datetime-local" id="editDeadline" name="editDeadline" />
+        </div>
+        <div className="field">
           <label htmlFor="participationMode">Participation</label>
           <select className="select" id="participationMode" name="participationMode">
             <option value="INDIVIDUAL">Individual</option>
@@ -155,6 +164,18 @@ export function ProgramForm() {
           </label>
           <label>
             <input type="checkbox" name="allowsEditAfterSubmit" /> Allow edits after submission
+          </label>
+          <label>
+            <input type="checkbox" name="allowsDrafts" defaultChecked /> Allow saved drafts
+          </label>
+          <label>
+            <input type="checkbox" name="allowsWithdrawal" defaultChecked /> Allow withdrawal
+          </label>
+          <label>
+            <input type="checkbox" name="requiresAuth" defaultChecked /> Require authenticated applicants
+          </label>
+          <label>
+            <input type="checkbox" name="blindReview" /> Blind review
           </label>
         </div>
         {error && (

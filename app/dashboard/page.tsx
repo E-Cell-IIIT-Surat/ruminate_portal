@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { Bell, Blocks, ClipboardList, UsersRound } from "lucide-react";
 import Link from "next/link";
+import { participantVisibleStatus } from "@/lib/domain/status";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,16 @@ export default async function DashboardPage() {
     );
   const session = await auth();
   if (!session?.user) return <AuthGate />;
-  const [applications, programs, announcements, notifications, teams] = await Promise.all([
+  const [applications, programs, notifications, teams] = await Promise.all([
     db.application.findMany({
       where: { userId: session.user.id, archivedAt: null },
-      select: { id: true, referenceId: true, status: true, submittedAt: true, program: { select: { name: true } } },
+      select: {
+        id: true,
+        referenceId: true,
+        status: true,
+        submittedAt: true,
+        program: { select: { name: true, resultsPublishedAt: true } },
+      },
       orderBy: { updatedAt: "desc" },
       take: 5,
     }),
@@ -32,15 +39,9 @@ export default async function DashboardPage() {
       orderBy: { registrationCloseAt: "asc" },
       take: 4,
     }),
-    db.announcement.findMany({
-      where: { publishedAt: { lte: new Date() }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-      select: { id: true, title: true, body: true, publishedAt: true },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-    }),
     db.notification.findMany({
       where: { userId: session.user.id },
-      select: { id: true, title: true, body: true, readAt: true, href: true },
+      select: { id: true, type: true, title: true, body: true, readAt: true, href: true },
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
@@ -67,28 +68,31 @@ export default async function DashboardPage() {
             </div>
             {applications.length ? (
               <div className="item-list">
-                {applications.map((item) => (
-                  <a href={`/applications/${item.id}`} key={item.id}>
-                    <span className="item-icon">
-                      <ClipboardList />
-                    </span>
-                    <div>
-                      <strong>{item.program.name}</strong>
-                      <small>{item.referenceId}</small>
-                    </div>
-                    <Badge
-                      tone={
-                        item.status === "SHORTLISTED" || item.status === "SELECTED"
-                          ? "green"
-                          : item.status === "REJECTED"
-                            ? "red"
-                            : "orange"
-                      }
-                    >
-                      {item.status.replaceAll("_", " ")}
-                    </Badge>
-                  </a>
-                ))}
+                {applications.map((item) => {
+                  const visibleStatus = participantVisibleStatus(item.status, item.program.resultsPublishedAt);
+                  return (
+                    <a href={`/applications/${item.id}`} key={item.id}>
+                      <span className="item-icon">
+                        <ClipboardList />
+                      </span>
+                      <div>
+                        <strong>{item.program.name}</strong>
+                        <small>{item.referenceId}</small>
+                      </div>
+                      <Badge
+                        tone={
+                          visibleStatus === "SHORTLISTED" || visibleStatus === "SELECTED"
+                            ? "green"
+                            : visibleStatus === "REJECTED"
+                              ? "red"
+                              : "orange"
+                        }
+                      >
+                        {visibleStatus.replaceAll("_", " ")}
+                      </Badge>
+                    </a>
+                  );
+                })}
               </div>
             ) : (
               <EmptyState
@@ -176,18 +180,21 @@ export default async function DashboardPage() {
               <EmptyState icon={UsersRound} title="No teams yet" body="Team registrations you lead will appear here." />
             )}
           </div>
-          {announcements.length > 0 && (
+          {notifications.some((item) => item.type === "ANNOUNCEMENT") && (
             <div className="panel">
               <div className="panel-header">
                 <h2>Announcements</h2>
               </div>
               <div className="compact-list">
-                {announcements.map((item) => (
+                {notifications
+                  .filter((item) => item.type === "ANNOUNCEMENT")
+                  .slice(0, 3)
+                  .map((item) => (
                   <div key={item.id}>
                     <strong>{item.title}</strong>
                     <small>{item.body}</small>
                   </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}

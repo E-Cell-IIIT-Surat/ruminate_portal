@@ -30,7 +30,9 @@ export default async function AdminProgramsPage() {
         title="Programs"
         description="Configure registration, forms, stages, evaluation, and communication."
         action={
-          authorization.isSuperAdmin ? <ButtonLink href="/admin/programs/new">Create program</ButtonLink> : undefined
+          authorization.grants.has("program:create") ? (
+            <ButtonLink href="/admin/programs/new">Create program</ButtonLink>
+          ) : undefined
         }
       />
       <div className="panel">
@@ -71,7 +73,7 @@ export default async function AdminProgramsPage() {
             title="No programs yet"
             body="Create the first reusable Ruminate program, then publish its form."
             action={
-              authorization.isSuperAdmin ? (
+              authorization.grants.has("program:create") ? (
                 <ButtonLink href="/admin/programs/new" variant="secondary">
                   Create program
                 </ButtonLink>

@@ -44,9 +44,27 @@ export function ApplicationForm({
   const [answers, setAnswers] = useState(initialAnswers);
   const [saveState, setSaveState] = useState("Saved");
   const [review, setReview] = useState(false);
+  const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [files, setFiles] = useState(initialFiles);
   const [error, setError] = useState("");
   const first = useRef(true);
+  async function persistAnswers() {
+    setSaveState("Saving…");
+    try {
+      const response = await fetch(`/api/applications/${applicationId}/draft`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(answers),
+      });
+      setSaveState(response.ok ? "Saved just now" : "Save failed");
+      return response.ok;
+    } catch {
+      setSaveState("Save failed");
+      return false;
+    }
+  }
   useEffect(() => {
     if (first.current) {
       first.current = false;
@@ -54,90 +72,94 @@ export function ApplicationForm({
     }
     if (locked) return;
     const timer = setTimeout(async () => {
-      setSaveState("Saving…");
-      const response = await fetch(`/api/applications/${applicationId}/draft`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(answers),
-      });
-      setSaveState(response.ok ? "Saved just now" : "Save failed");
+      await persistAnswers();
     }, 900);
     return () => clearTimeout(timer);
+    // persistAnswers intentionally follows the latest answer state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers, applicationId, locked]);
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (locked || (!saveState.startsWith("Unsaved") && !saveState.startsWith("Saving"))) return;
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [locked, saveState]);
   const visibleSections = useMemo(
     () =>
       sections.map((section) => ({ ...section, fields: section.fields.filter((field) => visible(field, answers)) })),
     [answers, sections],
   );
+  const currentStep = Math.min(step, Math.max(0, visibleSections.length - 1));
   function set(key: string, value: unknown) {
     setSaveState("Unsaved");
     setAnswers((current) => ({ ...current, [key]: value }));
   }
   async function manualSave() {
-    setSaveState("Saving…");
-    const response = await fetch(`/api/applications/${applicationId}/draft`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(answers),
-    });
-    setSaveState(response.ok ? "Saved just now" : "Save failed");
+    await persistAnswers();
   }
   async function upload(field: Field, file?: File) {
     if (!file) return;
+    setUploadingField(field.id);
+    setError("");
     setSaveState("Uploading…");
-    const request = await fetch("/api/files/upload-url", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        applicationId,
-        fieldId: field.id,
-        filename: file.name,
-        mimeType: file.type,
-        size: file.size,
-      }),
-    });
-    const signed = await request.json();
-    if (!request.ok) {
-      setError(signed.error);
-      setSaveState("Upload failed");
-      return;
-    }
-    const sent = await fetch(signed.uploadUrl, { method: "PUT", headers: { "content-type": file.type }, body: file });
-    if (!sent.ok) {
-      setError("Upload failed");
-      setSaveState("Upload failed");
-      return;
-    }
-    const finalized = await fetch("/api/files/finalize", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        applicationId,
-        fieldId: field.id,
-        filename: file.name,
-        mimeType: file.type,
-        size: file.size,
-        objectKey: signed.objectKey,
-      }),
-    });
-    const result = await finalized.json();
-    if (finalized.ok) {
-      setFiles((current) => [...current, result.file]);
+    try {
+      const request = await fetch("/api/files/upload-url", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          applicationId,
+          fieldId: field.id,
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size,
+        }),
+      });
+      const signed = await request.json();
+      if (!request.ok) throw new Error(signed.error ?? "Upload failed");
+      const sent = await fetch(signed.uploadUrl, { method: "PUT", headers: signed.requiredHeaders, body: file });
+      if (!sent.ok) throw new Error("Upload failed");
+      const finalized = await fetch("/api/files/finalize", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          applicationId,
+          fieldId: field.id,
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size,
+          objectKey: signed.objectKey,
+        }),
+      });
+      const result = await finalized.json();
+      if (!finalized.ok) throw new Error(result.error ?? "Upload failed");
+      setFiles((current) => [...current.filter((item) => item.fieldId !== field.id), result.file]);
       setSaveState("File uploaded");
-    } else {
-      setError(result.error);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Upload failed");
       setSaveState("Upload failed");
+    } finally {
+      setUploadingField(null);
     }
   }
   async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
     setError("");
-    const response = await fetch(`/api/applications/${applicationId}/submit`, { method: "POST" });
-    const result = await response.json();
-    if (!response.ok) {
-      setError(result.code === "VALIDATION_ERROR" ? "Complete every required field before submitting." : result.error);
-      return;
+    try {
+      if (!(await persistAnswers())) throw new Error("Save the application before submitting.");
+      const response = await fetch(`/api/applications/${applicationId}/submit`, { method: "POST" });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(
+          result.code === "VALIDATION_ERROR" ? "Complete every required field before submitting." : result.error,
+        );
+      location.reload();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Submission failed");
+      setSubmitting(false);
     }
-    location.reload();
   }
   if (review)
     return (
@@ -174,8 +196,8 @@ export function ApplicationForm({
             <strong>Ready to submit?</strong>
             <small>Your responses will be captured as an immutable revision.</small>
           </div>
-          <button className="button button-primary" onClick={submit}>
-            Submit application
+          <button className="button button-primary" onClick={submit} disabled={submitting}>
+            {submitting ? "Submitting…" : "Submit application"}
           </button>
         </div>
       </div>
@@ -188,7 +210,22 @@ export function ApplicationForm({
           <Save size={14} /> Save draft
         </button>
       </div>
-      {visibleSections.map((section) => (
+      {visibleSections.length > 1 && (
+        <nav className="application-steps" aria-label="Application sections">
+          {visibleSections.map((section, index) => (
+            <button
+              key={section.id}
+              type="button"
+              className={index === currentStep ? "active" : ""}
+              aria-current={index === currentStep ? "step" : undefined}
+              onClick={() => setStep(index)}
+            >
+              <span>{index + 1}</span> {section.title}
+            </button>
+          ))}
+        </nav>
+      )}
+      {visibleSections.slice(currentStep, currentStep + 1).map((section) => (
         <section className="application-section" key={section.id}>
           <header>
             <h2>{section.title}</h2>
@@ -203,12 +240,34 @@ export function ApplicationForm({
                 onChange={(value) => set(field.key, value)}
                 onFile={(file) => upload(field, file)}
                 files={files.filter((file) => file.fieldId === field.id)}
+                uploading={uploadingField === field.id}
                 locked={locked}
               />
             ))}
           </div>
         </section>
       ))}
+      {visibleSections.length > 1 && (
+        <div className="step-actions">
+          <button
+            type="button"
+            className="button button-secondary"
+            disabled={currentStep === 0}
+            onClick={() => setStep((current) => Math.max(0, current - 1))}
+          >
+            Previous
+          </button>
+          {currentStep < visibleSections.length - 1 && (
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => setStep((current) => Math.min(visibleSections.length - 1, current + 1))}
+            >
+              Save and continue
+            </button>
+          )}
+        </div>
+      )}
       {error && <div className="form-error">{error}</div>}
       <div className="submit-panel">
         <div>
@@ -219,7 +278,7 @@ export function ApplicationForm({
               : "Check every section and confirm your final responses."}
           </small>
         </div>
-        {!locked && (
+        {!locked && currentStep === visibleSections.length - 1 && (
           <button className="button button-primary" onClick={() => setReview(true)}>
             Review application
           </button>
@@ -235,6 +294,7 @@ function DynamicInput({
   onChange,
   onFile,
   files,
+  uploading,
   locked,
 }: {
   field: Field;
@@ -242,6 +302,7 @@ function DynamicInput({
   onChange(value: unknown): void;
   onFile(file?: File): void;
   files: { originalFilename: string }[];
+  uploading: boolean;
   locked: boolean;
 }) {
   if (field.type === "HEADING") return <h3 className="content-heading">{field.label}</h3>;
@@ -312,13 +373,13 @@ function DynamicInput({
         <div className="upload-box">
           <FileUp />
           <div>
-            <strong>{files[0]?.originalFilename ?? "Choose a private file"}</strong>
+            <strong>{uploading ? "Uploading…" : (files[0]?.originalFilename ?? "Choose a private file")}</strong>
             <small>{field.allowedFileTypes.join(", ") || "Allowed file types configured by the program"}</small>
           </div>
           <input
             aria-label={field.label}
             type="file"
-            disabled={locked}
+            disabled={locked || uploading}
             accept={field.allowedFileTypes.join(",")}
             onChange={(event) => onFile(event.target.files?.[0])}
           />

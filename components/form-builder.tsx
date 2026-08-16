@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
 
 type BuilderField = {
@@ -8,12 +8,20 @@ type BuilderField = {
   label: string;
   type: string;
   required: boolean;
+  hideFromReviewers?: boolean;
   description?: string;
   helpText?: string;
   placeholder?: string;
   options?: string[];
   allowedFileTypes: string[];
   maxFileSizeBytes?: number | null;
+  minLength?: number | null;
+  maxLength?: number | null;
+  minNumber?: number | null;
+  maxNumber?: number | null;
+  conditionFieldKey?: string | null;
+  conditionOperator?: "==" | "!=" | null;
+  conditionValue?: unknown;
 };
 type BuilderSection = { title: string; description?: string; fields: BuilderField[] };
 
@@ -31,12 +39,15 @@ const types = [
   "CHECKBOX",
   "FILE",
   "CONSENT",
+  "HEADING",
+  "HELP_TEXT",
 ];
 const blankField = (): BuilderField => ({
   key: `field_${Date.now()}`,
   label: "New field",
   type: "SHORT_TEXT",
   required: false,
+  hideFromReviewers: false,
   allowedFileTypes: [],
 });
 
@@ -75,6 +86,25 @@ const templates: Record<string, BuilderSection[]> = {
           required: true,
           allowedFileTypes: [],
         },
+      ],
+    },
+  ],
+  "Industry visit": [
+    {
+      title: "Registration",
+      fields: [
+        { key: "full_name", label: "Full name", type: "SHORT_TEXT", required: true, allowedFileTypes: [] },
+        { key: "email", label: "Email", type: "EMAIL", required: true, allowedFileTypes: [] },
+        { key: "phone", label: "Phone", type: "PHONE", required: true, allowedFileTypes: [] },
+        { key: "student_id", label: "Student ID", type: "SHORT_TEXT", required: true, allowedFileTypes: [] },
+        {
+          key: "emergency_contact",
+          label: "Emergency contact",
+          type: "PHONE",
+          required: true,
+          allowedFileTypes: [],
+        },
+        { key: "visit_consent", label: "I agree to the visit rules", type: "CONSENT", required: true, allowedFileTypes: [] },
       ],
     },
   ],
@@ -142,7 +172,17 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
     initial.length ? initial : [{ title: "Personal details", fields: [blankField()] }],
   );
   const [state, setState] = useState("Unsaved changes");
+  const [busy, setBusy] = useState(false);
   const totalFields = useMemo(() => sections.reduce((total, section) => total + section.fields.length, 0), [sections]);
+  const fieldKeys = useMemo(() => sections.flatMap((section) => section.fields.map((field) => field.key)), [sections]);
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!state.includes("Unsaved") && !state.includes("Saving")) return;
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [state]);
   function patchSection(index: number, patch: Partial<BuilderSection>) {
     setSections((current) => current.map((section, i) => (i === index ? { ...section, ...patch } : section)));
     setState("Unsaved changes");
@@ -160,21 +200,41 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
     setSections(next);
     setState("Unsaved changes");
   }
+  function moveField(sectionIndex: number, fieldIndex: number, offset: number) {
+    const target = fieldIndex + offset;
+    const fields = sections[sectionIndex].fields;
+    if (target < 0 || target >= fields.length) return;
+    const next = [...fields];
+    [next[fieldIndex], next[target]] = [next[target], next[fieldIndex]];
+    patchSection(sectionIndex, { fields: next });
+  }
   async function save(publish = false) {
+    if (busy) return;
+    setBusy(true);
     setState(publish ? "Publishing…" : "Saving…");
-    if (!publish) {
-      const response = await fetch(`/api/admin/programs/${programId}/form`, {
+    try {
+      const draftResponse = await fetch(`/api/admin/programs/${programId}/form`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sections }),
       });
+      const draftResult = await draftResponse.json();
+      if (!draftResponse.ok) {
+        setState(draftResult.error ?? "Could not save");
+        return;
+      }
+      if (!publish) {
+        setState(`Draft v${draftResult.version.version} saved`);
+        return;
+      }
+      const response = await fetch(`/api/admin/programs/${programId}/form`, { method: "POST" });
       const result = await response.json();
-      setState(response.ok ? `Draft v${result.version.version} saved` : (result.error ?? "Could not save"));
-      return;
+      setState(response.ok ? `Version ${result.version.version} published` : (result.error ?? "Could not publish"));
+    } catch {
+      setState("Could not reach the server");
+    } finally {
+      setBusy(false);
     }
-    const response = await fetch(`/api/admin/programs/${programId}/form`, { method: "POST" });
-    const result = await response.json();
-    setState(response.ok ? `Version ${result.version.version} published` : (result.error ?? "Could not publish"));
   }
   return (
     <div className="builder-layout">
@@ -200,10 +260,10 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
             </strong>
             <small>{state}</small>
           </div>
-          <button className="button button-secondary" onClick={() => save(false)}>
+          <button className="button button-secondary" onClick={() => save(false)} disabled={busy}>
             <Save size={15} /> Save draft
           </button>
-          <button className="button button-primary" onClick={() => save(true)}>
+          <button className="button button-primary" onClick={() => save(true)} disabled={busy}>
             Publish form
           </button>
         </div>
@@ -270,8 +330,177 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                         />{" "}
                         Required
                       </label>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={field.hideFromReviewers ?? false}
+                          onChange={(event) =>
+                            patchField(sectionIndex, fieldIndex, { hideFromReviewers: event.target.checked })
+                          }
+                        />{" "}
+                        Hide in blind review
+                      </label>
+                    </div>
+                    <div className="builder-field-options">
+                      <input
+                        aria-label="Field description"
+                        value={field.description ?? ""}
+                        placeholder="Description"
+                        onChange={(event) => patchField(sectionIndex, fieldIndex, { description: event.target.value })}
+                      />
+                      <input
+                        aria-label="Help text"
+                        value={field.helpText ?? ""}
+                        placeholder="Help text"
+                        onChange={(event) => patchField(sectionIndex, fieldIndex, { helpText: event.target.value })}
+                      />
+                      <input
+                        aria-label="Placeholder"
+                        value={field.placeholder ?? ""}
+                        placeholder="Placeholder"
+                        onChange={(event) => patchField(sectionIndex, fieldIndex, { placeholder: event.target.value })}
+                      />
+                      {["DROPDOWN", "MULTI_SELECT", "RADIO"].includes(field.type) && (
+                        <input
+                          aria-label="Options"
+                          value={(field.options ?? []).join(", ")}
+                          placeholder="Options, separated by commas"
+                          onChange={(event) =>
+                            patchField(sectionIndex, fieldIndex, {
+                              options: event.target.value.split(",").map((item) => item.trim()).filter(Boolean),
+                            })
+                          }
+                        />
+                      )}
+                      {["SHORT_TEXT", "LONG_TEXT", "PHONE"].includes(field.type) && (
+                        <>
+                          <input
+                            aria-label="Minimum length"
+                            type="number"
+                            min="0"
+                            value={field.minLength ?? ""}
+                            placeholder="Minimum length"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                minLength: event.target.value ? Number(event.target.value) : null,
+                              })
+                            }
+                          />
+                          <input
+                            aria-label="Maximum length"
+                            type="number"
+                            min="1"
+                            value={field.maxLength ?? ""}
+                            placeholder="Maximum length"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                maxLength: event.target.value ? Number(event.target.value) : null,
+                              })
+                            }
+                          />
+                        </>
+                      )}
+                      {field.type === "NUMBER" && (
+                        <>
+                          <input
+                            aria-label="Minimum number"
+                            type="number"
+                            value={field.minNumber ?? ""}
+                            placeholder="Minimum"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                minNumber: event.target.value ? Number(event.target.value) : null,
+                              })
+                            }
+                          />
+                          <input
+                            aria-label="Maximum number"
+                            type="number"
+                            value={field.maxNumber ?? ""}
+                            placeholder="Maximum"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                maxNumber: event.target.value ? Number(event.target.value) : null,
+                              })
+                            }
+                          />
+                        </>
+                      )}
+                      {field.type === "FILE" && (
+                        <>
+                          <input
+                            aria-label="Allowed MIME types"
+                            value={field.allowedFileTypes.join(", ")}
+                            placeholder="application/pdf, image/png"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                allowedFileTypes: event.target.value.split(",").map((item) => item.trim()).filter(Boolean),
+                              })
+                            }
+                          />
+                          <input
+                            aria-label="Maximum file size in megabytes"
+                            type="number"
+                            min="1"
+                            max="25"
+                            value={field.maxFileSizeBytes ? field.maxFileSizeBytes / 1024 / 1024 : ""}
+                            placeholder="Maximum MB"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                maxFileSizeBytes: event.target.value ? Number(event.target.value) * 1024 * 1024 : null,
+                              })
+                            }
+                          />
+                        </>
+                      )}
+                      <select
+                        aria-label="Conditional field"
+                        value={field.conditionFieldKey ?? ""}
+                        onChange={(event) =>
+                          patchField(sectionIndex, fieldIndex, {
+                            conditionFieldKey: event.target.value || null,
+                            conditionOperator: event.target.value ? (field.conditionOperator ?? "==") : null,
+                          })
+                        }
+                      >
+                        <option value="">Always visible</option>
+                        {fieldKeys.filter((key) => key !== field.key).map((key) => (
+                          <option key={key} value={key}>{key}</option>
+                        ))}
+                      </select>
+                      {field.conditionFieldKey && (
+                        <>
+                          <select
+                            aria-label="Condition operator"
+                            value={field.conditionOperator ?? "=="}
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, {
+                                conditionOperator: event.target.value as "==" | "!=",
+                              })
+                            }
+                          >
+                            <option value="==">equals</option>
+                            <option value="!=">does not equal</option>
+                          </select>
+                          <input
+                            aria-label="Condition value"
+                            value={String(field.conditionValue ?? "")}
+                            placeholder="Condition value"
+                            onChange={(event) =>
+                              patchField(sectionIndex, fieldIndex, { conditionValue: event.target.value })
+                            }
+                          />
+                        </>
+                      )}
                     </div>
                   </div>
+                  <div className="builder-field-actions">
+                    <button aria-label="Move field up" onClick={() => moveField(sectionIndex, fieldIndex, -1)}>
+                      <ArrowUp size={15} />
+                    </button>
+                    <button aria-label="Move field down" onClick={() => moveField(sectionIndex, fieldIndex, 1)}>
+                      <ArrowDown size={15} />
+                    </button>
                   <button
                     aria-label="Delete field"
                     onClick={() =>
@@ -280,6 +509,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                   >
                     <Trash2 size={15} />
                   </button>
+                  </div>
                 </div>
               ))}
             </div>

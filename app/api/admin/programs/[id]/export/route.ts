@@ -1,12 +1,18 @@
 import { requirePermission } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { safeError } from "@/lib/errors";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
-const csv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+const csv = (value: unknown) => {
+  let text = String(value ?? "");
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+};
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const actor = await requirePermission("application:export", id);
+    await enforceRateLimit(`application-export:${actor.id}:${id}`, 5, 60);
     const applications = await db.application.findMany({
       where: { programId: id },
       include: {

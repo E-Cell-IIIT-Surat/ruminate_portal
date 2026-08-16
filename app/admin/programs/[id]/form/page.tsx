@@ -1,10 +1,12 @@
 import { FormBuilder } from "@/components/form-builder";
 import { PageHeader } from "@/components/ui";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 export default async function ProgramFormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  await requirePermission("form:manage", id);
   const program = await db.program.findUnique({
     where: { id },
     include: {
@@ -30,12 +32,20 @@ export default async function ProgramFormPage({ params }: { params: Promise<{ id
         label: field.label,
         type: field.type,
         required: field.required,
+        hideFromReviewers: field.hideFromReviewers,
         description: field.description ?? undefined,
         helpText: field.helpText ?? undefined,
         placeholder: field.placeholder ?? undefined,
         options: Array.isArray(field.options) ? field.options.map(String) : undefined,
         allowedFileTypes: field.allowedFileTypes,
         maxFileSizeBytes: field.maxFileSizeBytes,
+        minLength: field.minLength,
+        maxLength: field.maxLength,
+        minNumber: field.minNumber?.toNumber() ?? null,
+        maxNumber: field.maxNumber?.toNumber() ?? null,
+        conditionFieldKey: field.conditionFieldKey,
+        conditionOperator: field.conditionOperator as "==" | "!=" | null,
+        conditionValue: field.conditionValue,
       })),
     })) ?? [];
   return (
