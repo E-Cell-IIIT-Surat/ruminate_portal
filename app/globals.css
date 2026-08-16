@@ -1273,6 +1273,139 @@ td {
   gap: 20px;
   align-items: start;
 }
+.template-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.template-row span {
+  color: #7d756d;
+  font-size: 10px;
+  margin-right: 4px;
+}
+.template-row button,
+.config-add {
+  border: 1px solid #302d28;
+  border-radius: 8px;
+  background: #12110f;
+  color: #9b9389;
+  padding: 8px 10px;
+  font-size: 9px;
+  cursor: pointer;
+}
+.template-row button:hover,
+.config-add:hover {
+  color: #f3a066;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+.config-editor {
+  max-width: 920px;
+}
+.config-row {
+  min-height: 62px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 26px minmax(160px, 0.7fr) 1fr 34px;
+  align-items: center;
+  gap: 9px;
+}
+.config-row b {
+  color: #6f6860;
+  font-size: 10px;
+}
+.config-row input,
+.config-meta input,
+.config-meta select {
+  height: 38px;
+  border: 1px solid #302d28;
+  border-radius: 8px;
+  background: #0c0c0b;
+  color: #c3bbb1;
+  padding: 0 9px;
+}
+.config-row button {
+  border: 0;
+  background: transparent;
+  color: #746d65;
+  cursor: pointer;
+}
+.config-add {
+  margin: 14px 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.config-state {
+  color: #9a765f;
+  font-size: 10px;
+  padding: 0 16px 12px;
+}
+.config-meta {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.config-meta label {
+  display: grid;
+  gap: 7px;
+  color: #8d857c;
+  font-size: 10px;
+}
+.rubric-row {
+  grid-template-columns: 26px 1fr 90px 90px 34px;
+}
+.config-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.announcement-card {
+  padding: 22px;
+}
+.announcement-card h2 {
+  margin: 8px 0;
+  font-size: 16px;
+}
+.announcement-card p {
+  color: #90887f;
+  line-height: 1.6;
+}
+.announcement-card small {
+  color: #6f6860;
+}
+.status-bars {
+  padding: 20px;
+}
+.status-bars > div {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 150px 1fr 40px;
+  gap: 14px;
+  align-items: center;
+}
+.status-bars span {
+  color: #958d84;
+  font-size: 10px;
+}
+.status-bars i {
+  height: 7px;
+  border-radius: 10px;
+  background: #26231f;
+  overflow: hidden;
+}
+.status-bars b {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--orange), var(--amber));
+}
+.status-bars strong {
+  font-size: 11px;
+  text-align: right;
+}
 .builder-toolbar {
   min-height: 68px;
   padding: 10px 15px;

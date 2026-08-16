@@ -40,6 +40,103 @@ const blankField = (): BuilderField => ({
   allowedFileTypes: [],
 });
 
+const templates: Record<string, BuilderSection[]> = {
+  "Basic registration": [
+    {
+      title: "Personal details",
+      fields: ["Name", "Email", "Phone", "College", "Year"].map((label) => ({
+        key: label.toLowerCase().replace(" ", "_"),
+        label,
+        type: label === "Email" ? "EMAIL" : label === "Phone" ? "PHONE" : "SHORT_TEXT",
+        required: true,
+        allowedFileTypes: [],
+      })),
+    },
+  ],
+  Workshop: [
+    {
+      title: "Personal information",
+      fields: ["Name", "Email", "College"].map((label) => ({
+        key: label.toLowerCase(),
+        label,
+        type: label === "Email" ? "EMAIL" : "SHORT_TEXT",
+        required: true,
+        allowedFileTypes: [],
+      })),
+    },
+    {
+      title: "Background",
+      fields: [
+        { key: "experience", label: "Relevant experience", type: "LONG_TEXT", required: false, allowedFileTypes: [] },
+        {
+          key: "motivation",
+          label: "Why do you want to attend?",
+          type: "LONG_TEXT",
+          required: true,
+          allowedFileTypes: [],
+        },
+      ],
+    },
+  ],
+  "Startup competition": [
+    {
+      title: "Startup",
+      fields: [
+        { key: "startup_name", label: "Startup name", type: "SHORT_TEXT", required: true, allowedFileTypes: [] },
+        { key: "problem", label: "Problem", type: "LONG_TEXT", required: true, allowedFileTypes: [] },
+        { key: "solution", label: "Solution", type: "LONG_TEXT", required: true, allowedFileTypes: [] },
+        { key: "target_market", label: "Target market", type: "LONG_TEXT", required: true, allowedFileTypes: [] },
+        {
+          key: "pitch_deck",
+          label: "Pitch deck",
+          type: "FILE",
+          required: true,
+          allowedFileTypes: ["application/pdf"],
+          maxFileSizeBytes: 10485760,
+        },
+      ],
+    },
+  ],
+  "SSIP application": [
+    {
+      title: "Proposal",
+      fields: [
+        {
+          key: "problem_statement",
+          label: "Problem statement",
+          type: "LONG_TEXT",
+          required: true,
+          allowedFileTypes: [],
+        },
+        { key: "innovation", label: "Innovation", type: "LONG_TEXT", required: true, allowedFileTypes: [] },
+        {
+          key: "technical_approach",
+          label: "Technical approach",
+          type: "LONG_TEXT",
+          required: true,
+          allowedFileTypes: [],
+        },
+        {
+          key: "implementation_plan",
+          label: "Implementation plan",
+          type: "LONG_TEXT",
+          required: true,
+          allowedFileTypes: [],
+        },
+        { key: "budget", label: "Budget", type: "NUMBER", required: true, allowedFileTypes: [] },
+        {
+          key: "proposal_document",
+          label: "Proposal document",
+          type: "FILE",
+          required: true,
+          allowedFileTypes: ["application/pdf"],
+          maxFileSizeBytes: 10485760,
+        },
+      ],
+    },
+  ],
+};
+
 export function FormBuilder({ programId, initial }: { programId: string; initial: BuilderSection[] }) {
   const [sections, setSections] = useState<BuilderSection[]>(
     initial.length ? initial : [{ title: "Personal details", fields: [blankField()] }],
@@ -82,6 +179,20 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
   return (
     <div className="builder-layout">
       <section>
+        <div className="template-row">
+          <span>Start from a template</span>
+          {Object.keys(templates).map((name) => (
+            <button
+              key={name}
+              onClick={() => {
+                setSections(structuredClone(templates[name]));
+                setState("Template applied · Unsaved");
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
         <div className="builder-toolbar">
           <div>
             <strong>
