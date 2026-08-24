@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { NetworkStatus } from "@/components/network-status";
+import { NavigationLoader } from "@/components/ruminate-loader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         {children}
+        <NavigationLoader />
         <NetworkStatus />
       </body>
     </html>

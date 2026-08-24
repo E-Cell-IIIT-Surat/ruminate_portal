@@ -43,6 +43,22 @@ export async function userAuthorization(userId: string) {
   return { ...user, roles, grants, managedProgramIds, isSuperAdmin: roles.has("SUPER_ADMIN") || isGlobalAdmin };
 }
 
+/**
+ * Server-rendered pages can still receive a JWT after a database was changed,
+ * reset, or migrated. In that case the session's user id no longer exists.
+ * Treat only that expected stale-session case as unauthenticated; database
+ * connectivity and query failures must continue to surface to the error
+ * boundary instead of being silently downgraded to a login state.
+ */
+export async function userAuthorizationOrNull(userId: string) {
+  try {
+    return await userAuthorization(userId);
+  } catch (error) {
+    if (error instanceof AppError && error.code === "UNAUTHORIZED") return null;
+    throw error;
+  }
+}
+
 export async function requirePermission(permission: PermissionKey, programId?: string) {
   const current = await requireUser();
   const authorization = await userAuthorization(current.id);

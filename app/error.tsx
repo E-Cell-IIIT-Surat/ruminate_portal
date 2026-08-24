@@ -4,10 +4,23 @@ import { AlertTriangle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
-export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string; code?: string; status?: number };
+  reset: () => void;
+}) {
   useEffect(() => {
     // Keep the boundary quiet in production while preserving a useful local trace.
     if (process.env.NODE_ENV !== "production") console.error(error);
+
+    // A database reset/migration can invalidate an otherwise valid JWT. Do not
+    // strand the user on a runtime-error screen in that expected case; send
+    // them through the full sign-in page so they can use Google or credentials.
+    if (error.code === "UNAUTHORIZED" || error.status === 401 || error.message === "Authentication required") {
+      window.location.replace("/signin?reason=session");
+    }
   }, [error]);
   return (
     <main className="route-state route-state-error">

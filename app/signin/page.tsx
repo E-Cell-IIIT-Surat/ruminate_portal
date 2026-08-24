@@ -14,7 +14,9 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(() => {
     if (typeof window === "undefined") return "";
-    const oauthError = new URLSearchParams(window.location.search).get("error");
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("reason") === "session") return "Your session is no longer valid. Please sign in again.";
+    const oauthError = searchParams.get("error");
     if (!oauthError) return "";
     return oauthError === "Configuration"
       ? "Google OAuth is not configured for this URL. Add http://localhost:3000/api/auth/callback/google to the Google OAuth client, then restart the server."

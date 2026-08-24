@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { AuthGate } from "@/components/auth-gate";
 import { PortalShell } from "@/components/portal-shell";
-import { userAuthorization } from "@/lib/authz";
+import { userAuthorizationOrNull } from "@/lib/authz";
 import { hasDatabaseConfig } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,9 @@ export default async function ReviewerLayout({ children }: { children: React.Rea
   if (!hasDatabaseConfig()) return <AuthGate title="Reviewer setup required" />;
   const session = await auth();
   if (!session?.user) return <AuthGate title="Reviewer sign in" />;
-  const authorization = await userAuthorization(session.user.id);
+  const authorization = await userAuthorizationOrNull(session.user.id);
+  if (!authorization)
+    return <AuthGate title="Your session has expired" body="Sign in again to continue to the reviewer workspace." />;
   if (
     !authorization.roles.has("REVIEWER") &&
     !authorization.roles.has("FACULTY_REVIEWER") &&

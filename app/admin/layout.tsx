@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { AuthGate } from "@/components/auth-gate";
 import { PortalShell } from "@/components/portal-shell";
-import { userAuthorization } from "@/lib/authz";
+import { userAuthorizationOrNull } from "@/lib/authz";
 import { hasDatabaseConfig } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     );
   const session = await auth();
   if (!session?.user) return <AuthGate title="Admin sign in" />;
-  const authorization = await userAuthorization(session.user.id);
+  const authorization = await userAuthorizationOrNull(session.user.id);
+  if (!authorization)
+    return <AuthGate title="Your session has expired" body="Sign in again to continue to the admin workspace." />;
   if (!authorization.isSuperAdmin && !authorization.roles.has("PROGRAM_MANAGER"))
     return <AuthGate title="Admin access unavailable" body="Your account has not been assigned to manage a program." />;
   return (

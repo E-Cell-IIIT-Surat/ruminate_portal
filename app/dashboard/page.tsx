@@ -4,12 +4,69 @@ import { PortalShell } from "@/components/portal-shell";
 import { Badge, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
-import { userAuthorization } from "@/lib/authz";
+import { userAuthorizationOrNull } from "@/lib/authz";
 import { Bell, Blocks, ClipboardList, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { participantVisibleStatus } from "@/lib/domain/status";
 
 export const dynamic = "force-dynamic";
+
+async function loadDashboardData(userId: string) {
+  const readApplications = () =>
+    db.application.findMany({
+      where: { userId, archivedAt: null },
+      select: {
+        id: true,
+        referenceId: true,
+        status: true,
+        submittedAt: true,
+        program: { select: { name: true, resultsPublishedAt: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+    });
+  const readPrograms = () =>
+    db.program.findMany({
+      where: { visibility: "PUBLIC", archivedAt: null, status: { in: ["PUBLISHED", "REGISTRATION_OPEN"] } },
+      select: { id: true, slug: true, name: true, registrationCloseAt: true },
+      orderBy: { registrationCloseAt: "asc" },
+      take: 4,
+    });
+  const readNotifications = () =>
+    db.notification.findMany({
+      where: { userId },
+      select: { id: true, type: true, title: true, body: true, readAt: true, href: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+  const readTeams = () =>
+    db.team.findMany({
+      where: { leaderId: userId },
+      select: { id: true, name: true, program: { select: { name: true } }, _count: { select: { members: true } } },
+      take: 4,
+    });
+
+  // Miniflare's local Worker TCP adapter can deadlock when several PrismaPg
+  // connections are opened concurrently. Keep that intentionally selected
+  // runtime sequential; normal Node development and production can use the
+  // pool concurrently to avoid four avoidable network round trips.
+  if (process.env.CLOUDFLARE_DEV === "true") {
+    return {
+      applications: await readApplications(),
+      programs: await readPrograms(),
+      notifications: await readNotifications(),
+      teams: await readTeams(),
+    };
+  }
+
+  const [applications, programs, notifications, teams] = await Promise.all([
+    readApplications(),
+    readPrograms(),
+    readNotifications(),
+    readTeams(),
+  ]);
+  return { applications, programs, notifications, teams };
+}
 
 export default async function DashboardPage() {
   if (!hasDatabaseConfig())
@@ -21,41 +78,12 @@ export default async function DashboardPage() {
     );
   const session = await auth();
   if (!session?.user) return <AuthGate />;
-  const authorization = await userAuthorization(session.user.id);
+  const authorization = await userAuthorizationOrNull(session.user.id);
+  if (!authorization)
+    return <AuthGate title="Your session has expired" body="Sign in again to continue to your workspace." />;
   const canManage = authorization.isSuperAdmin || authorization.roles.has("PROGRAM_MANAGER");
   const canReview = authorization.roles.has("REVIEWER") || authorization.roles.has("FACULTY_REVIEWER");
-  // Miniflare's local Worker TCP adapter can deadlock when several PrismaPg
-  // connections are opened concurrently. Keep these reads sequential so the
-  // dashboard remains reliable during local development and on edge runtimes.
-  const applications = await db.application.findMany({
-    where: { userId: session.user.id, archivedAt: null },
-    select: {
-      id: true,
-      referenceId: true,
-      status: true,
-      submittedAt: true,
-      program: { select: { name: true, resultsPublishedAt: true } },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 5,
-  });
-  const programs = await db.program.findMany({
-    where: { visibility: "PUBLIC", archivedAt: null, status: { in: ["PUBLISHED", "REGISTRATION_OPEN"] } },
-    select: { id: true, slug: true, name: true, registrationCloseAt: true },
-    orderBy: { registrationCloseAt: "asc" },
-    take: 4,
-  });
-  const notifications = await db.notification.findMany({
-    where: { userId: session.user.id },
-    select: { id: true, type: true, title: true, body: true, readAt: true, href: true, createdAt: true },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-  const teams = await db.team.findMany({
-    where: { leaderId: session.user.id },
-    select: { id: true, name: true, program: { select: { name: true } }, _count: { select: { members: true } } },
-    take: 4,
-  });
+  const { applications, programs, notifications, teams } = await loadDashboardData(session.user.id);
   return (
     <PortalShell mode="participant" title="Participant portal" user={session.user}>
       <PageHeader

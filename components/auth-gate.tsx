@@ -32,6 +32,11 @@ export function AuthGate({
             ? "The interface is available, but protected actions stay disabled until configuration is complete."
             : "Access is protected and scoped to your assigned role."}
         </small>
+        {!setupRequired && (
+          <Link className="auth-gate-manual-link" href="/signin">
+            Use email/password or another account
+          </Link>
+        )}
       </div>
     </main>
   );

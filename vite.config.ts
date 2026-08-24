@@ -1,6 +1,7 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
+import { nitro } from "nitro/vite";
 import { sites } from "./build/sites-vite-plugin";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID = "00000000-0000-4000-8000-000000000000";
@@ -44,7 +45,7 @@ export default defineConfig(async ({ command }) => {
   // where PostgreSQL works reliably, and keep the Cloudflare plugin for
   // production builds (or when explicitly requested with CLOUDFLARE_DEV).
   const useCloudflareRuntime = command === "build" || process.env.CLOUDFLARE_DEV === "true";
-  const plugins = [vinext(), sites()];
+  const plugins = [vinext(), sites(), nitro()];
 
   if (useCloudflareRuntime) {
     const { cloudflare } = await import("@cloudflare/vite-plugin");

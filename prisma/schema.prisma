@@ -8,6 +8,768 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                        String                     @id @default(cuid())
+  name                      String?
+  email                     String                     @unique
+  emailVerified             DateTime?
+  image                     String?
+  phone                     String?
+  institution               String?
+  degree                    String?
+  studyYear                 String?
+  city                      String?
+  studentId                 String?
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  archivedAt                DateTime?
+  passwordHash              String?
+  accounts                  Account[]
+  announcements             Announcement[]
+  applications              Application[]
+  comments                  ApplicationComment[]
+  uploadedFiles             ApplicationFile[]          @relation("FileUploader")
+  stagesMoved               ApplicationStageHistory[]
+  statusChanges             ApplicationStatusHistory[]
+  auditLogs                 AuditLog[]
+  evaluations               Evaluation[]
+  versionsPublished         FormVersion[]              @relation("VersionPublisher")
+  notifications             Notification[]
+  programsCreated           Program[]                  @relation("ProgramCreator")
+  programManagerFor         ProgramManager[]
+  assignmentsCreated        ReviewerAssignment[]       @relation("AssignmentCreator")
+  reviewerAssignments       ReviewerAssignment[]       @relation("AssignedReviewer")
+  sessions                  Session[]
+  ledTeams                  Team[]                     @relation("TeamLeader")
+  teamMemberships           TeamMember[]
+  udbhavCyclesManaged       UdbhavCycle[]              @relation("UdbhavCycleManager")
+  udbhavReviews             UdbhavReview[]             @relation("UdbhavReviewer")
+  udbhavAssignmentsCreated  UdbhavReviewerAssignment[] @relation("UdbhavAssignmentCreator")
+  udbhavReviewerAssignments UdbhavReviewerAssignment[] @relation("UdbhavAssignedReviewer")
+  udbhavStatusChanges       UdbhavStatusHistory[]      @relation("UdbhavStatusActor")
+  udbhavSubmissions         UdbhavSubmission[]         @relation("UdbhavLeader")
+  roles                     UserRole[]
+  workshopsCreated          Workshop[]                 @relation("WorkshopCreator")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        RoleName         @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  permissions RolePermission[]
+  users       UserRole[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  roles       RolePermission[]
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Program {
+  id                    String                    @id @default(cuid())
+  publicId              String                    @unique @default(cuid())
+  slug                  String                    @unique
+  name                  String
+  shortDescription      String
+  description           String
+  eligibility           String?
+  instructions          String?
+  type                  ProgramType               @default(OTHER)
+  status                ProgramStatus             @default(DRAFT)
+  visibility            ProgramVisibility         @default(PUBLIC)
+  registrationOpenAt    DateTime?
+  registrationCloseAt   DateTime?
+  startAt               DateTime?
+  endAt                 DateTime?
+  capacity              Int?
+  waitlistEnabled       Boolean                   @default(false)
+  participationMode     ParticipationMode         @default(INDIVIDUAL)
+  teamMinSize           Int                       @default(1)
+  teamMaxSize           Int                       @default(1)
+  requiresReview        Boolean                   @default(false)
+  allowsDrafts          Boolean                   @default(true)
+  allowsEditAfterSubmit Boolean                   @default(false)
+  allowsWithdrawal      Boolean                   @default(true)
+  editDeadline          DateTime?
+  requiresAuth          Boolean                   @default(true)
+  allowedEmailDomains   String[]
+  resultsPublishedAt    DateTime?
+  blindReview           Boolean                   @default(false)
+  createdById           String
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+  archivedAt            DateTime?
+  announcements         Announcement[]
+  applications          Application[]
+  stageHistory          ApplicationStageHistory[]
+  auditLogs             AuditLog[]
+  emailDeliveries       EmailDelivery[]
+  form                  Form?
+  createdBy             User                      @relation("ProgramCreator", fields: [createdById], references: [id])
+  managers              ProgramManager[]
+  stages                ProgramStage[]
+  rubrics               Rubric[]
+  teams                 Team[]
+
+  @@index([status, registrationCloseAt])
+  @@index([type, status])
+}
+
+model ProgramManager {
+  id        String   @id @default(cuid())
+  programId String
+  userId    String
+  createdAt DateTime @default(now())
+  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, userId])
+  @@index([userId])
+}
+
+model ProgramStage {
+  id           String                    @id @default(cuid())
+  programId    String
+  name         String
+  description  String?
+  order        Int
+  isInitial    Boolean                   @default(false)
+  isTerminal   Boolean                   @default(false)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  applications Application[]
+  fromHistory  ApplicationStageHistory[] @relation("FromStage")
+  toHistory    ApplicationStageHistory[] @relation("ToStage")
+  program      Program                   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  rubrics      Rubric[]
+
+  @@unique([programId, order])
+  @@index([programId])
+}
+
+model Form {
+  id        String        @id @default(cuid())
+  programId String        @unique
+  name      String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  program   Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  versions  FormVersion[]
+}
+
+model FormVersion {
+  id            String            @id @default(cuid())
+  formId        String
+  version       Int
+  status        FormVersionStatus @default(DRAFT)
+  changelog     String?
+  publishedAt   DateTime?
+  publishedById String?
+  createdAt     DateTime          @default(now())
+  applications  Application[]
+  sections      FormSection[]
+  form          Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
+  publishedBy   User?             @relation("VersionPublisher", fields: [publishedById], references: [id])
+
+  @@unique([formId, version])
+  @@index([formId, status])
+}
+
+model FormSection {
+  id            String      @id @default(cuid())
+  formVersionId String
+  title         String
+  description   String?
+  order         Int
+  fields        FormField[]
+  formVersion   FormVersion @relation(fields: [formVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([formVersionId, order])
+  @@index([formVersionId])
+}
+
+model FormField {
+  id                String              @id @default(cuid())
+  sectionId         String
+  key               String
+  type              FieldType
+  label             String
+  description       String?
+  helpText          String?
+  placeholder       String?
+  required          Boolean             @default(false)
+  minLength         Int?
+  maxLength         Int?
+  minNumber         Decimal?
+  maxNumber         Decimal?
+  options           Json?
+  allowedFileTypes  String[]
+  maxFileSizeBytes  Int?
+  conditionFieldKey String?
+  conditionOperator String?
+  conditionValue    Json?
+  order             Int
+  archivedAt        DateTime?
+  hideFromReviewers Boolean             @default(false)
+  answers           ApplicationAnswer[]
+  files             ApplicationFile[]
+  section           FormSection         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, key])
+  @@unique([sectionId, order])
+  @@index([sectionId])
+}
+
+model Application {
+  id                  String                     @id @default(cuid())
+  referenceId         String                     @unique
+  programId           String
+  userId              String
+  formVersionId       String
+  stageId             String?
+  status              ApplicationStatus          @default(DRAFT)
+  submittedAt         DateTime?
+  lastSavedAt         DateTime                   @default(now())
+  withdrawnAt         DateTime?
+  editOverrideUntil   DateTime?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  archivedAt          DateTime?
+  formVersion         FormVersion                @relation(fields: [formVersionId], references: [id])
+  program             Program                    @relation(fields: [programId], references: [id])
+  stage               ProgramStage?              @relation(fields: [stageId], references: [id])
+  user                User                       @relation(fields: [userId], references: [id])
+  answers             ApplicationAnswer[]
+  comments            ApplicationComment[]
+  files               ApplicationFile[]
+  revisions           ApplicationRevision[]
+  stageHistory        ApplicationStageHistory[]
+  statusHistory       ApplicationStatusHistory[]
+  evaluations         Evaluation[]
+  notifications       Notification[]
+  reviewerAssignments ReviewerAssignment[]
+  team                Team?
+
+  @@unique([programId, userId])
+  @@index([programId, status])
+  @@index([userId, status])
+  @@index([stageId])
+  @@index([submittedAt])
+}
+
+model ApplicationAnswer {
+  id            String      @id @default(cuid())
+  applicationId String
+  fieldId       String
+  value         Json
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  field         FormField   @relation(fields: [fieldId], references: [id])
+
+  @@unique([applicationId, fieldId])
+  @@index([fieldId])
+}
+
+model ApplicationRevision {
+  id            String      @id @default(cuid())
+  applicationId String
+  revision      Int
+  snapshot      Json
+  reason        String?
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, revision])
+}
+
+model ApplicationStatusHistory {
+  id            String             @id @default(cuid())
+  applicationId String
+  fromStatus    ApplicationStatus?
+  toStatus      ApplicationStatus
+  reason        String?
+  changedById   String?
+  createdAt     DateTime           @default(now())
+  application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy     User?              @relation(fields: [changedById], references: [id])
+
+  @@index([applicationId, createdAt])
+}
+
+model ApplicationStageHistory {
+  id            String        @id @default(cuid())
+  applicationId String
+  programId     String
+  fromStageId   String?
+  toStageId     String
+  changedById   String?
+  reason        String?
+  createdAt     DateTime      @default(now())
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy     User?         @relation(fields: [changedById], references: [id])
+  fromStage     ProgramStage? @relation("FromStage", fields: [fromStageId], references: [id])
+  program       Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  toStage       ProgramStage  @relation("ToStage", fields: [toStageId], references: [id])
+
+  @@index([applicationId, createdAt])
+  @@index([programId, toStageId])
+}
+
+model Team {
+  id            String       @id @default(cuid())
+  applicationId String       @unique
+  programId     String
+  leaderId      String
+  name          String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  leader        User         @relation("TeamLeader", fields: [leaderId], references: [id])
+  program       Program      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  members       TeamMember[]
+
+  @@index([programId])
+  @@index([leaderId])
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  teamId      String
+  userId      String?
+  name        String
+  email       String
+  phone       String?
+  institution String?
+  isLeader    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  role        String?
+  order       Int      @default(0)
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, email])
+  @@index([teamId, order])
+  @@index([userId])
+}
+
+model ApplicationFile {
+  id               String      @id @default(cuid())
+  applicationId    String
+  fieldId          String
+  objectKey        String      @unique
+  originalFilename String
+  mimeType         String
+  size             Int
+  uploadedById     String
+  checksum         String?
+  createdAt        DateTime    @default(now())
+  deletedAt        DateTime?
+  application      Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  field            FormField   @relation(fields: [fieldId], references: [id])
+  uploadedBy       User        @relation("FileUploader", fields: [uploadedById], references: [id])
+
+  @@index([applicationId])
+  @@index([fieldId])
+}
+
+model ReviewerAssignment {
+  id            String           @id @default(cuid())
+  applicationId String
+  reviewerId    String
+  rubricId      String
+  assignedById  String
+  status        AssignmentStatus @default(ASSIGNED)
+  dueAt         DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  evaluation    Evaluation?
+  application   Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  assignedBy    User             @relation("AssignmentCreator", fields: [assignedById], references: [id])
+  reviewer      User             @relation("AssignedReviewer", fields: [reviewerId], references: [id])
+  rubric        Rubric           @relation(fields: [rubricId], references: [id])
+
+  @@unique([applicationId, reviewerId, rubricId])
+  @@index([reviewerId, status])
+}
+
+model Rubric {
+  id          String               @id @default(cuid())
+  programId   String
+  stageId     String?
+  name        String
+  description String?
+  active      Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  evaluations Evaluation[]
+  assignments ReviewerAssignment[]
+  program     Program              @relation(fields: [programId], references: [id], onDelete: Cascade)
+  stage       ProgramStage?        @relation(fields: [stageId], references: [id])
+  criteria    RubricCriterion[]
+
+  @@index([programId, stageId])
+}
+
+model RubricCriterion {
+  id          String            @id @default(cuid())
+  rubricId    String
+  name        String
+  description String?
+  maxScore    Decimal
+  weight      Decimal           @default(1)
+  order       Int
+  scores      EvaluationScore[]
+  rubric      Rubric            @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+
+  @@unique([rubricId, order])
+}
+
+model Evaluation {
+  id            String             @id @default(cuid())
+  applicationId String
+  reviewerId    String
+  rubricId      String
+  assignmentId  String             @unique
+  status        EvaluationStatus   @default(DRAFT)
+  totalScore    Decimal?
+  internalNotes String?
+  feedback      String?
+  submittedAt   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  assignment    ReviewerAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  reviewer      User               @relation(fields: [reviewerId], references: [id])
+  rubric        Rubric             @relation(fields: [rubricId], references: [id])
+  scores        EvaluationScore[]
+
+  @@index([applicationId, status])
+  @@index([reviewerId, status])
+}
+
+model EvaluationScore {
+  id           String          @id @default(cuid())
+  evaluationId String
+  criterionId  String
+  score        Decimal
+  comment      String?
+  criterion    RubricCriterion @relation(fields: [criterionId], references: [id])
+  evaluation   Evaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@unique([evaluationId, criterionId])
+}
+
+model ApplicationComment {
+  id            String            @id @default(cuid())
+  applicationId String
+  authorId      String
+  body          String
+  visibility    CommentVisibility @default(INTERNAL)
+  createdAt     DateTime          @default(now())
+  editedAt      DateTime?
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author        User              @relation(fields: [authorId], references: [id])
+
+  @@index([applicationId, createdAt])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  programId   String?
+  title       String
+  body        String
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  targetType  String    @default("ALL_APPLICANTS")
+  targetValue String?
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  program     Program?  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId, publishedAt])
+}
+
+model Notification {
+  id            String           @id @default(cuid())
+  userId        String
+  applicationId String?
+  type          NotificationType
+  title         String
+  body          String
+  href          String?
+  readAt        DateTime?
+  createdAt     DateTime         @default(now())
+  application   Application?     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model WorkshopBooking {
+  id             String                @id @default(cuid())
+  workshop       String                @default("financial-literacy")
+  name           String
+  batch          String
+  year           String
+  email          String
+  phone          String
+  studentId      String?
+  department     String?
+  status         WorkshopBookingStatus @default(PENDING)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  reason         String?
+  workshopId     String?
+  workshopRecord Workshop?             @relation(fields: [workshopId], references: [id])
+
+  @@unique([workshop, email])
+  @@index([workshop, createdAt])
+  @@index([email])
+}
+
+model Workshop {
+  id                  String            @id @default(cuid())
+  slug                String            @unique
+  name                String
+  summary             String
+  description         String
+  batch               String?
+  year                String?
+  venue               String?
+  capacity            Int?
+  startsAt            DateTime?
+  endsAt              DateTime?
+  registrationOpenAt  DateTime?
+  registrationCloseAt DateTime?
+  status              WorkshopStatus    @default(DRAFT)
+  createdById         String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  archivedAt          DateTime?
+  bannerUrl           String?
+  createdBy           User              @relation("WorkshopCreator", fields: [createdById], references: [id])
+  bookings            WorkshopBooking[]
+
+  @@index([status, startsAt])
+  @@index([year, batch])
+}
+
+model UdbhavReviewerAssignment {
+  id           String           @id @default(cuid())
+  submissionId String
+  reviewerId   String
+  assignedById String
+  status       AssignmentStatus @default(ASSIGNED)
+  dueAt        DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  assignedBy   User             @relation("UdbhavAssignmentCreator", fields: [assignedById], references: [id])
+  reviewer     User             @relation("UdbhavAssignedReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  submission   UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, reviewerId])
+  @@index([reviewerId, status])
+}
+
+model UdbhavCycle {
+  id          String             @id @default(cuid())
+  month       Int
+  year        Int
+  opensAt     DateTime
+  closesAt    DateTime
+  status      UdbhavCycleStatus  @default(SCHEDULED)
+  managedById String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  managedBy   User?              @relation("UdbhavCycleManager", fields: [managedById], references: [id])
+  submissions UdbhavSubmission[]
+
+  @@unique([year, month])
+  @@index([status, opensAt, closesAt])
+}
+
+model UdbhavSubmission {
+  id                  String                     @id @default(cuid())
+  referenceId         String                     @unique
+  cycleId             String
+  leaderId            String
+  teamName            String
+  teamMembers         Json
+  title               String
+  challenge           String
+  proposal            String
+  solution            String
+  technology          String
+  estimatedBudget     Decimal?                   @db.Decimal(12, 2)
+  distributionPlan    String
+  milestones          String?
+  supportingFileKey   String?
+  status              UdbhavSubmissionStatus     @default(DRAFT)
+  currentStage        String                     @default("Submission")
+  totalScore          Decimal?                   @db.Decimal(6, 2)
+  secretMessage       String?
+  submittedAt         DateTime?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  reviews             UdbhavReview[]
+  reviewerAssignments UdbhavReviewerAssignment[]
+  statusLog           UdbhavStatusHistory[]
+  cycle               UdbhavCycle                @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  leader              User                       @relation("UdbhavLeader", fields: [leaderId], references: [id])
+
+  @@index([cycleId, status])
+  @@index([leaderId, createdAt])
+}
+
+model UdbhavReview {
+  id                   String           @id @default(cuid())
+  submissionId         String
+  reviewerId           String
+  creativity           Decimal          @db.Decimal(5, 2)
+  problemUnderstanding Decimal          @db.Decimal(5, 2)
+  innovation           Decimal          @db.Decimal(5, 2)
+  execution            Decimal          @db.Decimal(5, 2)
+  feasibility          Decimal          @db.Decimal(5, 2)
+  scalability          Decimal          @db.Decimal(5, 2)
+  impact               Decimal          @db.Decimal(5, 2)
+  sustainability       Decimal          @db.Decimal(5, 2)
+  presentation         Decimal          @db.Decimal(5, 2)
+  completeness         Decimal          @db.Decimal(5, 2)
+  totalScore           Decimal          @db.Decimal(6, 2)
+  feedback             String?
+  submittedAt          DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  reviewer             User             @relation("UdbhavReviewer", fields: [reviewerId], references: [id])
+  submission           UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, reviewerId])
+  @@index([reviewerId, submittedAt])
+}
+
+model UdbhavStatusHistory {
+  id           String                  @id @default(cuid())
+  submissionId String
+  fromStatus   UdbhavSubmissionStatus?
+  toStatus     UdbhavSubmissionStatus
+  stage        String?
+  reason       String?
+  changedById  String
+  createdAt    DateTime                @default(now())
+  changedBy    User                    @relation("UdbhavStatusActor", fields: [changedById], references: [id])
+  submission   UdbhavSubmission        @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  programId  String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipHash     String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id])
+  program    Program? @relation(fields: [programId], references: [id])
+
+  @@index([createdAt])
+  @@index([programId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model EmailDelivery {
+  id             String      @id @default(cuid())
+  programId      String?
+  recipientEmail String
+  templateKey    String
+  providerId     String?
+  status         EmailStatus @default(QUEUED)
+  errorCode      String?
+  createdAt      DateTime    @default(now())
+  sentAt         DateTime?
+  subject        String
+  textBody       String
+  attempts       Int         @default(0)
+  lastAttemptAt  DateTime?
+  program        Program?    @relation(fields: [programId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([recipientEmail, createdAt])
+}
+
+model RateLimitBucket {
+  key         String   @id
+  count       Int      @default(1)
+  windowStart DateTime
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+}
+
 enum RoleName {
   PARTICIPANT
   REVIEWER
@@ -151,804 +913,4 @@ enum UdbhavSubmissionStatus {
   PITCH_SCHEDULED
   ACCEPTED
   REJECTED
-}
-
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  phone         String?
-  institution   String?
-  degree        String?
-  studyYear     String?
-  city          String?
-  studentId     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  archivedAt    DateTime?
-
-  accounts            Account[]
-  sessions            Session[]
-  roles               UserRole[]
-  programManagerFor   ProgramManager[]
-  programsCreated     Program[]                  @relation("ProgramCreator")
-  applications        Application[]
-  ledTeams            Team[]                     @relation("TeamLeader")
-  teamMemberships     TeamMember[]
-  uploadedFiles       ApplicationFile[]          @relation("FileUploader")
-  reviewerAssignments ReviewerAssignment[]       @relation("AssignedReviewer")
-  assignmentsCreated  ReviewerAssignment[]       @relation("AssignmentCreator")
-  evaluations         Evaluation[]
-  comments            ApplicationComment[]
-  announcements       Announcement[]
-  notifications       Notification[]
-  auditLogs           AuditLog[]
-  statusChanges       ApplicationStatusHistory[]
-  stagesMoved         ApplicationStageHistory[]
-  versionsPublished   FormVersion[]              @relation("VersionPublisher")
-  workshopsCreated    Workshop[]                 @relation("WorkshopCreator")
-  udbhavCyclesManaged UdbhavCycle[]              @relation("UdbhavCycleManager")
-  udbhavSubmissions   UdbhavSubmission[]         @relation("UdbhavLeader")
-  udbhavReviews       UdbhavReview[]             @relation("UdbhavReviewer")
-  udbhavReviewerAssignments UdbhavReviewerAssignment[] @relation("UdbhavAssignedReviewer")
-  udbhavAssignmentsCreated UdbhavReviewerAssignment[] @relation("UdbhavAssignmentCreator")
-  udbhavStatusChanges UdbhavStatusHistory[]      @relation("UdbhavStatusActor")
-}
-
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([provider, providerAccountId])
-}
-
-model Session {
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
-
-  @@id([identifier, token])
-}
-
-model Role {
-  id          String   @id @default(cuid())
-  name        RoleName @unique
-  description String?
-  createdAt   DateTime @default(now())
-
-  users       UserRole[]
-  permissions RolePermission[]
-}
-
-model Permission {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-
-  roles RolePermission[]
-}
-
-model UserRole {
-  id        String   @id @default(cuid())
-  userId    String
-  roleId    String
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, roleId])
-  @@index([userId])
-}
-
-model RolePermission {
-  roleId       String
-  permissionId String
-
-  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@id([roleId, permissionId])
-}
-
-model Program {
-  id                    String            @id @default(cuid())
-  publicId              String            @unique @default(cuid())
-  slug                  String            @unique
-  name                  String
-  shortDescription      String
-  description           String
-  eligibility           String?
-  instructions          String?
-  type                  ProgramType       @default(OTHER)
-  status                ProgramStatus     @default(DRAFT)
-  visibility            ProgramVisibility @default(PUBLIC)
-  registrationOpenAt    DateTime?
-  registrationCloseAt   DateTime?
-  startAt               DateTime?
-  endAt                 DateTime?
-  capacity              Int?
-  waitlistEnabled       Boolean           @default(false)
-  participationMode     ParticipationMode @default(INDIVIDUAL)
-  teamMinSize           Int               @default(1)
-  teamMaxSize           Int               @default(1)
-  requiresReview        Boolean           @default(false)
-  allowsDrafts          Boolean           @default(true)
-  allowsEditAfterSubmit Boolean           @default(false)
-  allowsWithdrawal      Boolean           @default(true)
-  editDeadline          DateTime?
-  requiresAuth          Boolean           @default(true)
-  allowedEmailDomains   String[]
-  resultsPublishedAt    DateTime?
-  blindReview           Boolean           @default(false)
-  createdById           String
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  archivedAt            DateTime?
-
-  createdBy       User                      @relation("ProgramCreator", fields: [createdById], references: [id])
-  managers        ProgramManager[]
-  stages          ProgramStage[]
-  form            Form?
-  applications    Application[]
-  teams           Team[]
-  rubrics         Rubric[]
-  announcements   Announcement[]
-  auditLogs       AuditLog[]
-  emailDeliveries EmailDelivery[]
-  stageHistory    ApplicationStageHistory[]
-
-  @@index([status, registrationCloseAt])
-  @@index([type, status])
-}
-
-model ProgramManager {
-  id        String   @id @default(cuid())
-  programId String
-  userId    String
-  createdAt DateTime @default(now())
-
-  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([programId, userId])
-  @@index([userId])
-}
-
-model ProgramStage {
-  id          String   @id @default(cuid())
-  programId   String
-  name        String
-  description String?
-  order       Int
-  isInitial   Boolean  @default(false)
-  isTerminal  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  program      Program                   @relation(fields: [programId], references: [id], onDelete: Cascade)
-  applications Application[]
-  rubrics      Rubric[]
-  fromHistory  ApplicationStageHistory[] @relation("FromStage")
-  toHistory    ApplicationStageHistory[] @relation("ToStage")
-
-  @@unique([programId, order])
-  @@index([programId])
-}
-
-model Form {
-  id        String   @id @default(cuid())
-  programId String   @unique
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  program  Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
-  versions FormVersion[]
-}
-
-model FormVersion {
-  id            String            @id @default(cuid())
-  formId        String
-  version       Int
-  status        FormVersionStatus @default(DRAFT)
-  changelog     String?
-  publishedAt   DateTime?
-  publishedById String?
-  createdAt     DateTime          @default(now())
-
-  form         Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
-  publishedBy  User?         @relation("VersionPublisher", fields: [publishedById], references: [id])
-  sections     FormSection[]
-  applications Application[]
-
-  @@unique([formId, version])
-  @@index([formId, status])
-}
-
-model FormSection {
-  id            String  @id @default(cuid())
-  formVersionId String
-  title         String
-  description   String?
-  order         Int
-
-  formVersion FormVersion @relation(fields: [formVersionId], references: [id], onDelete: Cascade)
-  fields      FormField[]
-
-  @@unique([formVersionId, order])
-  @@index([formVersionId])
-}
-
-model FormField {
-  id                String    @id @default(cuid())
-  sectionId         String
-  key               String
-  type              FieldType
-  label             String
-  description       String?
-  helpText          String?
-  placeholder       String?
-  required          Boolean   @default(false)
-  hideFromReviewers Boolean   @default(false)
-  minLength         Int?
-  maxLength         Int?
-  minNumber         Decimal?
-  maxNumber         Decimal?
-  options           Json?
-  allowedFileTypes  String[]
-  maxFileSizeBytes  Int?
-  conditionFieldKey String?
-  conditionOperator String?
-  conditionValue    Json?
-  order             Int
-  archivedAt        DateTime?
-
-  section FormSection         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  answers ApplicationAnswer[]
-  files   ApplicationFile[]
-
-  @@unique([sectionId, key])
-  @@unique([sectionId, order])
-  @@index([sectionId])
-}
-
-model Application {
-  id                String            @id @default(cuid())
-  referenceId       String            @unique
-  programId         String
-  userId            String
-  formVersionId     String
-  stageId           String?
-  status            ApplicationStatus @default(DRAFT)
-  submittedAt       DateTime?
-  lastSavedAt       DateTime          @default(now())
-  withdrawnAt       DateTime?
-  editOverrideUntil DateTime?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  archivedAt        DateTime?
-
-  program             Program                    @relation(fields: [programId], references: [id])
-  user                User                       @relation(fields: [userId], references: [id])
-  formVersion         FormVersion                @relation(fields: [formVersionId], references: [id])
-  stage               ProgramStage?              @relation(fields: [stageId], references: [id])
-  answers             ApplicationAnswer[]
-  revisions           ApplicationRevision[]
-  statusHistory       ApplicationStatusHistory[]
-  stageHistory        ApplicationStageHistory[]
-  team                Team?
-  files               ApplicationFile[]
-  reviewerAssignments ReviewerAssignment[]
-  evaluations         Evaluation[]
-  comments            ApplicationComment[]
-  notifications       Notification[]
-
-  @@unique([programId, userId])
-  @@index([programId, status])
-  @@index([userId, status])
-  @@index([stageId])
-  @@index([submittedAt])
-}
-
-model ApplicationAnswer {
-  id            String   @id @default(cuid())
-  applicationId String
-  fieldId       String
-  value         Json
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  field       FormField   @relation(fields: [fieldId], references: [id])
-
-  @@unique([applicationId, fieldId])
-  @@index([fieldId])
-}
-
-model ApplicationRevision {
-  id            String   @id @default(cuid())
-  applicationId String
-  revision      Int
-  snapshot      Json
-  reason        String?
-  createdAt     DateTime @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@unique([applicationId, revision])
-}
-
-model ApplicationStatusHistory {
-  id            String             @id @default(cuid())
-  applicationId String
-  fromStatus    ApplicationStatus?
-  toStatus      ApplicationStatus
-  reason        String?
-  changedById   String?
-  createdAt     DateTime           @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  changedBy   User?       @relation(fields: [changedById], references: [id])
-
-  @@index([applicationId, createdAt])
-}
-
-model ApplicationStageHistory {
-  id            String   @id @default(cuid())
-  applicationId String
-  programId     String
-  fromStageId   String?
-  toStageId     String
-  changedById   String?
-  reason        String?
-  createdAt     DateTime @default(now())
-
-  application Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  program     Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
-  fromStage   ProgramStage? @relation("FromStage", fields: [fromStageId], references: [id])
-  toStage     ProgramStage  @relation("ToStage", fields: [toStageId], references: [id])
-  changedBy   User?         @relation(fields: [changedById], references: [id])
-
-  @@index([applicationId, createdAt])
-  @@index([programId, toStageId])
-}
-
-model Team {
-  id            String   @id @default(cuid())
-  applicationId String   @unique
-  programId     String
-  leaderId      String
-  name          String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  application Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  program     Program      @relation(fields: [programId], references: [id], onDelete: Cascade)
-  leader      User         @relation("TeamLeader", fields: [leaderId], references: [id])
-  members     TeamMember[]
-
-  @@index([programId])
-  @@index([leaderId])
-}
-
-model TeamMember {
-  id          String   @id @default(cuid())
-  teamId      String
-  userId      String?
-  name        String
-  email       String
-  phone       String?
-  institution String?
-  role        String?
-  order       Int      @default(0)
-  isLeader    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  team Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User? @relation(fields: [userId], references: [id])
-
-  @@unique([teamId, email])
-  @@index([teamId, order])
-  @@index([userId])
-}
-
-model ApplicationFile {
-  id               String    @id @default(cuid())
-  applicationId    String
-  fieldId          String
-  objectKey        String    @unique
-  originalFilename String
-  mimeType         String
-  size             Int
-  uploadedById     String
-  checksum         String?
-  createdAt        DateTime  @default(now())
-  deletedAt        DateTime?
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  field       FormField   @relation(fields: [fieldId], references: [id])
-  uploadedBy  User        @relation("FileUploader", fields: [uploadedById], references: [id])
-
-  @@index([applicationId])
-  @@index([fieldId])
-}
-
-model ReviewerAssignment {
-  id            String           @id @default(cuid())
-  applicationId String
-  reviewerId    String
-  rubricId      String
-  assignedById  String
-  status        AssignmentStatus @default(ASSIGNED)
-  dueAt         DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  reviewer    User        @relation("AssignedReviewer", fields: [reviewerId], references: [id])
-  assignedBy  User        @relation("AssignmentCreator", fields: [assignedById], references: [id])
-  rubric      Rubric      @relation(fields: [rubricId], references: [id])
-  evaluation  Evaluation?
-
-  @@unique([applicationId, reviewerId, rubricId])
-  @@index([reviewerId, status])
-}
-
-model Rubric {
-  id          String   @id @default(cuid())
-  programId   String
-  stageId     String?
-  name        String
-  description String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  program     Program              @relation(fields: [programId], references: [id], onDelete: Cascade)
-  stage       ProgramStage?        @relation(fields: [stageId], references: [id])
-  criteria    RubricCriterion[]
-  assignments ReviewerAssignment[]
-  evaluations Evaluation[]
-
-  @@index([programId, stageId])
-}
-
-model RubricCriterion {
-  id          String  @id @default(cuid())
-  rubricId    String
-  name        String
-  description String?
-  maxScore    Decimal
-  weight      Decimal @default(1)
-  order       Int
-
-  rubric Rubric            @relation(fields: [rubricId], references: [id], onDelete: Cascade)
-  scores EvaluationScore[]
-
-  @@unique([rubricId, order])
-}
-
-model Evaluation {
-  id            String           @id @default(cuid())
-  applicationId String
-  reviewerId    String
-  rubricId      String
-  assignmentId  String           @unique
-  status        EvaluationStatus @default(DRAFT)
-  totalScore    Decimal?
-  internalNotes String?
-  feedback      String?
-  submittedAt   DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  application Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  reviewer    User               @relation(fields: [reviewerId], references: [id])
-  rubric      Rubric             @relation(fields: [rubricId], references: [id])
-  assignment  ReviewerAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  scores      EvaluationScore[]
-
-  @@index([applicationId, status])
-  @@index([reviewerId, status])
-}
-
-model EvaluationScore {
-  id           String  @id @default(cuid())
-  evaluationId String
-  criterionId  String
-  score        Decimal
-  comment      String?
-
-  evaluation Evaluation      @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
-  criterion  RubricCriterion @relation(fields: [criterionId], references: [id])
-
-  @@unique([evaluationId, criterionId])
-}
-
-model ApplicationComment {
-  id            String            @id @default(cuid())
-  applicationId String
-  authorId      String
-  body          String
-  visibility    CommentVisibility @default(INTERNAL)
-  createdAt     DateTime          @default(now())
-  editedAt      DateTime?
-
-  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  author      User        @relation(fields: [authorId], references: [id])
-
-  @@index([applicationId, createdAt])
-}
-
-model Announcement {
-  id          String    @id @default(cuid())
-  programId   String?
-  title       String
-  body        String
-  publishedAt DateTime?
-  expiresAt   DateTime?
-  targetType  String    @default("ALL_APPLICANTS")
-  targetValue String?
-  createdById String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  program   Program? @relation(fields: [programId], references: [id], onDelete: Cascade)
-  createdBy User     @relation(fields: [createdById], references: [id])
-
-  @@index([programId, publishedAt])
-}
-
-model Notification {
-  id            String           @id @default(cuid())
-  userId        String
-  applicationId String?
-  type          NotificationType
-  title         String
-  body          String
-  href          String?
-  readAt        DateTime?
-  createdAt     DateTime         @default(now())
-
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([userId, readAt, createdAt])
-}
-
-model WorkshopBooking {
-  id         String                @id @default(cuid())
-  workshop   String                @default("financial-literacy")
-  workshopId String?
-  name       String
-  batch      String
-  year       String
-  email      String
-  phone      String
-  reason     String?
-  studentId  String?
-  department String?
-  status     WorkshopBookingStatus @default(PENDING)
-  createdAt  DateTime              @default(now())
-  updatedAt  DateTime              @updatedAt
-
-  workshopRecord Workshop? @relation(fields: [workshopId], references: [id], onDelete: SetNull)
-
-  @@unique([workshop, email])
-  @@index([workshop, createdAt])
-  @@index([email])
-}
-
-model Workshop {
-  id                  String         @id @default(cuid())
-  slug                String         @unique
-  name                String
-  summary             String
-  description         String
-  bannerUrl           String?
-  batch               String?
-  year                String?
-  venue               String?
-  capacity            Int?
-  startsAt            DateTime?
-  endsAt              DateTime?
-  registrationOpenAt  DateTime?
-  registrationCloseAt DateTime?
-  status              WorkshopStatus @default(DRAFT)
-  createdById         String
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-  archivedAt          DateTime?
-
-  createdBy User              @relation("WorkshopCreator", fields: [createdById], references: [id])
-  bookings  WorkshopBooking[]
-
-  @@index([status, startsAt])
-  @@index([year, batch])
-}
-
-model UdbhavReviewerAssignment {
-  id           String           @id @default(cuid())
-  submissionId String
-  reviewerId   String
-  assignedById String
-  status       AssignmentStatus @default(ASSIGNED)
-  dueAt        DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-
-  submission UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  reviewer   User             @relation("UdbhavAssignedReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
-  assignedBy User             @relation("UdbhavAssignmentCreator", fields: [assignedById], references: [id], onDelete: Restrict)
-
-  @@unique([submissionId, reviewerId])
-  @@index([reviewerId, status])
-}
-
-model UdbhavCycle {
-  id          String            @id @default(cuid())
-  month       Int
-  year        Int
-  opensAt     DateTime
-  closesAt    DateTime
-  status      UdbhavCycleStatus @default(SCHEDULED)
-  managedById String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  managedBy   User?              @relation("UdbhavCycleManager", fields: [managedById], references: [id])
-  submissions UdbhavSubmission[]
-
-  @@unique([year, month])
-  @@index([status, opensAt, closesAt])
-}
-
-model UdbhavSubmission {
-  id                String                 @id @default(cuid())
-  referenceId       String                 @unique
-  cycleId           String
-  leaderId          String
-  teamName          String
-  teamMembers       Json
-  title             String
-  challenge         String
-  proposal          String
-  solution          String
-  technology        String
-  estimatedBudget   Decimal?               @db.Decimal(12, 2)
-  distributionPlan  String
-  milestones        String?
-  supportingFileKey String?
-  status            UdbhavSubmissionStatus @default(DRAFT)
-  currentStage      String                 @default("Submission")
-  totalScore        Decimal?               @db.Decimal(6, 2)
-  secretMessage     String?
-  submittedAt       DateTime?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-
-  cycle     UdbhavCycle           @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  leader    User                  @relation("UdbhavLeader", fields: [leaderId], references: [id])
-  reviews   UdbhavReview[]
-  reviewerAssignments UdbhavReviewerAssignment[]
-  statusLog UdbhavStatusHistory[]
-
-  @@index([cycleId, status])
-  @@index([leaderId, createdAt])
-}
-
-model UdbhavReview {
-  id                   String   @id @default(cuid())
-  submissionId         String
-  reviewerId           String
-  creativity           Decimal  @db.Decimal(5, 2)
-  problemUnderstanding Decimal  @db.Decimal(5, 2)
-  innovation           Decimal  @db.Decimal(5, 2)
-  execution            Decimal  @db.Decimal(5, 2)
-  feasibility          Decimal  @db.Decimal(5, 2)
-  scalability          Decimal  @db.Decimal(5, 2)
-  impact               Decimal  @db.Decimal(5, 2)
-  sustainability       Decimal  @db.Decimal(5, 2)
-  presentation         Decimal  @db.Decimal(5, 2)
-  completeness         Decimal  @db.Decimal(5, 2)
-  totalScore           Decimal  @db.Decimal(6, 2)
-  feedback             String?
-  submittedAt          DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  submission UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  reviewer   User             @relation("UdbhavReviewer", fields: [reviewerId], references: [id])
-
-  @@unique([submissionId, reviewerId])
-  @@index([reviewerId, submittedAt])
-}
-
-model UdbhavStatusHistory {
-  id           String                  @id @default(cuid())
-  submissionId String
-  fromStatus   UdbhavSubmissionStatus?
-  toStatus     UdbhavSubmissionStatus
-  stage        String?
-  reason       String?
-  changedById  String
-  createdAt    DateTime                @default(now())
-
-  submission UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  changedBy  User             @relation("UdbhavStatusActor", fields: [changedById], references: [id])
-
-  @@index([submissionId, createdAt])
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  actorId    String?
-  programId  String?
-  action     String
-  entityType String
-  entityId   String?
-  metadata   Json?
-  ipHash     String?
-  createdAt  DateTime @default(now())
-
-  actor   User?    @relation(fields: [actorId], references: [id])
-  program Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
-
-  @@index([createdAt])
-  @@index([programId, createdAt])
-  @@index([actorId, createdAt])
-}
-
-model EmailDelivery {
-  id             String      @id @default(cuid())
-  programId      String?
-  recipientEmail String
-  templateKey    String
-  subject        String
-  textBody       String
-  providerId     String?
-  status         EmailStatus @default(QUEUED)
-  errorCode      String?
-  attempts       Int         @default(0)
-  lastAttemptAt  DateTime?
-  createdAt      DateTime    @default(now())
-  sentAt         DateTime?
-
-  program Program? @relation(fields: [programId], references: [id], onDelete: SetNull)
-
-  @@index([status, createdAt])
-  @@index([recipientEmail, createdAt])
-}
-
-model RateLimitBucket {
-  key         String   @id
-  count       Int      @default(1)
-  windowStart DateTime
-  expiresAt   DateTime
-
-  @@index([expiresAt])
 }
