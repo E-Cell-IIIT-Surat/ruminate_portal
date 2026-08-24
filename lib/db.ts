@@ -8,8 +8,14 @@ export const db =
   new PrismaClient({
     adapter: new PrismaPg({
       connectionString: process.env.DATABASE_URL ?? "postgresql://invalid:invalid@127.0.0.1:5432/invalid",
-      max: 5,
-      idleTimeoutMillis: 10_000,
+      // The local Cloudflare/Miniflare TCP shim is not reliable with a
+      // multi-connection pool. Serialize database work through one socket so
+      // RSC prefetches from several pages cannot exhaust the Worker runtime.
+      max: process.env.CLOUDFLARE_DEV === "true" ? 1 : 5,
+      // Close an idle socket quickly. Miniflare can retain a stale TCP socket
+      // between fetches; forcing a fresh socket prevents the next RSC request
+      // from waiting forever on that dead connection.
+      idleTimeoutMillis: process.env.CLOUDFLARE_DEV === "true" ? 50 : 10_000,
       connectionTimeoutMillis: 10_000,
     }),
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],

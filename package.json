@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vinext dev",
     "build": "vinext build",
-    "start": "vinext start",
+    "start": "node --require ./scripts/esm-runtime-shim.cjs ./node_modules/vinext/dist/cli.js start",
     "test": "tsx --test tests/**/*.test.ts",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
@@ -25,6 +25,7 @@
     "@aws-sdk/s3-request-presigner": "3.1111.0",
     "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",
+    "bcrypt-ts": "^9.0.2",
     "lucide-react": "0.468.0",
     "next-auth": "5.0.0-beta.32",
     "pg": "8.16.3",

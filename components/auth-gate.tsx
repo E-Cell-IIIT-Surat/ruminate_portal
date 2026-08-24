@@ -1,5 +1,6 @@
 import { LockKeyhole } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import Link from "next/link";
 
 export function AuthGate({
@@ -24,9 +25,7 @@ export function AuthGate({
             Back to homepage
           </Link>
         ) : (
-          <Link className="button button-primary" href="/api/auth/signin/google">
-            <span className="google-g">G</span>Continue with Google
-          </Link>
+          <GoogleSignInButton />
         )}
         <small>
           {setupRequired

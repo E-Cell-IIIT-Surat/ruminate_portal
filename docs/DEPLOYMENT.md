@@ -24,7 +24,21 @@ Set `SUPER_ADMIN_EMAILS` to the exact Google email allowed to bootstrap administ
 
 Create a private bucket with public `r2.dev` access disabled and a token restricted to read/write objects in that bucket. Set `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_PRIVATE_BUCKET`.
 
-Bucket CORS must allow the portal origin to issue `PUT` requests with `content-type`, `x-amz-meta-application`, and `x-amz-meta-field`. Do not permit public reads.
+Bucket CORS must allow the portal origin to issue `PUT` requests with `content-type`, `x-amz-meta-application`, and `x-amz-meta-field`. In the R2 bucket **Settings → CORS policy**, use a policy like this (add your production origin and keep the local origin for testing):
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://portal.ecelliiitsurat.in"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["content-type", "x-amz-meta-application", "x-amz-meta-field"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Do not permit public reads. The upload endpoint returns a short-lived signed URL and the server verifies object metadata and file signatures before creating the database record.
 
 ## Email
 

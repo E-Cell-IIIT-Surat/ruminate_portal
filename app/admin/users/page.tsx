@@ -21,15 +21,18 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         }
       : {}),
   };
-  const [users, total] = await Promise.all([db.user.findMany({
-    where: {
-      ...where,
-    },
-    include: { roles: { include: { role: true } } },
-    orderBy: { createdAt: "desc" },
-    skip: (page - 1) * take,
-    take,
-  }), db.user.count({ where })]);
+  const [users, total] = await Promise.all([
+    db.user.findMany({
+      where: {
+        ...where,
+      },
+      include: { roles: { include: { role: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * take,
+      take,
+    }),
+    db.user.count({ where }),
+  ]);
   return (
     <>
       <PageHeader
@@ -63,7 +66,9 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   <RoleEditor userId={user.id} initial={user.roles.map(({ role }) => role.name)} />
                 </td>
                 <td>{user.archivedAt ? "Disabled" : "Active"}</td>
-                <td><AccountAccessControl userId={user.id} active={!user.archivedAt} /></td>
+                <td>
+                  <AccountAccessControl userId={user.id} active={!user.archivedAt} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -71,9 +76,15 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       </div>
       {total > take && (
         <nav className="pagination" aria-label="User pagination">
-          <a aria-disabled={page === 1} href={`?page=${page - 1}&q=${encodeURIComponent(q)}`}>Previous</a>
-          <span>Page {page} of {Math.ceil(total / take)}</span>
-          <a aria-disabled={page * take >= total} href={`?page=${page + 1}&q=${encodeURIComponent(q)}`}>Next</a>
+          <a aria-disabled={page === 1} href={`?page=${page - 1}&q=${encodeURIComponent(q)}`}>
+            Previous
+          </a>
+          <span>
+            Page {page} of {Math.ceil(total / take)}
+          </span>
+          <a aria-disabled={page * take >= total} href={`?page=${page + 1}&q=${encodeURIComponent(q)}`}>
+            Next
+          </a>
         </nav>
       )}
     </>

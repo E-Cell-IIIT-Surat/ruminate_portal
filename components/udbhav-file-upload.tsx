@@ -1,0 +1,50 @@
+"use client";
+
+import { useState } from "react";
+
+export function UdbhavFileUpload({ submissionId, hasFile }: { submissionId: string; hasFile: boolean }) {
+  const [state, setState] = useState(hasFile ? "A supporting document is attached." : "");
+  const [busy, setBusy] = useState(false);
+  async function upload(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setState("Uploading…");
+    const response = await fetch(`/api/udbhav/submissions/${submissionId}/file`, {
+      method: "POST",
+      body: new FormData(event.currentTarget),
+    });
+    const result = (await response.json().catch(() => ({}))) as { error?: string };
+    setState(response.ok ? "Document uploaded securely." : (result.error ?? "Upload failed"));
+    setBusy(false);
+    if (response.ok) event.currentTarget.reset();
+  }
+  async function download() {
+    const response = await fetch(`/api/udbhav/submissions/${submissionId}/file`);
+    const result = (await response.json().catch(() => ({}))) as { file?: { url?: string }; error?: string };
+    if (result.file?.url) window.open(result.file.url, "_blank", "noopener,noreferrer");
+    else setState(result.error ?? "Document is unavailable");
+  }
+  return (
+    <form className="panel form-panel" onSubmit={upload}>
+      <div className="panel-header">
+        <div>
+          <span className="eyebrow">Supporting document</span>
+          <h2>Attach proposal material</h2>
+        </div>
+        <span className="config-state" role="status">
+          {state}
+        </span>
+      </div>
+      <p className="muted-copy">PDF, Word, PowerPoint, or Excel · maximum 5 MB · stored in private R2 storage.</p>
+      <input className="input" name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" required />
+      <button className="button button-secondary" disabled={busy}>
+        {busy ? "Uploading…" : "Upload document"}
+      </button>
+      {hasFile && (
+        <button className="button button-ghost" type="button" onClick={download}>
+          Download current document
+        </button>
+      )}
+    </form>
+  );
+}

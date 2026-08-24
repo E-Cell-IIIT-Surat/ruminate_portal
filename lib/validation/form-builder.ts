@@ -31,7 +31,13 @@ const field = z.object({
   maxNumber: z.number().nullable().optional(),
   options: z.array(z.string().min(1)).optional(),
   allowedFileTypes: z.array(z.string()).default([]),
-  maxFileSizeBytes: z.number().int().positive().max(25 * 1024 * 1024).nullable().optional(),
+  maxFileSizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(25 * 1024 * 1024)
+    .nullable()
+    .optional(),
   conditionFieldKey: z.string().nullable().optional(),
   conditionOperator: z.enum(["==", "!="]).nullable().optional(),
   conditionValue: z.unknown().optional(),
@@ -73,7 +79,7 @@ export const formBuilderInput = z
             path: ["sections", sectionIndex, "fields", fieldIndex, "maxNumber"],
             message: "Maximum number must be at least the minimum number",
           });
-        if (["DROPDOWN", "MULTI_SELECT", "RADIO"].includes(item.type) && !(item.options?.length))
+        if (["DROPDOWN", "MULTI_SELECT", "RADIO"].includes(item.type) && !item.options?.length)
           context.addIssue({
             code: "custom",
             path: ["sections", sectionIndex, "fields", fieldIndex, "options"],

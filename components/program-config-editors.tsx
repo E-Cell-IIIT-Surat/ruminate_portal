@@ -229,8 +229,23 @@ export function AnnouncementEditor({
         {targetType === "STATUS" && (
           <div className="field">
             <label htmlFor="announcement-status">Application status</label>
-            <select id="announcement-status" className="select" value={targetStatus} onChange={(event) => setTargetStatus(event.target.value)}>
-              {["SUBMITTED", "UNDER_REVIEW", "CHANGES_REQUESTED", "SHORTLISTED", "SELECTED", "REJECTED", "APPROVED", "WAITLISTED", "CONFIRMED"].map((status) => (
+            <select
+              id="announcement-status"
+              className="select"
+              value={targetStatus}
+              onChange={(event) => setTargetStatus(event.target.value)}
+            >
+              {[
+                "SUBMITTED",
+                "UNDER_REVIEW",
+                "CHANGES_REQUESTED",
+                "SHORTLISTED",
+                "SELECTED",
+                "REJECTED",
+                "APPROVED",
+                "WAITLISTED",
+                "CONFIRMED",
+              ].map((status) => (
                 <option key={status}>{status}</option>
               ))}
             </select>
@@ -239,8 +254,17 @@ export function AnnouncementEditor({
         {targetType === "STAGE" && (
           <div className="field">
             <label htmlFor="announcement-stage">Program stage</label>
-            <select id="announcement-stage" className="select" value={targetStageId} onChange={(event) => setTargetStageId(event.target.value)}>
-              {stages.map((stage) => <option value={stage.id} key={stage.id}>{stage.name}</option>)}
+            <select
+              id="announcement-stage"
+              className="select"
+              value={targetStageId}
+              onChange={(event) => setTargetStageId(event.target.value)}
+            >
+              {stages.map((stage) => (
+                <option value={stage.id} key={stage.id}>
+                  {stage.name}
+                </option>
+              ))}
             </select>
           </div>
         )}

@@ -53,7 +53,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         : input.targetType === "STAGE"
           ? { programId: id, stageId: input.targetStageId }
           : input.targetType === "SUBMITTED_APPLICANTS"
-            ? { programId: id, status: { notIn: [ApplicationStatus.DRAFT, ApplicationStatus.WITHDRAWN, ApplicationStatus.ARCHIVED] } }
+            ? {
+                programId: id,
+                status: { notIn: [ApplicationStatus.DRAFT, ApplicationStatus.WITHDRAWN, ApplicationStatus.ARCHIVED] },
+              }
             : { programId: id, status: { notIn: [ApplicationStatus.WITHDRAWN, ApplicationStatus.ARCHIVED] } };
     const applicants = await db.application.findMany({
       where: audience,

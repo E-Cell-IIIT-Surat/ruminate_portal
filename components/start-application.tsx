@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
 
 export function StartApplication({ programId }: { programId: string }) {
-  const router = useRouter();
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
@@ -18,13 +16,17 @@ export function StartApplication({ programId }: { programId: string }) {
           setError(result.error ?? "Unable to start application");
           return;
         }
-        router.replace(`/applications/${result.application.id}`);
+        // Vinext's local RSC runtime does not always provide an AppRouter
+        // context while this client component is mounted from a server page.
+        // A hard navigation is intentional here: it also guarantees the new
+        // application data is fetched after the POST succeeds.
+        window.location.replace(`/applications/${result.application.id}`);
       })
       .catch(() => active && setError("Unable to reach the server"));
     return () => {
       active = false;
     };
-  }, [programId, router]);
+  }, [programId]);
   return (
     <main className="auth-screen">
       <div className="auth-card">

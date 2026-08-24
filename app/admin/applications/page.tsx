@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { userAuthorization } from "@/lib/authz";
 import { db } from "@/lib/db";
-import { Badge, EmptyState, PageHeader } from "@/components/ui";
+import { Badge, EmptyState, Metric, PageHeader } from "@/components/ui";
 import { ClipboardList, Search } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export default async function AdminApplicationsPage({
         }
       : {}),
   };
-  const [applications, total] = await Promise.all([
+  const [applications, total, submittedTotal, draftTotal] = await Promise.all([
     db.application.findMany({
       where,
       select: {
@@ -54,6 +54,8 @@ export default async function AdminApplicationsPage({
       take,
     }),
     db.application.count({ where }),
+    db.application.count({ where: { ...where, status: { not: "DRAFT" } } }),
+    db.application.count({ where: { ...where, status: "DRAFT" } }),
   ]);
   return (
     <>
@@ -62,6 +64,11 @@ export default async function AdminApplicationsPage({
         title="Application operations"
         description={`${total} authorized records · server-side pagination`}
       />
+      <div className="metric-grid">
+        <Metric label="Submitted / in process" value={submittedTotal} />
+        <Metric label="Not submitted (draft)" value={draftTotal} />
+        <Metric label="Total applications" value={total} />
+      </div>
       <form className="filter-bar">
         {query.programId && <input type="hidden" name="programId" value={query.programId} />}
         <label>

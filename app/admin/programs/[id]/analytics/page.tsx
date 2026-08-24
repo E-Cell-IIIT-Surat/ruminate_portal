@@ -11,14 +11,22 @@ function Distribution({ title, rows }: { title: string; rows: { label: string; c
   const total = rows.reduce((sum, row) => sum + row.count, 0);
   return (
     <div className="panel status-bars">
-      <div className="panel-header"><h2>{title}</h2></div>
-      {rows.length ? rows.map((row) => (
-        <div key={row.label}>
-          <span>{row.label}</span>
-          <i><b style={{ width: `${total ? (row.count / total) * 100 : 0}%` }} /></i>
-          <strong>{row.count}</strong>
-        </div>
-      )) : <p className="config-state">No data yet.</p>}
+      <div className="panel-header">
+        <h2>{title}</h2>
+      </div>
+      {rows.length ? (
+        rows.map((row) => (
+          <div key={row.label}>
+            <span>{row.label}</span>
+            <i>
+              <b style={{ width: `${total ? (row.count / total) * 100 : 0}%` }} />
+            </i>
+            <strong>{row.count}</strong>
+          </div>
+        ))
+      ) : (
+        <p className="config-state">No data yet.</p>
+      )}
     </div>
   );
 }
@@ -72,7 +80,11 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
         eyebrow={program?.name}
         title="Program analytics"
         description="Live aggregated application, stage, college, and reviewer data."
-        action={<a className="button button-secondary" href={`/api/admin/programs/${id}/export`}>Export CSV</a>}
+        action={
+          <a className="button button-secondary" href={`/api/admin/programs/${id}/export`}>
+            Export CSV
+          </a>
+        }
       />
       <div className="metric-grid">
         <Metric label="Applications" value={total} />
@@ -81,18 +93,49 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
         <Metric label="Selected / approved" value={value("SELECTED") + value("APPROVED")} />
       </div>
       <div className="analytics-grid">
-        <Distribution title="Status distribution" rows={grouped.map((item) => ({ label: item.status.replaceAll("_", " "), count: item._count._all }))} />
-        <Distribution title="Stage distribution" rows={stageGrouped.map((item) => ({ label: item.stageId ? (stageNames.get(item.stageId) ?? "Unknown") : "No stage", count: item._count._all }))} />
-        <Distribution title="College distribution" rows={colleges.map((row) => ({ label: row.label, count: Number(row.count) }))} />
-        <Distribution title="Applications over time" rows={[...daily].reverse().map((row) => ({ label: row.label, count: Number(row.count) }))} />
+        <Distribution
+          title="Status distribution"
+          rows={grouped.map((item) => ({ label: item.status.replaceAll("_", " "), count: item._count._all }))}
+        />
+        <Distribution
+          title="Stage distribution"
+          rows={stageGrouped.map((item) => ({
+            label: item.stageId ? (stageNames.get(item.stageId) ?? "Unknown") : "No stage",
+            count: item._count._all,
+          }))}
+        />
+        <Distribution
+          title="College distribution"
+          rows={colleges.map((row) => ({ label: row.label, count: Number(row.count) }))}
+        />
+        <Distribution
+          title="Applications over time"
+          rows={[...daily].reverse().map((row) => ({ label: row.label, count: Number(row.count) }))}
+        />
       </div>
       <div className="panel table-wrap">
-        <div className="panel-header"><h2>Reviewer completion</h2></div>
+        <div className="panel-header">
+          <h2>Reviewer completion</h2>
+        </div>
         <table>
-          <thead><tr><th>Reviewer</th><th>Assigned</th><th>Completed</th><th>Pending</th></tr></thead>
-          <tbody>{reviewers.map((row) => (
-            <tr key={row.label}><td>{row.label}</td><td>{Number(row.assigned)}</td><td>{Number(row.completed)}</td><td>{Number(row.assigned - row.completed)}</td></tr>
-          ))}</tbody>
+          <thead>
+            <tr>
+              <th>Reviewer</th>
+              <th>Assigned</th>
+              <th>Completed</th>
+              <th>Pending</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reviewers.map((row) => (
+              <tr key={row.label}>
+                <td>{row.label}</td>
+                <td>{Number(row.assigned)}</td>
+                <td>{Number(row.completed)}</td>
+                <td>{Number(row.assigned - row.completed)}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     </>

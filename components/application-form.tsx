@@ -20,12 +20,34 @@ type Field = {
   maxFileSizeBytes: number | null;
 };
 type Section = { id: string; title: string; description: string | null; fields: Field[] };
+type ApiResponse = Record<string, unknown>;
+type UploadedFile = { id: string; fieldId: string; originalFilename: string };
 
 function visible(field: Field, answers: Record<string, unknown>) {
   if (!field.conditionFieldKey) return true;
   return field.conditionOperator === "!="
     ? answers[field.conditionFieldKey] !== field.conditionValue
     : answers[field.conditionFieldKey] === field.conditionValue;
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function readJson(response: Response): Promise<ApiResponse> {
+  const body = await response.text();
+  if (!body) return {};
+  try {
+    return JSON.parse(body) as ApiResponse;
+  } catch {
+    return { error: `The server returned an unexpected response (${response.status}).` };
+  }
 }
 
 export function ApplicationForm({
@@ -47,6 +69,7 @@ export function ApplicationForm({
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [uploadStage, setUploadStage] = useState("");
   const [files, setFiles] = useState(initialFiles);
   const [error, setError] = useState("");
   const first = useRef(true);
@@ -102,59 +125,112 @@ export function ApplicationForm({
   async function upload(field: Field, file?: File) {
     if (!file) return;
     setUploadingField(field.id);
+    setUploadStage("Preparing upload…");
     setError("");
     setSaveState("Uploading…");
     try {
-      const request = await fetch("/api/files/upload-url", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          applicationId,
-          fieldId: field.id,
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size,
-        }),
-      });
-      const signed = await request.json();
-      if (!request.ok) throw new Error(signed.error ?? "Upload failed");
-      const sent = await fetch(signed.uploadUrl, { method: "PUT", headers: signed.requiredHeaders, body: file });
-      if (!sent.ok) throw new Error("Upload failed");
-      const finalized = await fetch("/api/files/finalize", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          applicationId,
-          fieldId: field.id,
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size,
-          objectKey: signed.objectKey,
-        }),
-      });
-      const result = await finalized.json();
-      if (!finalized.ok) throw new Error(result.error ?? "Upload failed");
-      setFiles((current) => [...current.filter((item) => item.fieldId !== field.id), result.file]);
+      const request = await fetchWithTimeout(
+        "/api/files/upload-url",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            applicationId,
+            fieldId: field.id,
+            filename: file.name,
+            mimeType: file.type,
+            size: file.size,
+          }),
+        },
+        15_000,
+      );
+      const signed = await readJson(request);
+      if (!request.ok) throw new Error(String(signed.error ?? "Could not prepare the file upload."));
+      if (typeof signed.uploadUrl !== "string" || typeof signed.objectKey !== "string")
+        throw new Error("The storage service returned an invalid upload URL.");
+
+      setUploadStage("Uploading file…");
+      const sent = await fetchWithTimeout(
+        signed.uploadUrl,
+        { method: "PUT", headers: (signed.requiredHeaders ?? {}) as Record<string, string>, body: file },
+        90_000,
+      );
+      if (!sent.ok) {
+        if (sent.status === 403)
+          throw new Error("The private storage upload was rejected. Check the R2 bucket CORS policy.");
+        throw new Error(`File upload failed (${sent.status}).`);
+      }
+
+      setUploadStage("Verifying upload…");
+      const finalized = await fetchWithTimeout(
+        "/api/files/finalize",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            applicationId,
+            fieldId: field.id,
+            filename: file.name,
+            mimeType: file.type,
+            size: file.size,
+            objectKey: signed.objectKey,
+          }),
+        },
+        30_000,
+      );
+      const result = await readJson(finalized);
+      if (!finalized.ok) throw new Error(String(result.error ?? "The uploaded file could not be verified."));
+      const uploadedFile = result.file;
+      if (
+        !uploadedFile ||
+        typeof uploadedFile !== "object" ||
+        typeof (uploadedFile as { id?: unknown }).id !== "string" ||
+        typeof (uploadedFile as { fieldId?: unknown }).fieldId !== "string" ||
+        typeof (uploadedFile as { originalFilename?: unknown }).originalFilename !== "string"
+      )
+        throw new Error("The uploaded file was not saved.");
+      setFiles((current) => [...current.filter((item) => item.fieldId !== field.id), uploadedFile as UploadedFile]);
       setSaveState("File uploaded");
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Upload failed");
+      setError(
+        uploadError instanceof DOMException && uploadError.name === "AbortError"
+          ? "Upload timed out. Check your connection and the R2 bucket CORS settings, then try again."
+          : uploadError instanceof Error
+            ? uploadError.message
+            : "Upload failed",
+      );
       setSaveState("Upload failed");
     } finally {
       setUploadingField(null);
+      setUploadStage("");
     }
   }
   async function submit() {
     if (submitting) return;
+    if (uploadingField) {
+      setError("Wait for the file upload to finish before submitting.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
       if (!(await persistAnswers())) throw new Error("Save the application before submitting.");
-      const response = await fetch(`/api/applications/${applicationId}/submit`, { method: "POST" });
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(
-          result.code === "VALIDATION_ERROR" ? "Complete every required field before submitting." : result.error,
-        );
+      const response = await fetchWithTimeout(`/api/applications/${applicationId}/submit`, { method: "POST" }, 30_000);
+      const result = await readJson(response);
+      if (!response.ok) {
+        if (result.code === "VALIDATION_ERROR" && result.fields && typeof result.fields === "object") {
+          const missing = Object.values(result.fields as Record<string, unknown>)
+            .map(String)
+            .filter(Boolean)
+            .join(" ");
+          throw new Error(
+            missing
+              ? `Complete every required field before submitting. ${missing}`
+              : "Complete every required field, including uploaded documents, before submitting.",
+          );
+        }
+        throw new Error(String(result.error ?? "Submission failed"));
+      }
       location.reload();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Submission failed");
@@ -241,6 +317,7 @@ export function ApplicationForm({
                 onFile={(file) => upload(field, file)}
                 files={files.filter((file) => file.fieldId === field.id)}
                 uploading={uploadingField === field.id}
+                uploadStage={uploadingField === field.id ? uploadStage : ""}
                 locked={locked}
               />
             ))}
@@ -279,7 +356,7 @@ export function ApplicationForm({
           </small>
         </div>
         {!locked && currentStep === visibleSections.length - 1 && (
-          <button className="button button-primary" onClick={() => setReview(true)}>
+          <button className="button button-primary" onClick={() => setReview(true)} disabled={Boolean(uploadingField)}>
             Review application
           </button>
         )}
@@ -295,6 +372,7 @@ function DynamicInput({
   onFile,
   files,
   uploading,
+  uploadStage,
   locked,
 }: {
   field: Field;
@@ -303,6 +381,7 @@ function DynamicInput({
   onFile(file?: File): void;
   files: { originalFilename: string }[];
   uploading: boolean;
+  uploadStage: string;
   locked: boolean;
 }) {
   if (field.type === "HEADING") return <h3 className="content-heading">{field.label}</h3>;
@@ -373,7 +452,9 @@ function DynamicInput({
         <div className="upload-box">
           <FileUp />
           <div>
-            <strong>{uploading ? "Uploading…" : (files[0]?.originalFilename ?? "Choose a private file")}</strong>
+            <strong>
+              {uploading ? uploadStage || "Uploading…" : (files[0]?.originalFilename ?? "Choose a private file")}
+            </strong>
             <small>{field.allowedFileTypes.join(", ") || "Allowed file types configured by the program"}</small>
           </div>
           <input

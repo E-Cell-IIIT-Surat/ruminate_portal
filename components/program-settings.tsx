@@ -154,14 +154,29 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
           <div className="field">
             <label htmlFor="type">Program type</label>
             <select className="select" id="type" name="type" defaultValue={program.type}>
-              {["EVENT", "WORKSHOP", "INDUSTRY_VISIT", "HACKATHON", "STARTUP_COMPETITION", "SSIP", "MENTORSHIP", "PITCH_EVENT", "OTHER"].map((item) => (
+              {[
+                "EVENT",
+                "WORKSHOP",
+                "INDUSTRY_VISIT",
+                "HACKATHON",
+                "STARTUP_COMPETITION",
+                "SSIP",
+                "MENTORSHIP",
+                "PITCH_EVENT",
+                "OTHER",
+              ].map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </select>
           </div>
           <div className="field">
             <label htmlFor="participationMode">Participation</label>
-            <select className="select" id="participationMode" name="participationMode" defaultValue={program.participationMode}>
+            <select
+              className="select"
+              id="participationMode"
+              name="participationMode"
+              defaultValue={program.participationMode}
+            >
               <option value="INDIVIDUAL">Individual</option>
               <option value="TEAM">Team</option>
               <option value="BOTH">Individual or team</option>
@@ -207,15 +222,33 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
           </div>
           <div className="field">
             <label htmlFor="registrationOpenAt">Registration opens</label>
-            <input className="input" type="datetime-local" id="registrationOpenAt" name="registrationOpenAt" defaultValue={program.registrationOpenAt ?? ""} />
+            <input
+              className="input"
+              type="datetime-local"
+              id="registrationOpenAt"
+              name="registrationOpenAt"
+              defaultValue={program.registrationOpenAt ?? ""}
+            />
           </div>
           <div className="field">
             <label htmlFor="registrationCloseAt">Registration closes</label>
-            <input className="input" type="datetime-local" id="registrationCloseAt" name="registrationCloseAt" defaultValue={program.registrationCloseAt ?? ""} />
+            <input
+              className="input"
+              type="datetime-local"
+              id="registrationCloseAt"
+              name="registrationCloseAt"
+              defaultValue={program.registrationCloseAt ?? ""}
+            />
           </div>
           <div className="field">
             <label htmlFor="startAt">Program starts</label>
-            <input className="input" type="datetime-local" id="startAt" name="startAt" defaultValue={program.startAt ?? ""} />
+            <input
+              className="input"
+              type="datetime-local"
+              id="startAt"
+              name="startAt"
+              defaultValue={program.startAt ?? ""}
+            />
           </div>
           <div className="field">
             <label htmlFor="endAt">Program ends</label>
@@ -223,7 +256,13 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
           </div>
           <div className="field">
             <label htmlFor="editDeadline">Post-submission edit deadline</label>
-            <input className="input" type="datetime-local" id="editDeadline" name="editDeadline" defaultValue={program.editDeadline ?? ""} />
+            <input
+              className="input"
+              type="datetime-local"
+              id="editDeadline"
+              name="editDeadline"
+              defaultValue={program.editDeadline ?? ""}
+            />
           </div>
           <div className="field">
             <label htmlFor="capacity">Capacity</label>
@@ -276,13 +315,15 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
               Allow post-submission edits
             </label>
             <label>
-              <input type="checkbox" name="requiresReview" defaultChecked={program.requiresReview} /> Evaluation required
+              <input type="checkbox" name="requiresReview" defaultChecked={program.requiresReview} /> Evaluation
+              required
             </label>
             <label>
               <input type="checkbox" name="allowsDrafts" defaultChecked={program.allowsDrafts} /> Allow saved drafts
             </label>
             <label>
-              <input type="checkbox" name="requiresAuth" defaultChecked={program.requiresAuth} /> Require authenticated applicants
+              <input type="checkbox" name="requiresAuth" defaultChecked={program.requiresAuth} /> Require authenticated
+              applicants
             </label>
             <label>
               <input type="checkbox" name="allowsWithdrawal" defaultChecked={program.allowsWithdrawal} /> Allow

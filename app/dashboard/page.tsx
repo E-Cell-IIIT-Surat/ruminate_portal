@@ -4,6 +4,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { Badge, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
+import { userAuthorization } from "@/lib/authz";
 import { Bell, Blocks, ClipboardList, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { participantVisibleStatus } from "@/lib/domain/status";
@@ -20,44 +21,62 @@ export default async function DashboardPage() {
     );
   const session = await auth();
   if (!session?.user) return <AuthGate />;
-  const [applications, programs, notifications, teams] = await Promise.all([
-    db.application.findMany({
-      where: { userId: session.user.id, archivedAt: null },
-      select: {
-        id: true,
-        referenceId: true,
-        status: true,
-        submittedAt: true,
-        program: { select: { name: true, resultsPublishedAt: true } },
-      },
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-    }),
-    db.program.findMany({
-      where: { visibility: "PUBLIC", archivedAt: null, status: { in: ["PUBLISHED", "REGISTRATION_OPEN"] } },
-      select: { id: true, slug: true, name: true, registrationCloseAt: true },
-      orderBy: { registrationCloseAt: "asc" },
-      take: 4,
-    }),
-    db.notification.findMany({
-      where: { userId: session.user.id },
-      select: { id: true, type: true, title: true, body: true, readAt: true, href: true },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
-    db.team.findMany({
-      where: { leaderId: session.user.id },
-      select: { id: true, name: true, program: { select: { name: true } }, _count: { select: { members: true } } },
-      take: 4,
-    }),
-  ]);
+  const authorization = await userAuthorization(session.user.id);
+  const canManage = authorization.isSuperAdmin || authorization.roles.has("PROGRAM_MANAGER");
+  const canReview = authorization.roles.has("REVIEWER") || authorization.roles.has("FACULTY_REVIEWER");
+  // Miniflare's local Worker TCP adapter can deadlock when several PrismaPg
+  // connections are opened concurrently. Keep these reads sequential so the
+  // dashboard remains reliable during local development and on edge runtimes.
+  const applications = await db.application.findMany({
+    where: { userId: session.user.id, archivedAt: null },
+    select: {
+      id: true,
+      referenceId: true,
+      status: true,
+      submittedAt: true,
+      program: { select: { name: true, resultsPublishedAt: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 5,
+  });
+  const programs = await db.program.findMany({
+    where: { visibility: "PUBLIC", archivedAt: null, status: { in: ["PUBLISHED", "REGISTRATION_OPEN"] } },
+    select: { id: true, slug: true, name: true, registrationCloseAt: true },
+    orderBy: { registrationCloseAt: "asc" },
+    take: 4,
+  });
+  const notifications = await db.notification.findMany({
+    where: { userId: session.user.id },
+    select: { id: true, type: true, title: true, body: true, readAt: true, href: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+  const teams = await db.team.findMany({
+    where: { leaderId: session.user.id },
+    select: { id: true, name: true, program: { select: { name: true } }, _count: { select: { members: true } } },
+    take: 4,
+  });
   return (
     <PortalShell mode="participant" title="Participant portal" user={session.user}>
       <PageHeader
         eyebrow="Participant portal"
         title={`Welcome${session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}`}
         description="Everything important, in one place."
-        action={<ButtonLink href="/programs">Explore programs</ButtonLink>}
+        action={
+          <div className="hero-actions">
+            <ButtonLink href="/programs">Explore programs</ButtonLink>
+            {canManage && (
+              <ButtonLink href="/admin" variant="secondary">
+                Admin workspace
+              </ButtonLink>
+            )}
+            {!canManage && canReview && (
+              <ButtonLink href="/reviewer" variant="secondary">
+                Reviewer workspace
+              </ButtonLink>
+            )}
+          </div>
+        }
       />
       <div className="dashboard-columns">
         <section>
@@ -147,7 +166,7 @@ export default async function DashboardPage() {
             {notifications.length ? (
               <div className="compact-list">
                 {notifications.map((item) => (
-                  <a href={item.href ?? "#"} key={item.id} className={!item.readAt ? "unread" : ""}>
+                  <a href={item.href ?? "/notifications"} key={item.id} className={!item.readAt ? "unread" : ""}>
                     <strong>{item.title}</strong>
                     <small>{item.body}</small>
                   </a>
@@ -190,10 +209,10 @@ export default async function DashboardPage() {
                   .filter((item) => item.type === "ANNOUNCEMENT")
                   .slice(0, 3)
                   .map((item) => (
-                  <div key={item.id}>
-                    <strong>{item.title}</strong>
-                    <small>{item.body}</small>
-                  </div>
+                    <div key={item.id}>
+                      <strong>{item.title}</strong>
+                      <small>{item.body}</small>
+                    </div>
                   ))}
               </div>
             </div>

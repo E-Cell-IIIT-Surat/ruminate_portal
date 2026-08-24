@@ -1,17 +1,18 @@
 import { db } from "@/lib/db";
-import { permissions, rolePermissionMap } from "@/lib/permissions";
 import { superAdminEmails } from "@/lib/env";
+import { permissions, rolePermissionMap } from "@/lib/permissions";
 
 export async function ensureUserRoles(user: { id?: string; email?: string | null }) {
   if (!user.id || !user.email) return;
   const userId = user.id;
-  const email = user.email;
+  const email = user.email.toLowerCase();
 
   await db.$transaction(async (tx) => {
     await tx.permission.createMany({
       data: permissions.map((key) => ({ key, description: key.replaceAll(":", " ") })),
       skipDuplicates: true,
     });
+
     await tx.role.createMany({
       data: Object.keys(rolePermissionMap).map((name) => ({ name: name as never })),
       skipDuplicates: true,
@@ -21,6 +22,7 @@ export async function ensureUserRoles(user: { id?: string; email?: string | null
       tx.role.findMany({ select: { id: true, name: true } }),
       tx.permission.findMany({ select: { id: true, key: true } }),
     ]);
+
     const permissionByKey = new Map(grants.map((grant) => [grant.key, grant.id]));
     for (const role of roles) {
       const keys = rolePermissionMap[role.name];
@@ -32,21 +34,23 @@ export async function ensureUserRoles(user: { id?: string; email?: string | null
     }
 
     const participant = roles.find((role) => role.name === "PARTICIPANT");
-    if (participant)
+    if (participant) {
       await tx.userRole.upsert({
         where: { userId_roleId: { userId, roleId: participant.id } },
         create: { userId, roleId: participant.id },
         update: {},
       });
+    }
 
-    if (superAdminEmails().has(email.toLowerCase())) {
+    if (superAdminEmails().has(email)) {
       const admin = roles.find((role) => role.name === "SUPER_ADMIN");
-      if (admin)
+      if (admin) {
         await tx.userRole.upsert({
           where: { userId_roleId: { userId, roleId: admin.id } },
           create: { userId, roleId: admin.id },
           update: {},
         });
+      }
     }
   });
 }

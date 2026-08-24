@@ -112,7 +112,7 @@ export async function submitApplication(applicationId: string, userId: string) {
           issues[field.key] = `${field.label} is required`;
       }
       if (Object.keys(issues).length)
-        throw new AppError("Please complete all required fields", 422, "VALIDATION_ERROR");
+        throw new AppError("Please complete all required fields", 422, "VALIDATION_ERROR", issues);
 
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`program-capacity:${application.programId}`}))`;
       const countedStatuses = [

@@ -33,6 +33,11 @@ Next.js-compatible App Router (Vinext runtime), React 19, TypeScript strict mode
 7. Optionally load development data with `npm run db:seed`.
 8. Start the portal with `npm run dev`.
 
+Local `npm run dev` uses Vinext's Node runtime so PostgreSQL can be reached
+reliably from Windows. The Cloudflare/Miniflare runtime is still used by
+`npm run build`; set `CLOUDFLARE_DEV=true` only when you specifically need to
+test Worker emulation.
+
 ## Environment variables
 
 Required in production:
@@ -66,7 +71,9 @@ Create a Google OAuth web client and add these redirect URIs:
 - Local: `http://localhost:3000/api/auth/callback/google`
 - Production: `https://portal.ecelliiitsurat.in/api/auth/callback/google`
 
-Set the client ID and secret in the runtime environment. Auth.js persists accounts and sessions in PostgreSQL. No password authentication is implemented.
+Set the client ID and secret in the runtime environment. Auth.js persists
+accounts and sessions in PostgreSQL. Users can sign in with Google or with a
+password created through the manual signup form.
 
 ## Initial Super Admin
 
@@ -116,12 +123,288 @@ Every mutation is server-authorized. Participant ownership, program-manager scop
 
 ## Important routes
 
-- Public: `/`, `/programs`, `/programs/[slug]`, `/signin`
+- Public: `/`, `/programs`, `/programs/[slug]`, `/udbhav`, `/ssip`, `/financial-literacy-workshop`, `/signin`
 - Participant: `/dashboard`, `/applications`, `/applications/[id]`, `/teams`, `/notifications`, `/profile`
 - Reviewer: `/reviewer`, `/reviewer/reviews/[id]`
-- Admin: `/admin`, `/admin/programs`, program form/stages/reviewers/evaluation/announcements/analytics/settings, `/admin/applications`, `/admin/reviews`, `/admin/participants`, `/admin/users`, and `/admin/audit-logs`
-- Auth/API: `/api/auth/*`, `/api/programs/*`, `/api/applications/*`, `/api/files/*`, `/api/reviews/*`
+- Admin: `/admin`, `/admin/programs`, program form/stages/reviewers/evaluation/announcements/analytics/settings, `/admin/applications`, `/admin/reviews`, `/admin/participants`, `/admin/users`, `/admin/workshops/financial-literacy`, and `/admin/audit-logs`
+- Auth/API: `/api/auth/*`, `/api/programs/*`, `/api/applications/*`, `/api/files/*`, `/api/reviews/*`, `/api/workshops/financial-literacy`
+
+## Reviewer access and submission workflow
+
+Every new Google or manual-signup account starts as a `PARTICIPANT`. A Super Admin (or an account with role-management permission) opens **Admin → Users & Roles**, selects `REVIEWER` or `FACULTY_REVIEWER`, and saves. The admin then opens the relevant program's **Reviewers** tab and assigns that reviewer to an application and rubric. Only assigned applications appear in the reviewer's workspace; the reviewer cannot grant roles or see unrelated submissions.
+
+The **Start application** action creates a draft through `POST /api/programs/[id]/applications` and then navigates to the new `/applications/[id]` record. It does not send the participant back to `/programs`. Administrators configure and publish forms under **Admin → Programs → Form**; submitted student records are available under **Admin → Applications** and each program's **Applications** tab.
+
+The Financial Literacy Workshop is intentionally a separate seat-booking workflow rather than a program application. The public form at `/financial-literacy-workshop` stores name, batch, academic year, email, phone, student ID, and department in `WorkshopBooking`. Authorized administrators review and confirm requests at `/admin/workshops/financial-literacy`.
 
 ## Core-member workflow
 
 A Super Admin grants a core member the Program Manager role and assigns the relevant program. The manager configures dates and rules, builds and publishes the form, creates stages and rubrics, assigns reviewers, publishes registration, monitors submissions, moves applications through authorized statuses, communicates outcomes, publishes results, exports authorized data, and archives the completed program. Repeating the initiative should duplicate configuration—not applications or past evaluations.
+
+```
+rumi_portal
+├─ .openai
+│  ├─ .openai
+│  └─ hosting.json
+├─ .prettierignore
+├─ .prettierrc.json
+├─ app
+│  ├─ admin
+│  │  ├─ analytics
+│  │  │  └─ page.tsx
+│  │  ├─ announcements
+│  │  │  └─ page.tsx
+│  │  ├─ applications
+│  │  │  ├─ page.tsx
+│  │  │  └─ [id]
+│  │  │     └─ page.tsx
+│  │  ├─ audit
+│  │  │  └─ page.tsx
+│  │  ├─ audit-logs
+│  │  │  └─ page.tsx
+│  │  ├─ layout.tsx
+│  │  ├─ page.tsx
+│  │  ├─ participants
+│  │  │  └─ page.tsx
+│  │  ├─ programs
+│  │  │  ├─ new
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ page.tsx
+│  │  │  └─ [id]
+│  │  │     ├─ analytics
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ announcements
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ applications
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ evaluation
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ form
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ page.tsx
+│  │  │     ├─ reviewers
+│  │  │     │  └─ page.tsx
+│  │  │     ├─ settings
+│  │  │     │  └─ page.tsx
+│  │  │     └─ stages
+│  │  │        └─ page.tsx
+│  │  ├─ reviews
+│  │  │  └─ page.tsx
+│  │  ├─ settings
+│  │  │  └─ page.tsx
+│  │  └─ users
+│  │     └─ page.tsx
+│  ├─ api
+│  │  ├─ admin
+│  │  │  ├─ programs
+│  │  │  │  └─ [id]
+│  │  │  │     ├─ announcements
+│  │  │  │     │  └─ route.ts
+│  │  │  │     ├─ export
+│  │  │  │     │  └─ route.ts
+│  │  │  │     ├─ form
+│  │  │  │     │  └─ route.ts
+│  │  │  │     ├─ managers
+│  │  │  │     │  └─ route.ts
+│  │  │  │     ├─ route.ts
+│  │  │  │     ├─ rubrics
+│  │  │  │     │  └─ route.ts
+│  │  │  │     └─ stages
+│  │  │  │        └─ route.ts
+│  │  │  └─ users
+│  │  │     └─ [id]
+│  │  │        ├─ roles
+│  │  │        │  └─ route.ts
+│  │  │        └─ route.ts
+│  │  ├─ applications
+│  │  │  └─ [id]
+│  │  │     ├─ comments
+│  │  │     │  └─ route.ts
+│  │  │     ├─ draft
+│  │  │     │  └─ route.ts
+│  │  │     ├─ reviewers
+│  │  │     │  └─ route.ts
+│  │  │     ├─ status
+│  │  │     │  └─ route.ts
+│  │  │     ├─ submit
+│  │  │     │  └─ route.ts
+│  │  │     ├─ team
+│  │  │     │  └─ route.ts
+│  │  │     └─ withdraw
+│  │  │        └─ route.ts
+│  │  ├─ auth
+│  │  │  ├─ signup
+│  │  │  │  └─ route.ts
+│  │  │  └─ [...nextauth]
+│  │  │     └─ route.ts
+│  │  ├─ files
+│  │  │  ├─ finalize
+│  │  │  │  └─ route.ts
+│  │  │  ├─ upload-url
+│  │  │  │  └─ route.ts
+│  │  │  └─ [id]
+│  │  │     └─ download
+│  │  │        └─ route.ts
+│  │  ├─ health
+│  │  │  └─ route.ts
+│  │  ├─ internal
+│  │  │  └─ email
+│  │  │     └─ process
+│  │  │        └─ route.ts
+│  │  ├─ notifications
+│  │  │  └─ read
+│  │  │     └─ route.ts
+│  │  ├─ profile
+│  │  │  └─ route.ts
+│  │  ├─ programs
+│  │  │  ├─ route.ts
+│  │  │  └─ [id]
+│  │  │     └─ applications
+│  │  │        └─ route.ts
+│  │  └─ reviews
+│  │     └─ [id]
+│  │        └─ submit
+│  │           └─ route.ts
+│  ├─ applications
+│  │  ├─ page.tsx
+│  │  ├─ start
+│  │  │  └─ page.tsx
+│  │  └─ [id]
+│  │     ├─ edit
+│  │     │  └─ page.tsx
+│  │     └─ page.tsx
+│  ├─ chatgpt-auth.ts
+│  ├─ dashboard
+│  │  └─ page.tsx
+│  ├─ globals.css
+│  ├─ layout.tsx
+│  ├─ notifications
+│  │  └─ page.tsx
+│  ├─ page.tsx
+│  ├─ profile
+│  │  └─ page.tsx
+│  ├─ programs
+│  │  ├─ page.tsx
+│  │  └─ [slug]
+│  │     └─ page.tsx
+│  ├─ reviewer
+│  │  ├─ layout.tsx
+│  │  ├─ page.tsx
+│  │  └─ reviews
+│  │     └─ [id]
+│  │        └─ page.tsx
+│  ├─ signin
+│  │  └─ page.tsx
+│  ├─ teams
+│  │  └─ page.tsx
+│  └─ _sites-preview
+├─ auth.ts
+├─ build
+│  └─ sites-vite-plugin.ts
+├─ components
+│  ├─ account-access-control.tsx
+│  ├─ application-comments.tsx
+│  ├─ application-form.tsx
+│  ├─ auth-gate.tsx
+│  ├─ brand.tsx
+│  ├─ form-builder.tsx
+│  ├─ google-sign-in-button.tsx
+│  ├─ manager-assignment.tsx
+│  ├─ notification-list.tsx
+│  ├─ portal-shell.tsx
+│  ├─ profile-form.tsx
+│  ├─ program-config-editors.tsx
+│  ├─ program-form.tsx
+│  ├─ program-settings.tsx
+│  ├─ public-header.tsx
+│  ├─ review-form.tsx
+│  ├─ reviewer-assignment.tsx
+│  ├─ role-editor.tsx
+│  ├─ sign-out-button.tsx
+│  ├─ start-application.tsx
+│  ├─ status-control.tsx
+│  ├─ team-editor.tsx
+│  ├─ ui.tsx
+│  └─ withdraw-application.tsx
+├─ db
+├─ docs
+│  ├─ ADMIN_GUIDE.md
+│  ├─ ARCHITECTURE.md
+│  ├─ DATABASE.md
+│  ├─ DEPLOYMENT.md
+│  └─ SECURITY.md
+├─ drizzle
+│  └─ meta
+├─ eslint.config.mjs
+├─ examples
+│  └─ d1
+│     ├─ app
+│     │  └─ api
+│     │     └─ notes
+│     └─ db
+├─ lib
+│  ├─ authz.ts
+│  ├─ data
+│  │  └─ public.ts
+│  ├─ db.ts
+│  ├─ domain
+│  │  ├─ access.ts
+│  │  ├─ evaluation.ts
+│  │  ├─ program.ts
+│  │  └─ status.ts
+│  ├─ env.ts
+│  ├─ errors.ts
+│  ├─ permissions.ts
+│  ├─ rate-limit.ts
+│  ├─ services
+│  │  ├─ applications.ts
+│  │  ├─ bootstrap.ts
+│  │  ├─ email.ts
+│  │  ├─ evaluations.ts
+│  │  ├─ files.ts
+│  │  └─ status.ts
+│  └─ validation
+│     ├─ api.ts
+│     ├─ dynamic-form.ts
+│     ├─ form-builder.ts
+│     ├─ program-settings.ts
+│     └─ program.ts
+├─ next-env.d.ts
+├─ next.config.ts
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.mjs
+├─ prisma
+│  ├─ migrations
+│  │  ├─ 20260816000000_init
+│  │  │  └─ migration.sql
+│  │  ├─ 20260816010000_email_queue
+│  │  │  └─ migration.sql
+│  │  ├─ 20260816011000_blind_review_fields
+│  │  │  └─ migration.sql
+│  │  ├─ 20260816012000_team_member_order
+│  │  │  └─ migration.sql
+│  │  ├─ 20260816013000_announcement_targeting
+│  │  │  └─ migration.sql
+│  │  ├─ 20260822052243_add_password_hash
+│  │  │  └─ migration.sql
+│  │  └─ migration_lock.toml
+│  ├─ schema.prisma
+│  └─ seed.ts
+├─ proxy.ts
+├─ public
+│  ├─ favicon.svg
+│  ├─ file.svg
+│  ├─ globe.svg
+│  ├─ ruminate-social-card.png
+│  └─ window.svg
+├─ README.md
+├─ scripts
+├─ tests
+│  └─ domain.test.ts
+├─ tsconfig.json
+├─ vite.config.ts
+└─ worker
+   └─ index.ts
+
+```

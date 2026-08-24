@@ -11,7 +11,17 @@ export const programSettingsInput = z.object({
   eligibility: z.string().max(10000).nullable().optional(),
   instructions: z.string().max(10000).nullable().optional(),
   type: z
-    .enum(["EVENT", "WORKSHOP", "INDUSTRY_VISIT", "HACKATHON", "STARTUP_COMPETITION", "SSIP", "MENTORSHIP", "PITCH_EVENT", "OTHER"])
+    .enum([
+      "EVENT",
+      "WORKSHOP",
+      "INDUSTRY_VISIT",
+      "HACKATHON",
+      "STARTUP_COMPETITION",
+      "SSIP",
+      "MENTORSHIP",
+      "PITCH_EVENT",
+      "OTHER",
+    ])
     .optional(),
   status: z
     .enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "REGISTRATION_CLOSED", "IN_PROGRESS", "COMPLETED", "ARCHIVED"])

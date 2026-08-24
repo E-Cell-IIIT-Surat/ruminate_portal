@@ -1,10 +1,11 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { forbidden, unauthorized } from "@/lib/errors";
-import type { PermissionKey } from "@/lib/permissions";
+import { permissions, type PermissionKey } from "@/lib/permissions";
 import { canEditSubmitted } from "@/lib/domain/program";
 import { AppError } from "@/lib/errors";
 import { canAccessApplication } from "@/lib/domain/access";
+import { superAdminEmails } from "@/lib/env";
 
 export async function requireUser() {
   const session = await auth();
@@ -17,6 +18,7 @@ export async function userAuthorization(userId: string) {
     where: { id: userId, archivedAt: null },
     select: {
       id: true,
+      email: true,
       roles: {
         select: {
           role: {
@@ -29,9 +31,16 @@ export async function userAuthorization(userId: string) {
   });
   if (!user) throw unauthorized();
   const roles = new Set(user.roles.map(({ role }) => role.name));
-  const grants = new Set(user.roles.flatMap(({ role }) => role.permissions.map(({ permission }) => permission.key)));
+  const grants = new Set<PermissionKey>(
+    user.roles.flatMap(({ role }) => role.permissions.map(({ permission }) => permission.key as PermissionKey)),
+  );
+  const isGlobalAdmin = superAdminEmails().has(user.email.toLowerCase());
+  if (isGlobalAdmin) {
+    roles.add("SUPER_ADMIN");
+    permissions.forEach((permission) => grants.add(permission));
+  }
   const managedProgramIds = new Set(user.programManagerFor.map(({ programId }) => programId));
-  return { ...user, roles, grants, managedProgramIds, isSuperAdmin: roles.has("SUPER_ADMIN") };
+  return { ...user, roles, grants, managedProgramIds, isSuperAdmin: roles.has("SUPER_ADMIN") || isGlobalAdmin };
 }
 
 export async function requirePermission(permission: PermissionKey, programId?: string) {

@@ -104,7 +104,13 @@ const templates: Record<string, BuilderSection[]> = {
           required: true,
           allowedFileTypes: [],
         },
-        { key: "visit_consent", label: "I agree to the visit rules", type: "CONSENT", required: true, allowedFileTypes: [] },
+        {
+          key: "visit_consent",
+          label: "I agree to the visit rules",
+          type: "CONSENT",
+          required: true,
+          allowedFileTypes: [],
+        },
       ],
     },
   ],
@@ -367,7 +373,10 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                           placeholder="Options, separated by commas"
                           onChange={(event) =>
                             patchField(sectionIndex, fieldIndex, {
-                              options: event.target.value.split(",").map((item) => item.trim()).filter(Boolean),
+                              options: event.target.value
+                                .split(",")
+                                .map((item) => item.trim())
+                                .filter(Boolean),
                             })
                           }
                         />
@@ -434,7 +443,10 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                             placeholder="application/pdf, image/png"
                             onChange={(event) =>
                               patchField(sectionIndex, fieldIndex, {
-                                allowedFileTypes: event.target.value.split(",").map((item) => item.trim()).filter(Boolean),
+                                allowedFileTypes: event.target.value
+                                  .split(",")
+                                  .map((item) => item.trim())
+                                  .filter(Boolean),
                               })
                             }
                           />
@@ -464,9 +476,13 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                         }
                       >
                         <option value="">Always visible</option>
-                        {fieldKeys.filter((key) => key !== field.key).map((key) => (
-                          <option key={key} value={key}>{key}</option>
-                        ))}
+                        {fieldKeys
+                          .filter((key) => key !== field.key)
+                          .map((key) => (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          ))}
                       </select>
                       {field.conditionFieldKey && (
                         <>
@@ -501,14 +517,14 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                     <button aria-label="Move field down" onClick={() => moveField(sectionIndex, fieldIndex, 1)}>
                       <ArrowDown size={15} />
                     </button>
-                  <button
-                    aria-label="Delete field"
-                    onClick={() =>
-                      patchSection(sectionIndex, { fields: section.fields.filter((_, i) => i !== fieldIndex) })
-                    }
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                    <button
+                      aria-label="Delete field"
+                      onClick={() =>
+                        patchSection(sectionIndex, { fields: section.fields.filter((_, i) => i !== fieldIndex) })
+                      }
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
                 </div>
               ))}

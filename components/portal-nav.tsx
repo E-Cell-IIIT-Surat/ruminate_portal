@@ -1,0 +1,63 @@
+"use client";
+
+import {
+  Bell,
+  Blocks,
+  BookOpenCheck,
+  ClipboardList,
+  FileCheck2,
+  Gauge,
+  Megaphone,
+  Rocket,
+  Settings,
+  ShieldCheck,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
+
+type NavItem = readonly [string, string, keyof typeof icons];
+
+const icons = {
+  Bell,
+  Blocks,
+  BookOpenCheck,
+  ClipboardList,
+  FileCheck2,
+  Gauge,
+  Megaphone,
+  Rocket,
+  Settings,
+  ShieldCheck,
+  UsersRound,
+} satisfies Record<string, LucideIcon>;
+
+export function PortalNav({ items }: { items: readonly NavItem[] }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  return (
+    <nav aria-label="Portal navigation">
+      {items.map(([label, href, iconName]) => {
+        const Icon = icons[iconName];
+        const [targetPath, targetQuery] = href.split("?");
+        const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+        const queryMatches = targetQuery
+          ? new URLSearchParams(targetQuery).get("view") === searchParams.get("view")
+          : !["/reviewer"].includes(targetPath) || !searchParams.get("view");
+        const active = pathMatches && queryMatches;
+        return (
+          <Link
+            href={href}
+            className={active ? "active" : undefined}
+            aria-current={active ? "page" : undefined}
+            key={href}
+          >
+            <Icon size={18} />
+            <span>{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

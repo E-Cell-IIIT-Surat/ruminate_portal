@@ -122,12 +122,44 @@ enum EmailStatus {
   SUPPRESSED
 }
 
+enum WorkshopBookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum WorkshopStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+}
+
+enum UdbhavCycleStatus {
+  SCHEDULED
+  OPEN
+  CLOSED
+}
+
+enum UdbhavSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  IN_PROGRESS
+  ON_HOLD
+  ACTION_NEEDED
+  PITCH_SCHEDULED
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  passwordHash  String?
   phone         String?
   institution   String?
   degree        String?
@@ -138,25 +170,32 @@ model User {
   updatedAt     DateTime  @updatedAt
   archivedAt    DateTime?
 
-  accounts             Account[]
-  sessions             Session[]
-  roles                UserRole[]
-  programManagerFor    ProgramManager[]
-  programsCreated      Program[]            @relation("ProgramCreator")
-  applications         Application[]
-  ledTeams             Team[]               @relation("TeamLeader")
-  teamMemberships      TeamMember[]
-  uploadedFiles        ApplicationFile[]     @relation("FileUploader")
-  reviewerAssignments  ReviewerAssignment[] @relation("AssignedReviewer")
-  assignmentsCreated   ReviewerAssignment[] @relation("AssignmentCreator")
-  evaluations          Evaluation[]
-  comments             ApplicationComment[]
-  announcements        Announcement[]
-  notifications        Notification[]
-  auditLogs            AuditLog[]
-  statusChanges        ApplicationStatusHistory[]
-  stagesMoved          ApplicationStageHistory[]
-  versionsPublished    FormVersion[]         @relation("VersionPublisher")
+  accounts            Account[]
+  sessions            Session[]
+  roles               UserRole[]
+  programManagerFor   ProgramManager[]
+  programsCreated     Program[]                  @relation("ProgramCreator")
+  applications        Application[]
+  ledTeams            Team[]                     @relation("TeamLeader")
+  teamMemberships     TeamMember[]
+  uploadedFiles       ApplicationFile[]          @relation("FileUploader")
+  reviewerAssignments ReviewerAssignment[]       @relation("AssignedReviewer")
+  assignmentsCreated  ReviewerAssignment[]       @relation("AssignmentCreator")
+  evaluations         Evaluation[]
+  comments            ApplicationComment[]
+  announcements       Announcement[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  statusChanges       ApplicationStatusHistory[]
+  stagesMoved         ApplicationStageHistory[]
+  versionsPublished   FormVersion[]              @relation("VersionPublisher")
+  workshopsCreated    Workshop[]                 @relation("WorkshopCreator")
+  udbhavCyclesManaged UdbhavCycle[]              @relation("UdbhavCycleManager")
+  udbhavSubmissions   UdbhavSubmission[]         @relation("UdbhavLeader")
+  udbhavReviews       UdbhavReview[]             @relation("UdbhavReviewer")
+  udbhavReviewerAssignments UdbhavReviewerAssignment[] @relation("UdbhavAssignedReviewer")
+  udbhavAssignmentsCreated UdbhavReviewerAssignment[] @relation("UdbhavAssignmentCreator")
+  udbhavStatusChanges UdbhavStatusHistory[]      @relation("UdbhavStatusActor")
 }
 
 model Account {
@@ -237,51 +276,51 @@ model RolePermission {
 }
 
 model Program {
-  id                       String              @id @default(cuid())
-  publicId                 String              @unique @default(cuid())
-  slug                     String              @unique
-  name                     String
-  shortDescription         String
-  description              String
-  eligibility              String?
-  instructions             String?
-  type                     ProgramType         @default(OTHER)
-  status                   ProgramStatus       @default(DRAFT)
-  visibility               ProgramVisibility   @default(PUBLIC)
-  registrationOpenAt       DateTime?
-  registrationCloseAt      DateTime?
-  startAt                  DateTime?
-  endAt                    DateTime?
-  capacity                 Int?
-  waitlistEnabled          Boolean             @default(false)
-  participationMode        ParticipationMode   @default(INDIVIDUAL)
-  teamMinSize              Int                 @default(1)
-  teamMaxSize              Int                 @default(1)
-  requiresReview           Boolean             @default(false)
-  allowsDrafts             Boolean             @default(true)
-  allowsEditAfterSubmit    Boolean             @default(false)
-  allowsWithdrawal         Boolean             @default(true)
-  editDeadline             DateTime?
-  requiresAuth             Boolean             @default(true)
-  allowedEmailDomains      String[]
-  resultsPublishedAt       DateTime?
-  blindReview              Boolean             @default(false)
-  createdById              String
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
-  archivedAt               DateTime?
+  id                    String            @id @default(cuid())
+  publicId              String            @unique @default(cuid())
+  slug                  String            @unique
+  name                  String
+  shortDescription      String
+  description           String
+  eligibility           String?
+  instructions          String?
+  type                  ProgramType       @default(OTHER)
+  status                ProgramStatus     @default(DRAFT)
+  visibility            ProgramVisibility @default(PUBLIC)
+  registrationOpenAt    DateTime?
+  registrationCloseAt   DateTime?
+  startAt               DateTime?
+  endAt                 DateTime?
+  capacity              Int?
+  waitlistEnabled       Boolean           @default(false)
+  participationMode     ParticipationMode @default(INDIVIDUAL)
+  teamMinSize           Int               @default(1)
+  teamMaxSize           Int               @default(1)
+  requiresReview        Boolean           @default(false)
+  allowsDrafts          Boolean           @default(true)
+  allowsEditAfterSubmit Boolean           @default(false)
+  allowsWithdrawal      Boolean           @default(true)
+  editDeadline          DateTime?
+  requiresAuth          Boolean           @default(true)
+  allowedEmailDomains   String[]
+  resultsPublishedAt    DateTime?
+  blindReview           Boolean           @default(false)
+  createdById           String
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  archivedAt            DateTime?
 
-  createdBy           User                      @relation("ProgramCreator", fields: [createdById], references: [id])
-  managers            ProgramManager[]
-  stages              ProgramStage[]
-  form                Form?
-  applications        Application[]
-  teams               Team[]
-  rubrics             Rubric[]
-  announcements       Announcement[]
-  auditLogs           AuditLog[]
-  emailDeliveries     EmailDelivery[]
-  stageHistory        ApplicationStageHistory[]
+  createdBy       User                      @relation("ProgramCreator", fields: [createdById], references: [id])
+  managers        ProgramManager[]
+  stages          ProgramStage[]
+  form            Form?
+  applications    Application[]
+  teams           Team[]
+  rubrics         Rubric[]
+  announcements   Announcement[]
+  auditLogs       AuditLog[]
+  emailDeliveries EmailDelivery[]
+  stageHistory    ApplicationStageHistory[]
 
   @@index([status, registrationCloseAt])
   @@index([type, status])
@@ -342,9 +381,9 @@ model FormVersion {
   publishedById String?
   createdAt     DateTime          @default(now())
 
-  form        Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
-  publishedBy User?         @relation("VersionPublisher", fields: [publishedById], references: [id])
-  sections    FormSection[]
+  form         Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+  publishedBy  User?         @relation("VersionPublisher", fields: [publishedById], references: [id])
+  sections     FormSection[]
   applications Application[]
 
   @@unique([formId, version])
@@ -352,7 +391,7 @@ model FormVersion {
 }
 
 model FormSection {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   formVersionId String
   title         String
   description   String?
@@ -372,22 +411,22 @@ model FormField {
   type              FieldType
   label             String
   description       String?
-  helpText           String?
-  placeholder        String?
-  required           Boolean   @default(false)
-  hideFromReviewers  Boolean   @default(false)
-  minLength          Int?
-  maxLength          Int?
-  minNumber          Decimal?
-  maxNumber          Decimal?
-  options            Json?
-  allowedFileTypes   String[]
-  maxFileSizeBytes   Int?
+  helpText          String?
+  placeholder       String?
+  required          Boolean   @default(false)
+  hideFromReviewers Boolean   @default(false)
+  minLength         Int?
+  maxLength         Int?
+  minNumber         Decimal?
+  maxNumber         Decimal?
+  options           Json?
+  allowedFileTypes  String[]
+  maxFileSizeBytes  Int?
   conditionFieldKey String?
   conditionOperator String?
   conditionValue    Json?
-  order              Int
-  archivedAt         DateTime?
+  order             Int
+  archivedAt        DateTime?
 
   section FormSection         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   answers ApplicationAnswer[]
@@ -399,20 +438,20 @@ model FormField {
 }
 
 model Application {
-  id                    String            @id @default(cuid())
-  referenceId           String            @unique
-  programId             String
-  userId                String
-  formVersionId         String
-  stageId               String?
-  status                ApplicationStatus @default(DRAFT)
-  submittedAt           DateTime?
-  lastSavedAt           DateTime           @default(now())
-  withdrawnAt           DateTime?
-  editOverrideUntil     DateTime?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
-  archivedAt            DateTime?
+  id                String            @id @default(cuid())
+  referenceId       String            @unique
+  programId         String
+  userId            String
+  formVersionId     String
+  stageId           String?
+  status            ApplicationStatus @default(DRAFT)
+  submittedAt       DateTime?
+  lastSavedAt       DateTime          @default(now())
+  withdrawnAt       DateTime?
+  editOverrideUntil DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  archivedAt        DateTime?
 
   program             Program                    @relation(fields: [programId], references: [id])
   user                User                       @relation(fields: [userId], references: [id])
@@ -465,13 +504,13 @@ model ApplicationRevision {
 }
 
 model ApplicationStatusHistory {
-  id            String            @id @default(cuid())
+  id            String             @id @default(cuid())
   applicationId String
   fromStatus    ApplicationStatus?
   toStatus      ApplicationStatus
   reason        String?
   changedById   String?
-  createdAt     DateTime          @default(now())
+  createdAt     DateTime           @default(now())
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   changedBy   User?       @relation(fields: [changedById], references: [id])
@@ -489,8 +528,8 @@ model ApplicationStageHistory {
   reason        String?
   createdAt     DateTime @default(now())
 
-  application Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  program     Program      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  application Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  program     Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
   fromStage   ProgramStage? @relation("FromStage", fields: [fromStageId], references: [id])
   toStage     ProgramStage  @relation("ToStage", fields: [toStageId], references: [id])
   changedBy   User?         @relation(fields: [changedById], references: [id])
@@ -539,17 +578,17 @@ model TeamMember {
 }
 
 model ApplicationFile {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   applicationId    String
-  fieldId           String
-  objectKey         String   @unique
+  fieldId          String
+  objectKey        String    @unique
   originalFilename String
-  mimeType          String
-  size              Int
-  uploadedById      String
-  checksum          String?
-  createdAt         DateTime @default(now())
-  deletedAt         DateTime?
+  mimeType         String
+  size             Int
+  uploadedById     String
+  checksum         String?
+  createdAt        DateTime  @default(now())
+  deletedAt        DateTime?
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   field       FormField   @relation(fields: [fieldId], references: [id])
@@ -600,12 +639,12 @@ model Rubric {
 }
 
 model RubricCriterion {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   rubricId    String
   name        String
   description String?
   maxScore    Decimal
-  weight      Decimal  @default(1)
+  weight      Decimal @default(1)
   order       Int
 
   rubric Rubric            @relation(fields: [rubricId], references: [id], onDelete: Cascade)
@@ -615,7 +654,7 @@ model RubricCriterion {
 }
 
 model Evaluation {
-  id           String           @id @default(cuid())
+  id            String           @id @default(cuid())
   applicationId String
   reviewerId    String
   rubricId      String
@@ -667,17 +706,17 @@ model ApplicationComment {
 }
 
 model Announcement {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   programId   String?
   title       String
   body        String
   publishedAt DateTime?
   expiresAt   DateTime?
-  targetType  String   @default("ALL_APPLICANTS")
+  targetType  String    @default("ALL_APPLICANTS")
   targetValue String?
   createdById String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   program   Program? @relation(fields: [programId], references: [id], onDelete: Cascade)
   createdBy User     @relation(fields: [createdById], references: [id])
@@ -700,6 +739,169 @@ model Notification {
   application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
+}
+
+model WorkshopBooking {
+  id         String                @id @default(cuid())
+  workshop   String                @default("financial-literacy")
+  workshopId String?
+  name       String
+  batch      String
+  year       String
+  email      String
+  phone      String
+  reason     String?
+  studentId  String?
+  department String?
+  status     WorkshopBookingStatus @default(PENDING)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  workshopRecord Workshop? @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+
+  @@unique([workshop, email])
+  @@index([workshop, createdAt])
+  @@index([email])
+}
+
+model Workshop {
+  id                  String         @id @default(cuid())
+  slug                String         @unique
+  name                String
+  summary             String
+  description         String
+  bannerUrl           String?
+  batch               String?
+  year                String?
+  venue               String?
+  capacity            Int?
+  startsAt            DateTime?
+  endsAt              DateTime?
+  registrationOpenAt  DateTime?
+  registrationCloseAt DateTime?
+  status              WorkshopStatus @default(DRAFT)
+  createdById         String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  archivedAt          DateTime?
+
+  createdBy User              @relation("WorkshopCreator", fields: [createdById], references: [id])
+  bookings  WorkshopBooking[]
+
+  @@index([status, startsAt])
+  @@index([year, batch])
+}
+
+model UdbhavReviewerAssignment {
+  id           String           @id @default(cuid())
+  submissionId String
+  reviewerId   String
+  assignedById String
+  status       AssignmentStatus @default(ASSIGNED)
+  dueAt        DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  submission UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   User             @relation("UdbhavAssignedReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  assignedBy User             @relation("UdbhavAssignmentCreator", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@unique([submissionId, reviewerId])
+  @@index([reviewerId, status])
+}
+
+model UdbhavCycle {
+  id          String            @id @default(cuid())
+  month       Int
+  year        Int
+  opensAt     DateTime
+  closesAt    DateTime
+  status      UdbhavCycleStatus @default(SCHEDULED)
+  managedById String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  managedBy   User?              @relation("UdbhavCycleManager", fields: [managedById], references: [id])
+  submissions UdbhavSubmission[]
+
+  @@unique([year, month])
+  @@index([status, opensAt, closesAt])
+}
+
+model UdbhavSubmission {
+  id                String                 @id @default(cuid())
+  referenceId       String                 @unique
+  cycleId           String
+  leaderId          String
+  teamName          String
+  teamMembers       Json
+  title             String
+  challenge         String
+  proposal          String
+  solution          String
+  technology        String
+  estimatedBudget   Decimal?               @db.Decimal(12, 2)
+  distributionPlan  String
+  milestones        String?
+  supportingFileKey String?
+  status            UdbhavSubmissionStatus @default(DRAFT)
+  currentStage      String                 @default("Submission")
+  totalScore        Decimal?               @db.Decimal(6, 2)
+  secretMessage     String?
+  submittedAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  cycle     UdbhavCycle           @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  leader    User                  @relation("UdbhavLeader", fields: [leaderId], references: [id])
+  reviews   UdbhavReview[]
+  reviewerAssignments UdbhavReviewerAssignment[]
+  statusLog UdbhavStatusHistory[]
+
+  @@index([cycleId, status])
+  @@index([leaderId, createdAt])
+}
+
+model UdbhavReview {
+  id                   String   @id @default(cuid())
+  submissionId         String
+  reviewerId           String
+  creativity           Decimal  @db.Decimal(5, 2)
+  problemUnderstanding Decimal  @db.Decimal(5, 2)
+  innovation           Decimal  @db.Decimal(5, 2)
+  execution            Decimal  @db.Decimal(5, 2)
+  feasibility          Decimal  @db.Decimal(5, 2)
+  scalability          Decimal  @db.Decimal(5, 2)
+  impact               Decimal  @db.Decimal(5, 2)
+  sustainability       Decimal  @db.Decimal(5, 2)
+  presentation         Decimal  @db.Decimal(5, 2)
+  completeness         Decimal  @db.Decimal(5, 2)
+  totalScore           Decimal  @db.Decimal(6, 2)
+  feedback             String?
+  submittedAt          DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  submission UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   User             @relation("UdbhavReviewer", fields: [reviewerId], references: [id])
+
+  @@unique([submissionId, reviewerId])
+  @@index([reviewerId, submittedAt])
+}
+
+model UdbhavStatusHistory {
+  id           String                  @id @default(cuid())
+  submissionId String
+  fromStatus   UdbhavSubmissionStatus?
+  toStatus     UdbhavSubmissionStatus
+  stage        String?
+  reason       String?
+  changedById  String
+  createdAt    DateTime                @default(now())
+
+  submission UdbhavSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  changedBy  User             @relation("UdbhavStatusActor", fields: [changedById], references: [id])
+
+  @@index([submissionId, createdAt])
 }
 
 model AuditLog {

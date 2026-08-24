@@ -6,6 +6,7 @@ export class AppError extends Error {
     message: string,
     public readonly status = 400,
     public readonly code = "BAD_REQUEST",
+    public readonly fields?: Record<string, string>,
   ) {
     super(message);
   }
@@ -17,7 +18,10 @@ export const notFound = (entity = "Resource") => new AppError(`${entity} not fou
 
 export function safeError(error: unknown) {
   if (error instanceof AppError) {
-    return Response.json({ error: error.message, code: error.code }, { status: error.status });
+    return Response.json(
+      { error: error.message, code: error.code, ...(error.fields ? { fields: error.fields } : {}) },
+      { status: error.status },
+    );
   }
   if (error instanceof ZodError) {
     return Response.json(

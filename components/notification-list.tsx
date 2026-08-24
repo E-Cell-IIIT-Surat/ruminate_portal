@@ -27,7 +27,7 @@ export function NotificationList({
       </div>
       <div className="compact-list">
         {notifications.map((item) => (
-          <a key={item.id} href={item.href ?? "#"} className={!item.readAt ? "unread" : ""}>
+          <a key={item.id} href={item.href ?? "/notifications"} className={!item.readAt ? "unread" : ""}>
             <strong>{item.title}</strong>
             <small>
               {item.body} · {new Date(item.createdAt).toLocaleString("en-IN")}

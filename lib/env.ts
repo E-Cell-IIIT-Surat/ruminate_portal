@@ -7,6 +7,7 @@ const serverSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   SUPER_ADMIN_EMAILS: z.string().default(""),
+  UDHBHAV_ADMIN_EMAILS: z.string().default(""),
   R2_ACCOUNT_ID: z.string().min(1),
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
@@ -73,10 +74,15 @@ export function validateProductionEnvironment() {
 }
 
 export function superAdminEmails() {
-  return new Set(
+  const emails = new Set(
     (process.env.SUPER_ADMIN_EMAILS ?? "")
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean),
   );
+  // These are the portal's baseline administrators. Keep their global access
+  // even if an older deployment has not yet refreshed its .env file.
+  emails.add("ruminate.ecell@iiitsurat.ac.in");
+  emails.add("nishad.deshpande@iiitsurat.ac.in");
+  return emails;
 }
