@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Financial Literacy Workshop" };
+export const dynamic = "force-dynamic";
 
 export default async function FinancialLiteracyWorkshopPage() {
   const workshops = hasDatabaseConfig()

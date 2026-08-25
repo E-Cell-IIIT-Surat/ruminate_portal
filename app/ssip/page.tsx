@@ -15,6 +15,7 @@ import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 
 export const metadata: Metadata = { title: "SSIP · Student Startup & Innovation Policy" };
+export const dynamic = "force-dynamic";
 
 export default async function SsipPage() {
   const program = hasDatabaseConfig()

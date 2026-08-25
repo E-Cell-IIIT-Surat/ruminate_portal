@@ -20,7 +20,7 @@ Ruminate Portal is one reusable program engine for registrations, UdbhAV, SSIP, 
 
 ## Tech stack
 
-Next.js-compatible App Router (Vinext runtime), React 19, TypeScript strict mode, Tailwind CSS, PostgreSQL, Prisma, Auth.js, Google OAuth, Zod, and a private Cloudflare R2 bucket using S3-compatible signed requests.
+Next.js 15 App Router, React 19, TypeScript strict mode, Tailwind CSS, PostgreSQL, Prisma, Auth.js, Google OAuth, Zod, and a private Cloudflare R2 bucket using S3-compatible signed requests.
 
 ## Local setup
 
@@ -33,10 +33,8 @@ Next.js-compatible App Router (Vinext runtime), React 19, TypeScript strict mode
 7. Optionally load development data with `npm run db:seed`.
 8. Start the portal with `npm run dev`.
 
-Local `npm run dev` uses Vinext's Node runtime so PostgreSQL can be reached
-reliably from Windows. The Cloudflare/Miniflare runtime is still used by
-`npm run build`; set `CLOUDFLARE_DEV=true` only when you specifically need to
-test Worker emulation.
+`npm run dev` starts the standard Next.js development server. Production uses
+the normal Node.js runtime provided by Vercel.
 
 ## Environment variables
 
@@ -111,7 +109,7 @@ The pure-domain suite covers deadlines, team bounds, edit overrides, weighted sc
 
 ## Production build and deployment
 
-Run `npm run db:deploy` before starting the new release, then run `npm run build`. Configure all secrets in the hosting platform, keep PostgreSQL and R2 private, force HTTPS, and set `APP_URL` to the canonical portal origin. Google OAuth callback URLs must match exactly. Use a pooled PostgreSQL endpoint compatible with the deployment runtime. The Prisma client uses its JavaScript engine with the PostgreSQL driver adapter and the Worker build enables `nodejs_compat`, avoiding a native query-engine binary in Cloudflare. Back up PostgreSQL, enable R2 object-versioning/retention as policy requires, and forward application logs without confidential answer or file content.
+Run `npm run db:deploy` before starting the new release, then run `npm run build`. Configure all secrets in the hosting platform, keep PostgreSQL and R2 private, force HTTPS, and set `APP_URL` to the canonical portal origin. Google OAuth callback URLs must match exactly. Use a pooled PostgreSQL endpoint compatible with the deployment runtime. The Prisma client uses its JavaScript engine with the PostgreSQL driver adapter, so it runs in standard Vercel serverless functions without a native query-engine binary. Back up PostgreSQL, enable R2 object-versioning/retention as policy requires, and forward application logs without confidential answer or file content.
 
 Use `GET /api/health` as the deployment readiness probe. It returns `200` only when PostgreSQL is configured and reachable. Configure a scheduler to call the protected email processor regularly; failed deliveries are retried up to five times.
 
@@ -143,9 +141,6 @@ A Super Admin grants a core member the Program Manager role and assigns the rele
 
 ```
 rumi_portal
-├─ .openai
-│  ├─ .openai
-│  └─ hosting.json
 ├─ .prettierignore
 ├─ .prettierrc.json
 ├─ app
@@ -299,8 +294,6 @@ rumi_portal
 │  │  └─ page.tsx
 │  └─ _sites-preview
 ├─ auth.ts
-├─ build
-│  └─ sites-vite-plugin.ts
 ├─ components
 │  ├─ account-access-control.tsx
 │  ├─ application-comments.tsx
@@ -391,7 +384,7 @@ rumi_portal
 │  │  └─ migration_lock.toml
 │  ├─ schema.prisma
 │  └─ seed.ts
-├─ proxy.ts
+├─ middleware.ts
 ├─ public
 │  ├─ favicon.svg
 │  ├─ file.svg
@@ -403,8 +396,6 @@ rumi_portal
 ├─ tests
 │  └─ domain.test.ts
 ├─ tsconfig.json
-├─ vite.config.ts
-└─ worker
-   └─ index.ts
+└─ next.config.ts
 
 ```

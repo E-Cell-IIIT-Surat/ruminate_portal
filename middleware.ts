@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/") && !safeMethods.has(request.method)) {
     const isAuth = request.nextUrl.pathname.startsWith("/api/auth/");
     const isInternal = request.nextUrl.pathname.startsWith("/api/internal/");

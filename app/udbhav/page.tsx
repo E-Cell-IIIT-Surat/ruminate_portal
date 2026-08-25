@@ -9,6 +9,7 @@ import { hasDatabaseConfig } from "@/lib/env";
 import { defaultUdbhavWindow } from "@/lib/udbhav";
 
 export const metadata: Metadata = { title: "UdbhAV" };
+export const dynamic = "force-dynamic";
 
 export default async function UdbhavPage() {
   const session = hasDatabaseConfig() ? await auth() : null;

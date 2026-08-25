@@ -10,7 +10,7 @@ Ruminate Portal is the operational system for applications, evaluation, and outc
 2. Small client components handle form editing, autosave, uploads, status changes, and rubric scoring.
 3. Route handlers authenticate the user, validate input with Zod, enforce object scope and rate limits, and call domain services.
 4. Domain services own transactional submission, workflow, evaluation, email-queue, and private-file behavior.
-5. Prisma accesses PostgreSQL through the JavaScript PostgreSQL driver adapter, allowing the server build to run in a Cloudflare Worker-compatible runtime.
+5. Prisma accesses PostgreSQL through the JavaScript PostgreSQL driver adapter, allowing the server build to run in standard Node.js serverless functions.
 6. Private document bytes live in Cloudflare R2; PostgreSQL stores only ownership and file metadata.
 
 ## Identity and authorization
@@ -45,4 +45,4 @@ Announcements target all active applicants, submitted applicants, a status, or a
 
 ## Deployment shape
 
-The application builds to Cloudflare Worker-compatible ESM through Vinext. Runtime secrets are supplied by the hosting environment. PostgreSQL and the private R2 bucket remain external managed services. See `docs/DEPLOYMENT.md` for the release procedure.
+The application builds as a standard Next.js 15 App Router application for Vercel's Node.js runtime. Runtime secrets are supplied by the hosting environment. PostgreSQL and the private R2 bucket remain external managed services. See `docs/DEPLOYMENT.md` for the release procedure.

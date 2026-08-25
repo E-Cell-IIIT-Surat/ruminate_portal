@@ -9,7 +9,7 @@
 
 Ruminate is the digital operations portal for E-Cell IIIT Surat. It gives students a single place to discover programmes, register or submit ideas, upload documents, form teams, follow application status, and receive updates. It gives programme managers, admins, faculty, and reviewers tools to configure forms, assign reviews, score submissions, update statuses, communicate with participants, and audit activity.
 
-The project is a full-stack React/TypeScript application using the Vinext/Vite App Router runtime, Auth.js v5, PostgreSQL, Prisma, and Cloudflare Worker/R2 deployment components.
+The project is a full-stack React/TypeScript application using the Next.js 15 App Router, Auth.js v5, PostgreSQL, Prisma, and Cloudflare R2 storage.
 
 ### Estimated completion
 
@@ -46,14 +46,14 @@ Two baseline super-admin emails are configured by the application’s environmen
 
 ## 3. Technology stack
 
-- **Frontend/server rendering:** React 19, TypeScript, Vinext/Vite App Router, Tailwind CSS 4.
+- **Frontend/server rendering:** Next.js 15 App Router, React 19, TypeScript, Tailwind CSS 4.
 - **Authentication:** Auth.js v5 beta with Google OAuth and Credentials provider.
 - **Database:** PostgreSQL with Prisma 6 and `@prisma/adapter-pg`.
 - **File storage:** private Cloudflare R2 bucket using AWS S3 SDK presigned URLs.
-- **Runtime/deployment:** Cloudflare Worker entrypoint with Cloudflare Vite plugin; local default runtime is stable Node/Vinext, while `CLOUDFLARE_DEV=true` exercises Miniflare/Workers emulation.
+- **Runtime/deployment:** Standard Node.js runtime on Vercel with Cloudflare R2 accessed through its S3-compatible API.
 - **Validation/security:** Zod schemas, server-side authorization, ownership/program scoping, audit logging, rate limiting, signed file URLs, and Auth.js CSRF/session handling.
 - **Email:** queue-backed delivery service; console mode is used locally and Resend is supported for real delivery.
-- **Testing/tooling:** TypeScript, ESLint, Prettier, Node test runner through `tsx`, Prisma migrations, Wrangler.
+- **Testing/tooling:** TypeScript, ESLint, Prettier, Node test runner through `tsx`, and Prisma migrations.
 
 ## 4. Repository tree
 
@@ -88,15 +88,13 @@ rumi_portal/
 │  ├─ schema.prisma
 │  ├─ migrations/
 │  └─ seed.ts
-├─ worker/index.ts                   # Cloudflare Worker entrypoint
-├─ build/sites-vite-plugin.ts        # generated sites/build integration
 ├─ public/                           # logo and social-card assets
 ├─ docs/                             # architecture, security, database, deployment guides
 ├─ tests/domain.test.ts
 ├─ scripts/                          # runtime/build helper scripts
 ├─ auth.ts
-├─ proxy.ts
-├─ vite.config.ts
+├─ middleware.ts
+├─ next.config.ts
 ├─ package.json
 ├─ .env.example
 └─ README.md
@@ -280,27 +278,26 @@ The origin must match the current browser host and the Google Cloud OAuth client
 
 The real `.env` must stay local/secret. This report records names and purpose only.
 
-| Variable                                   | Purpose                                     | Staging guidance                                                                |
-| ------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------- |
-| `DATABASE_URL`                             | PostgreSQL connection string                | Use a dedicated staging database; never use local credentials in production.    |
-| `AUTH_SECRET`                              | Auth.js session/signing secret              | Generate a new random value for staging and production.                         |
-| `AUTH_TRUST_HOST`                          | Allows Auth.js to trust the deployment host | Set only according to the deployment’s Auth.js requirements.                    |
-| `AUTH_URL`, `NEXTAUTH_URL`                 | Canonical Auth.js origin                    | Set both to the exact staging HTTPS origin.                                     |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client credentials             | Use a client whose authorized redirect URI is the exact staging callback.       |
-| `SUPER_ADMIN_EMAILS`                       | Comma-separated global admin allow-list     | Keep minimal; audit every address.                                              |
-| `UDHBHAV_ADMIN_EMAILS`                     | Udbhav-specific allow-list/compatibility    | Keep aligned with the intended professor/admin policy.                          |
-| `R2_ACCOUNT_ID`                            | Cloudflare account identifier               | Configure as a secret/platform variable.                                        |
-| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 S3-compatible credentials                | Use least privilege and rotate if exposed.                                      |
-| `R2_PRIVATE_BUCKET`                        | Private object bucket name                  | Use a separate staging bucket and configure CORS.                               |
-| `EMAIL_PROVIDER`                           | `console` or `resend`                       | Use `console` locally; use `resend` only after sender/domain verification.      |
-| `EMAIL_FROM`                               | Sender identity                             | Must be a verified sender in the email provider.                                |
-| `RESEND_API_KEY`                           | Resend API key                              | Store only as a deployment secret.                                              |
-| `CRON_SECRET`                              | Protects internal email processing endpoint | Required when a scheduler calls the endpoint.                                   |
-| `TURNSTILE_SECRET_KEY`                     | Optional server Turnstile validation        | Add only if guest forms use Turnstile.                                          |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`           | Optional browser Turnstile key              | Safe for browser exposure, paired with server secret.                           |
-| `APP_URL`                                  | Application canonical URL                   | Set to staging/production HTTPS origin.                                         |
-| `NODE_ENV`                                 | Runtime environment                         | `production` for deployed production.                                           |
-| `CLOUDFLARE_DEV`                           | Opts into local Worker/Miniflare runtime    | Keep `false` for stable local Node runtime unless testing Worker compatibility. |
+| Variable                                   | Purpose                                     | Staging guidance                                                             |
+| ------------------------------------------ | ------------------------------------------- | ---------------------------------------------------------------------------- |
+| `DATABASE_URL`                             | PostgreSQL connection string                | Use a dedicated staging database; never use local credentials in production. |
+| `AUTH_SECRET`                              | Auth.js session/signing secret              | Generate a new random value for staging and production.                      |
+| `AUTH_TRUST_HOST`                          | Allows Auth.js to trust the deployment host | Set only according to the deployment’s Auth.js requirements.                 |
+| `AUTH_URL`, `NEXTAUTH_URL`                 | Canonical Auth.js origin                    | Set both to the exact staging HTTPS origin.                                  |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client credentials             | Use a client whose authorized redirect URI is the exact staging callback.    |
+| `SUPER_ADMIN_EMAILS`                       | Comma-separated global admin allow-list     | Keep minimal; audit every address.                                           |
+| `UDHBHAV_ADMIN_EMAILS`                     | Udbhav-specific allow-list/compatibility    | Keep aligned with the intended professor/admin policy.                       |
+| `R2_ACCOUNT_ID`                            | Cloudflare account identifier               | Configure as a secret/platform variable.                                     |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 S3-compatible credentials                | Use least privilege and rotate if exposed.                                   |
+| `R2_PRIVATE_BUCKET`                        | Private object bucket name                  | Use a separate staging bucket and configure CORS.                            |
+| `EMAIL_PROVIDER`                           | `console` or `resend`                       | Use `console` locally; use `resend` only after sender/domain verification.   |
+| `EMAIL_FROM`                               | Sender identity                             | Must be a verified sender in the email provider.                             |
+| `RESEND_API_KEY`                           | Resend API key                              | Store only as a deployment secret.                                           |
+| `CRON_SECRET`                              | Protects internal email processing endpoint | Required when a scheduler calls the endpoint.                                |
+| `TURNSTILE_SECRET_KEY`                     | Optional server Turnstile validation        | Add only if guest forms use Turnstile.                                       |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`           | Optional browser Turnstile key              | Safe for browser exposure, paired with server secret.                        |
+| `APP_URL`                                  | Application canonical URL                   | Set to staging/production HTTPS origin.                                      |
+| `NODE_ENV`                                 | Runtime environment                         | `production` for deployed production.                                        |
 
 ## 9. What has already been verified
 
@@ -313,20 +310,20 @@ The following checks were run after the Google OAuth/client-runtime fixes:
 | `npm.cmd test`                   | Pass; 12 domain tests                                                         |
 | `npm.cmd run format:check`       | Pass                                                                          |
 | `npm.cmd run build`              | Pass                                                                          |
-| `npx wrangler deploy --dry-run`  | Pass; Worker bundle generated                                                 |
+| `npm.cmd run build`              | Pass; standard Next.js production bundle generated                            |
 | Local Auth.js providers endpoint | Google provider present                                                       |
 | Local sign-in POST               | Auth.js sign-in endpoint returned successfully and produced an OAuth redirect |
 
-The dry-run output reported **no Cloudflare bindings**. The bundle can be generated, but this does not prove that production PostgreSQL/R2/email resources are connected in the deployed Worker.
+The local build proves that the standard Next.js bundle can be generated, but it does not prove that production PostgreSQL/R2/email resources are connected in Vercel.
 
 ## 10. Known incomplete work and risks
 
 ### P0 — must complete before sharing a serious staging build
 
-1. **Configure staging infrastructure:** PostgreSQL, R2 private bucket, Worker secrets, and a real HTTPS origin.
+1. **Configure staging infrastructure:** PostgreSQL, R2 private bucket, Vercel environment variables, and a real HTTPS origin.
 2. **Configure OAuth for the staging origin:** add the exact `/api/auth/callback/google` redirect URI and authorized origin; add test users if the OAuth consent screen is in testing mode.
-3. **Verify database connectivity from the deployed Worker:** `/api/health` must return HTTP 200 with database readiness. The local dry-run showed no bindings.
-4. **Verify Cloudflare database architecture:** if the Worker connects to PostgreSQL through Cloudflare, configure the supported Hyperdrive/`pg` binding or otherwise prove that the current adapter works in the selected runtime. Do not assume a local `DATABASE_URL` is sufficient in production.
+3. **Verify database connectivity from the deployed Vercel app:** `/api/health` must return HTTP 200 with database readiness.
+4. **Verify the Vercel environment:** all required variables must be configured for Preview and Production, using a pooled PostgreSQL URL for serverless connections.
 5. **Test R2 upload end to end:** presign, upload, finalize, authorized download, size/type rejection, and expired URL behavior.
 6. **Test email delivery:** switch from console to Resend only after sender/domain verification; run the queue processor/scheduler and test every status template.
 7. **Run the role matrix below with separate accounts.**
@@ -370,17 +367,10 @@ The dry-run output reported **no Cloudflare bindings**. The bundle can be genera
    npm test
    npm run format:check
    npm run build
-   npx wrangler deploy --dry-run
    ```
 
-4. Log in with Wrangler and deploy a named staging Worker:
-
-   ```text
-   npx wrangler login
-   npx wrangler deploy --name ruminate-portal-staging
-   ```
-
-5. Add environment values through Cloudflare secrets/variables or the hosting dashboard. Never commit `.env` or paste secrets into issues.
+4. Import the repository into Vercel with the repository root as the Root Directory, use `npm run build`, and leave Output Directory blank.
+5. Add environment values through Vercel Project Settings. Never commit `.env` or paste secrets into issues.
 6. Set `APP_URL`, `AUTH_URL`, and `NEXTAUTH_URL` to the same staging HTTPS origin.
 7. In Google Cloud, add exactly:
 
@@ -393,11 +383,8 @@ The dry-run output reported **no Cloudflare bindings**. The bundle can be genera
 
 Useful official deployment references:
 
-- [Cloudflare Vite plugin getting started](https://developers.cloudflare.com/workers/vite-plugin/get-started/)
-- [Cloudflare Worker environment variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
-- [Wrangler Worker commands](https://developers.cloudflare.com/workers/wrangler/commands/workers/)
-- [Cloudflare Hyperdrive with PostgreSQL](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/)
-- [Hyperdrive `node-postgres` example](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/node-postgres/)
+- [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying)
+- [Vercel project configuration](https://vercel.com/docs/project-configuration)
 
 ## 12. Teammate acceptance-test plan
 
@@ -458,7 +445,7 @@ Time (IST):
 Screenshot/video:
 Browser console error:
 Network request + status:
-Worker/server log correlation ID (if available):
+Server log correlation ID (if available):
 Can it be reproduced? always | sometimes | once
 ```
 
@@ -467,13 +454,13 @@ Can it be reproduced? always | sometimes | once
 ```text
 You are helping maintain the Ruminate Operations Platform in C:\Users\Acer\Desktop\rumi_portal.
 
-Ruminate is a full-stack React/TypeScript Vinext/Vite App Router application for E-Cell IIIT Surat. It supports public programme discovery, participant applications, configurable forms, teams, private R2 uploads, workshops/bookings, Udbhav idea submissions, reviewer assignments and rubric scoring, admin/manager operations, announcements, notifications, audit logs, exports, Google OAuth, and credentials authentication.
+Ruminate is a full-stack React/TypeScript Next.js 15 App Router application for E-Cell IIIT Surat. It supports public programme discovery, participant applications, configurable forms, teams, private R2 uploads, workshops/bookings, Udbhav idea submissions, reviewer assignments and rubric scoring, admin/manager operations, announcements, notifications, audit logs, exports, Google OAuth, and credentials authentication.
 
-Stack: React 19, TypeScript, Vinext/Vite, Auth.js v5, PostgreSQL, Prisma 6, pg, Cloudflare Worker/R2, Zod, Tailwind CSS. The default local runtime is Node/Vinext; CLOUDFLARE_DEV=true intentionally exercises Miniflare/Workers.
+Stack: Next.js 15, React 19, TypeScript, Auth.js v5, PostgreSQL, Prisma 6, pg, Cloudflare R2, Zod, Tailwind CSS. The local and production runtime is standard Node.js.
 
 Important roles: PARTICIPANT, REVIEWER, PROGRAM_MANAGER, CONTENT_MANAGER, FACULTY_REVIEWER, SUPER_ADMIN. New users normally start as participants. Super-admin/role-management users assign roles and programme-specific reviewer assignments. The professor email nishad.deshpande@iiitsurat.ac.in is intended to have global admin access plus faculty/reviewer powers.
 
-Important files: auth.ts, app/api/auth/[...nextauth]/route.ts, app/signin/page.tsx, lib/client-auth.ts, lib/authz.ts, lib/permissions.ts, lib/db.ts, lib/env.ts, prisma/schema.prisma, worker/index.ts, vite.config.ts, .env.example, docs/DEPLOYMENT.md, docs/SECURITY.md.
+Important files: auth.ts, app/api/auth/[...nextauth]/route.ts, app/signin/page.tsx, lib/client-auth.ts, lib/authz.ts, lib/permissions.ts, lib/db.ts, lib/env.ts, prisma/schema.prisma, next.config.ts, .env.example, docs/DEPLOYMENT.md, docs/SECURITY.md.
 
 Before changing code:
 1. Read docs/CHATGPT_PROJECT_REPORT.md, README.md, docs/DEPLOYMENT.md, docs/SECURITY.md, and the relevant route/service/schema files.
@@ -483,7 +470,7 @@ Before changing code:
 5. Run typecheck, lint, tests, format check, and build after changes.
 6. For deployment issues, verify /api/health, database connectivity, R2 binding/storage, email provider, and exact Google OAuth callback URI on the deployed origin.
 
-Current readiness is approximately 70% overall: the core app and checks pass, but staging infrastructure, Cloudflare database/bindings, R2/email end-to-end verification, browser/API role tests, backups/monitoring, and security review remain. Treat the application as a controlled staging candidate, not as proven production-ready until the P0 checklist passes.
+Current readiness is approximately 70% overall: the core app and checks pass, but staging infrastructure, Vercel environment variables, R2/email end-to-end verification, browser/API role tests, backups/monitoring, and security review remain. Treat the application as a controlled staging candidate, not as proven production-ready until the P0 checklist passes.
 ```
 
 ## 15. Security and release checklist
@@ -497,7 +484,7 @@ Current readiness is approximately 70% overall: the core app and checks pass, bu
 - [ ] Configure file size/type limits and a malware scanning/retention policy.
 - [ ] Configure Resend sender/domain and email queue scheduling.
 - [ ] Configure PostgreSQL backups and test restore.
-- [ ] Configure Worker logs, alerts, uptime checks, and error tracking.
+- [ ] Configure Vercel logs, alerts, uptime checks, and error tracking.
 - [ ] Run the full role matrix with fresh sessions.
 - [ ] Review privacy/consent copy for participant data and student identifiers.
 - [ ] Re-run all quality checks and record the deployment commit/version.

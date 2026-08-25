@@ -46,19 +46,6 @@ async function loadDashboardData(userId: string) {
       take: 4,
     });
 
-  // Miniflare's local Worker TCP adapter can deadlock when several PrismaPg
-  // connections are opened concurrently. Keep that intentionally selected
-  // runtime sequential; normal Node development and production can use the
-  // pool concurrently to avoid four avoidable network round trips.
-  if (process.env.CLOUDFLARE_DEV === "true") {
-    return {
-      applications: await readApplications(),
-      programs: await readPrograms(),
-      notifications: await readNotifications(),
-      teams: await readTeams(),
-    };
-  }
-
   const [applications, programs, notifications, teams] = await Promise.all([
     readApplications(),
     readPrograms(),

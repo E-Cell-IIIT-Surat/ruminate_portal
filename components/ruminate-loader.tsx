@@ -30,7 +30,7 @@ export function RuminateLoader({ label = "Loading Ruminate", overlay = false }: 
   );
 }
 
-/** Shows immediate feedback for Next/Vinext client-side route transitions. */
+/** Shows immediate feedback for Next.js client-side route transitions. */
 export function NavigationLoader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();

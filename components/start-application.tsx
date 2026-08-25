@@ -16,10 +16,8 @@ export function StartApplication({ programId }: { programId: string }) {
           setError(result.error ?? "Unable to start application");
           return;
         }
-        // Vinext's local RSC runtime does not always provide an AppRouter
-        // context while this client component is mounted from a server page.
-        // A hard navigation is intentional here: it also guarantees the new
-        // application data is fetched after the POST succeeds.
+        // A hard navigation guarantees the new application data is fetched
+        // after the POST succeeds.
         window.location.replace(`/applications/${result.application.id}`);
       })
       .catch(() => active && setError("Unable to reach the server"));

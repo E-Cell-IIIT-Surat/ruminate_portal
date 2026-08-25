@@ -9,7 +9,7 @@ import { ensureUserRoles } from "@/lib/services/bootstrap";
 import { compare } from "bcrypt-ts";
 import { superAdminEmails } from "@/lib/env";
 
-// Explicitly read environment variables for the Worker runtime
+// Explicitly read environment variables for the server runtime
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -72,9 +72,8 @@ export const authConfig = {
     Google({
       clientId: googleClientId ?? "",
       clientSecret: googleClientSecret ?? "",
-      // Keep the authorization endpoint explicit. This avoids OIDC discovery
-      // during local Miniflare requests, where outbound discovery fetches can
-      // be unavailable, while token/userinfo requests still use Google's
+      // Keep the authorization endpoint explicit. This avoids an extra OIDC
+      // discovery request while token/userinfo requests still use Google's
       // standard OAuth endpoints during the callback.
       authorization: {
         url: "https://accounts.google.com/o/oauth2/v2/auth",

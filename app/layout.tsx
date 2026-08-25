@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { NetworkStatus } from "@/components/network-status";
 import { NavigationLoader } from "@/components/ruminate-loader";
 import "./globals.css";
@@ -28,7 +29,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         {children}
-        <NavigationLoader />
+        <Suspense fallback={null}>
+          <NavigationLoader />
+        </Suspense>
         <NetworkStatus />
       </body>
     </html>

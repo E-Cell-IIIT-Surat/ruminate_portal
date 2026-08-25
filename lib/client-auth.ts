@@ -1,10 +1,9 @@
 /**
  * Starts an Auth.js OAuth flow from the browser.
  *
- * Vinext's Worker runtime does not always preserve the redirect response used
- * by `next-auth/react`'s `signIn` helper. Calling the same Auth.js endpoints
- * explicitly keeps the CSRF cookie, asks for the JSON redirect response, and
- * then performs the browser navigation ourselves.
+ * Calling the Auth.js endpoints explicitly keeps the CSRF cookie, asks for
+ * the JSON redirect response, and then performs the browser navigation
+ * ourselves. This works consistently in the standard Next.js runtime.
  */
 export async function startGoogleOAuth(callbackUrl = "/dashboard") {
   const providersResponse = await fetch("/api/auth/providers", {
