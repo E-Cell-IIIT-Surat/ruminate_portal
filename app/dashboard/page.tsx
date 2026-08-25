@@ -8,6 +8,7 @@ import { userAuthorizationOrNull } from "@/lib/authz";
 import { Bell, Blocks, ClipboardList, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { participantVisibleStatus } from "@/lib/domain/status";
+import type { Session } from "next-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -63,14 +64,48 @@ export default async function DashboardPage() {
         body="Connect PostgreSQL and configure Google OAuth to activate secure participant access."
       />
     );
-  const session = await auth();
+  let session: Session | null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("[dashboard] authentication check failed", error);
+    return (
+      <AuthGate
+        title="Portal temporarily unavailable"
+        body="The live database or auth service could not be reached. Check the Vercel runtime logs and database connection."
+      />
+    );
+  }
   if (!session?.user) return <AuthGate />;
-  const authorization = await userAuthorizationOrNull(session.user.id);
+  let authorization: Awaited<ReturnType<typeof userAuthorizationOrNull>>;
+  try {
+    authorization = await userAuthorizationOrNull(session.user.id);
+  } catch (error) {
+    console.error("[dashboard] authorization lookup failed", error);
+    return (
+      <AuthGate
+        title="Portal temporarily unavailable"
+        body="Your session is valid, but the portal could not read user permissions from the production database."
+      />
+    );
+  }
   if (!authorization)
     return <AuthGate title="Your session has expired" body="Sign in again to continue to your workspace." />;
   const canManage = authorization.isSuperAdmin || authorization.roles.has("PROGRAM_MANAGER");
   const canReview = authorization.roles.has("REVIEWER") || authorization.roles.has("FACULTY_REVIEWER");
-  const { applications, programs, notifications, teams } = await loadDashboardData(session.user.id);
+  let dashboardData: Awaited<ReturnType<typeof loadDashboardData>>;
+  try {
+    dashboardData = await loadDashboardData(session.user.id);
+  } catch (error) {
+    console.error("[dashboard] data load failed", error);
+    return (
+      <AuthGate
+        title="Portal temporarily unavailable"
+        body="The dashboard could not load from the production database. Check DATABASE_URL and deployed migrations."
+      />
+    );
+  }
+  const { applications, programs, notifications, teams } = dashboardData;
   return (
     <PortalShell mode="participant" title="Participant portal" user={session.user}>
       <PageHeader

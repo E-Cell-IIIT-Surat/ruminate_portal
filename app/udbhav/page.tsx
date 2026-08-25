@@ -7,34 +7,59 @@ import { Badge, ButtonLink } from "@/components/ui";
 import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { defaultUdbhavWindow } from "@/lib/udbhav";
+import type { Session } from "next-auth";
 
 export const metadata: Metadata = { title: "UdbhAV" };
 export const dynamic = "force-dynamic";
 
+function activeCycleQuery() {
+  return db.udbhavCycle.findFirst({
+    where: {
+      status: { not: "CLOSED" },
+      OR: [{ status: "OPEN" }, { closesAt: { gte: new Date() } }],
+    },
+    orderBy: { opensAt: "asc" },
+  });
+}
+
+function ownSubmissionsQuery(userId: string) {
+  return db.udbhavSubmission.findMany({
+    where: { leaderId: userId },
+    orderBy: { updatedAt: "desc" },
+    take: 5,
+    select: { id: true, referenceId: true, title: true, status: true, currentStage: true, totalScore: true },
+  });
+}
+
 export default async function UdbhavPage() {
-  const session = hasDatabaseConfig() ? await auth() : null;
+  const hasDb = hasDatabaseConfig();
+  let session: Session | null = null;
+  let cycle: Awaited<ReturnType<typeof activeCycleQuery>> = null;
+  let ownSubmissions: Awaited<ReturnType<typeof ownSubmissionsQuery>> = [];
   const window = defaultUdbhavWindow();
-  const cycle = hasDatabaseConfig()
-    ? await db.udbhavCycle.findFirst({
-        where: {
-          status: { not: "CLOSED" },
-          OR: [{ status: "OPEN" }, { closesAt: { gte: new Date() } }],
-        },
-        orderBy: { opensAt: "asc" },
-      })
-    : null;
+
+  if (hasDb) {
+    try {
+      session = await auth();
+      cycle = await activeCycleQuery();
+    } catch (error) {
+      console.error("[udbhav] database read failed", error);
+    }
+  }
+
   const now = new Date();
   const opensAt = cycle?.opensAt ?? window.opensAt;
   const closesAt = cycle?.closesAt ?? window.closesAt;
   const isOpen = cycle?.status === "OPEN" || (cycle?.status !== "CLOSED" && now >= opensAt && now <= closesAt);
-  const ownSubmissions = session?.user
-    ? await db.udbhavSubmission.findMany({
-        where: { leaderId: session.user.id },
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-        select: { id: true, referenceId: true, title: true, status: true, currentStage: true, totalScore: true },
-      })
-    : [];
+
+  if (session?.user) {
+    try {
+      ownSubmissions = await ownSubmissionsQuery(session.user.id);
+    } catch (error) {
+      console.error("[udbhav] user submissions read failed", error);
+    }
+  }
+
   return (
     <div className="public-page udbhav-page">
       <PublicHeader />

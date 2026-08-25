@@ -8,36 +8,54 @@ import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
+function programQuery(slug: string) {
+  return db.program.findFirst({
+    where: {
+      slug,
+      archivedAt: null,
+      visibility: { in: ["PUBLIC", "UNLISTED"] },
+      status: { notIn: ["DRAFT", "ARCHIVED"] },
+    },
+    select: {
+      id: true,
+      name: true,
+      shortDescription: true,
+      description: true,
+      eligibility: true,
+      instructions: true,
+      status: true,
+      registrationOpenAt: true,
+      registrationCloseAt: true,
+      startAt: true,
+      endAt: true,
+      capacity: true,
+      participationMode: true,
+      teamMinSize: true,
+      teamMaxSize: true,
+      waitlistEnabled: true,
+    },
+  });
+}
+
+function existingApplicationQuery(programId: string, userId: string) {
+  return db.application.findUnique({
+    where: { programId_userId: { programId, userId } },
+    select: { id: true, status: true },
+  });
+}
+
 export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const program = hasDatabaseConfig()
-    ? await db.program.findFirst({
-        where: {
-          slug,
-          archivedAt: null,
-          visibility: { in: ["PUBLIC", "UNLISTED"] },
-          status: { notIn: ["DRAFT", "ARCHIVED"] },
-        },
-        select: {
-          id: true,
-          name: true,
-          shortDescription: true,
-          description: true,
-          eligibility: true,
-          instructions: true,
-          status: true,
-          registrationOpenAt: true,
-          registrationCloseAt: true,
-          startAt: true,
-          endAt: true,
-          capacity: true,
-          participationMode: true,
-          teamMinSize: true,
-          teamMaxSize: true,
-          waitlistEnabled: true,
-        },
-      })
-    : null;
+  let program: Awaited<ReturnType<typeof programQuery>> = null;
+
+  if (hasDatabaseConfig()) {
+    try {
+      program = await programQuery(slug);
+    } catch (error) {
+      console.error("[program] database read failed", { slug, error });
+    }
+  }
+
   if (!program)
     return (
       <div className="public-page">
@@ -59,13 +77,15 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
       </div>
     );
   const state = registrationState(program);
-  const session = await auth();
-  const existing = session?.user?.id
-    ? await db.application.findUnique({
-        where: { programId_userId: { programId: program.id, userId: session.user.id } },
-        select: { id: true, status: true },
-      })
-    : null;
+  let existing: Awaited<ReturnType<typeof existingApplicationQuery>> = null;
+
+  try {
+    const session = await auth();
+    existing = session?.user?.id ? await existingApplicationQuery(program.id, session.user.id) : null;
+  } catch (error) {
+    console.error("[program] session application lookup failed", { slug, error });
+  }
+
   const format = (value: Date | null) =>
     value
       ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(value)

@@ -39,11 +39,12 @@ const googleFetch: typeof fetch = async (input, init) => {
   }
 };
 
-if (isProduction && (!googleClientId || !googleClientSecret)) {
-  throw new Error("Production authentication configuration is missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET.");
-}
-if (isProduction && !authSecret) {
-  throw new Error("Production authentication configuration is missing AUTH_SECRET.");
+if (isProduction && (!googleClientId || !googleClientSecret || !authSecret)) {
+  console.error("Production authentication configuration is incomplete", {
+    hasGoogleClientId: Boolean(googleClientId),
+    hasGoogleClientSecret: Boolean(googleClientSecret),
+    hasAuthSecret: Boolean(authSecret),
+  });
 }
 
 const rolePriority: RoleName[] = [
@@ -69,7 +70,7 @@ async function getPrimaryRole(userId: string): Promise<RoleName> {
 export const authConfig = {
   basePath: "/api/auth",
   debug: process.env.AUTH_DEBUG === "true",
-  secret: authSecret ?? "ruminate-local-development-secret-not-for-production",
+  secret: authSecret ?? (isProduction ? undefined : "ruminate-local-development-secret-not-for-production"),
   adapter: PrismaAdapter(db),
   providers: [
     Google({

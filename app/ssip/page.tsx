@@ -17,13 +17,24 @@ import { hasDatabaseConfig } from "@/lib/env";
 export const metadata: Metadata = { title: "SSIP · Student Startup & Innovation Policy" };
 export const dynamic = "force-dynamic";
 
+function ssipProgramQuery() {
+  return db.program.findFirst({
+    where: { slug: { in: ["ssip", "ssip-demo"] }, archivedAt: null },
+    select: { slug: true, status: true },
+  });
+}
+
 export default async function SsipPage() {
-  const program = hasDatabaseConfig()
-    ? await db.program.findFirst({
-        where: { slug: { in: ["ssip", "ssip-demo"] }, archivedAt: null },
-        select: { slug: true, status: true },
-      })
-    : null;
+  let program: Awaited<ReturnType<typeof ssipProgramQuery>> = null;
+
+  if (hasDatabaseConfig()) {
+    try {
+      program = await ssipProgramQuery();
+    } catch (error) {
+      console.error("[ssip] database read failed", error);
+    }
+  }
+
   const formHref = program ? `/programs/${program.slug}` : "/programs";
   return (
     <div className="public-page ssip-page">

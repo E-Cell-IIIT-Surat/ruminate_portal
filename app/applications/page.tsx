@@ -6,20 +6,43 @@ import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { ClipboardList } from "lucide-react";
 import { participantVisibleStatus } from "@/lib/domain/status";
+import type { Session } from "next-auth";
 
 export const dynamic = "force-dynamic";
-export default async function ApplicationsPage() {
-  if (!hasDatabaseConfig()) return <AuthGate title="Portal setup required" />;
-  const session = await auth();
-  if (!session?.user) return <AuthGate />;
-  const applications = await db.application.findMany({
-    where: { userId: session.user.id, archivedAt: null },
+
+function applicationsQuery(userId: string) {
+  return db.application.findMany({
+    where: { userId, archivedAt: null },
     include: {
       program: { select: { name: true, slug: true, resultsPublishedAt: true } },
       team: { select: { name: true } },
     },
     orderBy: { updatedAt: "desc" },
   });
+}
+
+export default async function ApplicationsPage() {
+  if (!hasDatabaseConfig()) return <AuthGate title="Portal setup required" />;
+  let session: Session | null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("[applications] authentication check failed", error);
+    return <AuthGate title="Portal temporarily unavailable" body="The live auth service could not be reached." />;
+  }
+  if (!session?.user) return <AuthGate />;
+  let applications: Awaited<ReturnType<typeof applicationsQuery>> = [];
+  try {
+    applications = await applicationsQuery(session.user.id);
+  } catch (error) {
+    console.error("[applications] database read failed", error);
+    return (
+      <AuthGate
+        title="Applications temporarily unavailable"
+        body="The portal could not read applications from the production database."
+      />
+    );
+  }
   return (
     <PortalShell mode="participant" title="Participant portal" user={session.user}>
       <PageHeader

@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+let prismaClient: PrismaClient | undefined;
 
 function requireDatabaseUrl() {
   const value = process.env.DATABASE_URL?.trim();
@@ -29,11 +30,9 @@ function requireDatabaseUrl() {
   return value;
 }
 
-const databaseUrl = requireDatabaseUrl();
-
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createPrismaClient() {
+  const databaseUrl = requireDatabaseUrl();
+  return new PrismaClient({
     adapter: new PrismaPg({
       connectionString: databaseUrl,
       max: 5,
@@ -42,5 +41,19 @@ export const db =
     }),
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+export function getDb() {
+  if (prismaClient) return prismaClient;
+  prismaClient = globalForPrisma.prisma ?? createPrismaClient();
+  if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prismaClient;
+  return prismaClient;
+}
+
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, property) {
+    const client = getDb();
+    const value = Reflect.get(client, property);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

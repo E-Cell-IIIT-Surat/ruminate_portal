@@ -10,14 +10,25 @@ import { hasDatabaseConfig } from "@/lib/env";
 export const metadata: Metadata = { title: "Financial Literacy Workshop" };
 export const dynamic = "force-dynamic";
 
+function workshopsQuery() {
+  return db.workshop.findMany({
+    where: { archivedAt: null },
+    orderBy: [{ startsAt: "desc" }, { createdAt: "desc" }],
+    take: 30,
+  });
+}
+
 export default async function FinancialLiteracyWorkshopPage() {
-  const workshops = hasDatabaseConfig()
-    ? await db.workshop.findMany({
-        where: { archivedAt: null },
-        orderBy: [{ startsAt: "desc" }, { createdAt: "desc" }],
-        take: 30,
-      })
-    : [];
+  let workshops: Awaited<ReturnType<typeof workshopsQuery>> = [];
+
+  if (hasDatabaseConfig()) {
+    try {
+      workshops = await workshopsQuery();
+    } catch (error) {
+      console.error("[financial-literacy-workshop] database read failed", error);
+    }
+  }
+
   const upcoming = workshops.filter((workshop) => workshop.status === "PUBLISHED");
   const previous = workshops.filter((workshop) => workshop.status === "COMPLETED");
   return (
