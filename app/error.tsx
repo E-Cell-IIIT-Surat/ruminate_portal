@@ -12,8 +12,16 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Keep the boundary quiet in production while preserving a useful local trace.
-    if (process.env.NODE_ENV !== "production") console.error(error);
+    // Always log the digest and stack so Vercel Runtime Logs can be correlated
+    // with the generic production error screen shown to users.
+    console.error("[Ruminate route error]", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      digest: error.digest,
+      stack: error.stack,
+    });
 
     // A database reset/migration can invalidate an otherwise valid JWT. Do not
     // strand the user on a runtime-error screen in that expected case; send

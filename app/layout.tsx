@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: { default: "Ruminate Portal", template: "%s · Ruminate Portal" },
   description:
     "The operations platform for programs, applications, reviews, and outcomes at Ruminate — E-Cell IIIT Surat.",
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  metadataBase: process.env.APP_URL ? new URL(process.env.APP_URL) : undefined,
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
   openGraph: {
     title: "Ruminate Operations Platform",

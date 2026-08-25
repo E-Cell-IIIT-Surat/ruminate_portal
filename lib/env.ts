@@ -1,9 +1,20 @@
 import { z } from "zod";
 
+function isPostgresUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return ["postgresql:", "postgres:"].includes(parsed.protocol) && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 const serverSchema = z.object({
-  DATABASE_URL: z.string().url().or(z.string().startsWith("postgresql://")),
+  DATABASE_URL: z.string().refine(isPostgresUrl, "must be a PostgreSQL connection URL"),
   AUTH_SECRET: z.string().min(32),
   AUTH_TRUST_HOST: z.enum(["true", "false"]),
+  AUTH_URL: z.string().url(),
+  NEXTAUTH_URL: z.string().url(),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   SUPER_ADMIN_EMAILS: z.string().default(""),
@@ -17,7 +28,7 @@ const serverSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
   CRON_SECRET: z.string().min(32).optional(),
-  APP_URL: z.string().url().default("http://localhost:3000"),
+  APP_URL: z.string().url(),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
@@ -49,7 +60,8 @@ export function env(): ServerEnv {
 }
 
 export function hasDatabaseConfig() {
-  return Boolean(process.env.DATABASE_URL?.startsWith("postgresql://"));
+  const value = process.env.DATABASE_URL?.trim();
+  return Boolean(value && isPostgresUrl(value));
 }
 
 export function r2Env() {
@@ -69,7 +81,11 @@ export function validateProductionEnvironment() {
   const issues: string[] = [];
   if (config.AUTH_SECRET.toLowerCase().includes("replace")) issues.push("AUTH_SECRET");
   if (config.EMAIL_PROVIDER === "resend" && !config.RESEND_API_KEY) issues.push("RESEND_API_KEY");
-  if (!config.APP_URL.startsWith("https://")) issues.push("APP_URL must use HTTPS");
+  const origins = [config.APP_URL, config.AUTH_URL, config.NEXTAUTH_URL].map((value) => new URL(value).origin);
+  if (origins.some((origin) => !origin.startsWith("https://")))
+    issues.push("APP_URL/AUTH_URL/NEXTAUTH_URL must use HTTPS");
+  if (new Set(origins).size !== 1) issues.push("APP_URL, AUTH_URL, and NEXTAUTH_URL must use the same origin");
+  if (config.AUTH_TRUST_HOST !== "true") issues.push("AUTH_TRUST_HOST must be true");
   if (issues.length) throw new Error(`Invalid production configuration: ${issues.join(", ")}`);
 }
 

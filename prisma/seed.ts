@@ -2,9 +2,12 @@ import { PrismaClient, RoleName, ProgramType, ProgramStatus, ParticipationMode, 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { permissions, rolePermissionMap } from "../lib/permissions";
 
+const databaseUrl = process.env.DATABASE_URL?.trim();
+if (!databaseUrl) throw new Error("DATABASE_URL is required to run the seed script.");
+
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
-    connectionString: process.env.DATABASE_URL ?? "postgresql://invalid:invalid@127.0.0.1:5432/invalid",
+    connectionString: databaseUrl,
   }),
 });
 

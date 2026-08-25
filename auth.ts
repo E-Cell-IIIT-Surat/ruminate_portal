@@ -12,6 +12,8 @@ import { superAdminEmails } from "@/lib/env";
 // Explicitly read environment variables for the server runtime
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const authSecret = process.env.AUTH_SECRET?.trim();
+const isProduction = process.env.NODE_ENV === "production";
 
 const googleFetch: typeof fetch = async (input, init) => {
   const controller = new AbortController();
@@ -37,8 +39,11 @@ const googleFetch: typeof fetch = async (input, init) => {
   }
 };
 
-if (!googleClientId || !googleClientSecret) {
-  console.error("CRITICAL: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing from the runtime environment!");
+if (isProduction && (!googleClientId || !googleClientSecret)) {
+  throw new Error("Production authentication configuration is missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET.");
+}
+if (isProduction && !authSecret) {
+  throw new Error("Production authentication configuration is missing AUTH_SECRET.");
 }
 
 const rolePriority: RoleName[] = [
@@ -64,9 +69,7 @@ async function getPrimaryRole(userId: string): Promise<RoleName> {
 export const authConfig = {
   basePath: "/api/auth",
   debug: process.env.AUTH_DEBUG === "true",
-  secret:
-    process.env.AUTH_SECRET ??
-    (process.env.NODE_ENV !== "production" ? "ruminate-local-development-secret-not-for-production" : undefined),
+  secret: authSecret ?? "ruminate-local-development-secret-not-for-production",
   adapter: PrismaAdapter(db),
   providers: [
     Google({
@@ -154,7 +157,9 @@ export const authConfig = {
       await ensureUserRoles(user);
     },
   },
-  trustHost: process.env.AUTH_TRUST_HOST === "true" || process.env.NODE_ENV !== "production",
+  // Vercel terminates TLS in front of the Node runtime. Auth.js must trust the
+  // forwarded host when constructing OAuth callback URLs.
+  trustHost: true,
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
