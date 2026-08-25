@@ -19,7 +19,7 @@ export default function SignInPage() {
     const oauthError = searchParams.get("error");
     if (!oauthError) return "";
     return oauthError === "Configuration"
-      ? "Google OAuth is not configured for this URL. Add http://localhost:3000/api/auth/callback/google to the Google OAuth client, then restart the server."
+      ? "Google OAuth is not configured for this URL. Add https://ruminate-portal.vercel.app/api/auth/callback/google to the Google OAuth client, then restart the server."
       : `Google sign-in failed (${oauthError}). Please try again.`;
   });
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
