@@ -112,9 +112,6 @@ a {
   gap: 18px;
   justify-content: space-between;
 }
-.public-header-inner .back-button {
-  margin-right: auto;
-}
 .public-nav {
   display: flex;
   gap: 24px;

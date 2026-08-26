@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "The operations platform for programs, applications, reviews, and outcomes at Ruminate — E-Cell IIIT Surat.",
   metadataBase: process.env.APP_URL ? new URL(process.env.APP_URL) : undefined,
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: { icon: "/logo_of_rumi.png", shortcut: "/logo_of_rumi.png" },
   openGraph: {
     title: "Ruminate Operations Platform",
     description: "Ideas move forward when the process does.",

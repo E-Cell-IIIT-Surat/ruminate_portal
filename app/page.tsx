@@ -165,7 +165,7 @@ export default function Home() {
               teams, reviewers, decisions, and updates into one calm workspace.
             </p>
             <Link className="text-link" href="https://ecelliiitsurat.in/" target="_blank" rel="noreferrer">
-              Meet the ecosystem <ArrowRight size={16} />
+             Official website <ArrowRight size={16} />
             </Link>
           </div>
           <div className="value-grid">

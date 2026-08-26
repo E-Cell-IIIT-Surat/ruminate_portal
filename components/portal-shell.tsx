@@ -2,7 +2,6 @@ import { Brand } from "@/components/brand";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PortalNav } from "@/components/portal-nav";
 import { AnnouncementPopover } from "@/components/announcement-popover";
-import { BackButton } from "@/components/back-button";
 import { db } from "@/lib/db";
 
 const navSets = {
@@ -77,7 +76,6 @@ export async function PortalShell({
       <main>
         <header className="portal-topbar">
           <Brand compact />
-          <BackButton fallback={mode === "admin" ? "/admin" : mode === "reviewer" ? "/reviewer" : "/dashboard"} />
           <span>{title}</span>
           <SignOutButton />
         </header>

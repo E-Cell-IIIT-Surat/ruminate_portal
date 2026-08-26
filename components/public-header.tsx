@@ -1,6 +1,5 @@
 import { Brand } from "@/components/brand";
 import { PublicNav } from "@/components/public-nav";
-import { BackButton } from "@/components/back-button";
 import { auth } from "@/auth";
 import { hasDatabaseConfig } from "@/lib/env";
 
@@ -15,7 +14,6 @@ export async function PublicHeader() {
     <header className="public-header">
       <div className="public-header-inner">
         <Brand />
-        <BackButton />
         <PublicNav signedIn={Boolean(session?.user)} />
       </div>
     </header>
