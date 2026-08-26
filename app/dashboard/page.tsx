@@ -43,7 +43,13 @@ async function loadDashboardData(userId: string) {
   const readTeams = () =>
     db.team.findMany({
       where: { leaderId: userId },
-      select: { id: true, name: true, program: { select: { name: true } }, _count: { select: { members: true } } },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        program: { select: { name: true } },
+        _count: { select: { members: true } },
+      },
       take: 4,
     });
 
@@ -240,7 +246,7 @@ export default async function DashboardPage() {
                   <div key={team.id}>
                     <strong>{team.name}</strong>
                     <small>
-                      {team.program.name} · {team._count.members} members
+                      {team.program?.name ?? team.status.replaceAll("_", " ")} · {team._count.members} members
                     </small>
                   </div>
                 ))}

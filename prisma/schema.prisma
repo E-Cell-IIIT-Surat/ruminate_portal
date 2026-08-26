@@ -41,7 +41,10 @@ model User {
   reviewerAssignments       ReviewerAssignment[]       @relation("AssignedReviewer")
   sessions                  Session[]
   ledTeams                  Team[]                     @relation("TeamLeader")
+  approvedTeams             Team[]                     @relation("TeamApprover")
   teamMemberships           TeamMember[]
+  teamJoinRequests          TeamJoinRequest[]          @relation("TeamJoinRequester")
+  teamJoinReviews           TeamJoinRequest[]          @relation("TeamJoinReviewer")
   udbhavCyclesManaged       UdbhavCycle[]              @relation("UdbhavCycleManager")
   udbhavReviews             UdbhavReview[]             @relation("UdbhavReviewer")
   udbhavAssignmentsCreated  UdbhavReviewerAssignment[] @relation("UdbhavAssignmentCreator")
@@ -376,20 +379,31 @@ model ApplicationStageHistory {
 }
 
 model Team {
-  id            String       @id @default(cuid())
-  applicationId String       @unique
-  programId     String
-  leaderId      String
-  name          String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  leader        User         @relation("TeamLeader", fields: [leaderId], references: [id])
-  program       Program      @relation(fields: [programId], references: [id], onDelete: Cascade)
-  members       TeamMember[]
+  id             String            @id @default(cuid())
+  applicationId  String?           @unique
+  programId      String?
+  leaderId       String
+  name           String
+  motto          String?
+  projectSummary String?
+  lookingFor     String?
+  requiredMembers Int              @default(4)
+  status         TeamStatus        @default(PENDING_APPROVAL)
+  isPublic       Boolean           @default(false)
+  approvedAt     DateTime?
+  approvedById   String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  application    Application?      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  approvedBy     User?             @relation("TeamApprover", fields: [approvedById], references: [id])
+  joinRequests   TeamJoinRequest[]
+  leader         User              @relation("TeamLeader", fields: [leaderId], references: [id])
+  program        Program?          @relation(fields: [programId], references: [id], onDelete: Cascade)
+  members        TeamMember[]
 
   @@index([programId])
   @@index([leaderId])
+  @@index([status, isPublic, updatedAt])
 }
 
 model TeamMember {
@@ -410,6 +424,25 @@ model TeamMember {
   @@unique([teamId, email])
   @@index([teamId, order])
   @@index([userId])
+}
+
+model TeamJoinRequest {
+  id          String                @id @default(cuid())
+  teamId      String
+  requesterId String
+  message     String?
+  status      TeamJoinRequestStatus @default(PENDING)
+  reviewedAt  DateTime?
+  reviewedById String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  requester   User                  @relation("TeamJoinRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewedBy  User?                 @relation("TeamJoinReviewer", fields: [reviewedById], references: [id])
+  team        Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, requesterId])
+  @@index([requesterId, status])
+  @@index([teamId, status, createdAt])
 }
 
 model ApplicationFile {
@@ -811,6 +844,21 @@ enum ParticipationMode {
   INDIVIDUAL
   TEAM
   BOTH
+}
+
+enum TeamStatus {
+  PENDING_APPROVAL
+  PUBLIC
+  CLOSED
+  REJECTED
+  ARCHIVED
+}
+
+enum TeamJoinRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
 }
 
 enum FormVersionStatus {

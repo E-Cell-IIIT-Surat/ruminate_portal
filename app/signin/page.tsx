@@ -205,6 +205,7 @@ import { ShieldCheck, Sparkles } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BackButton } from "@/components/back-button";
 import { Brand } from "@/components/brand";
 import { SparkField } from "@/components/spark-field";
 import { startGoogleOAuth } from "@/lib/client-auth";
@@ -291,6 +292,9 @@ export default function SignInPage() {
   return (
     <main className="auth-screen auth-screen-branded">
       <SparkField />
+      <div className="auth-back">
+        <BackButton />
+      </div>
       <div className="auth-layout">
         <section className="auth-story">
           <Brand />

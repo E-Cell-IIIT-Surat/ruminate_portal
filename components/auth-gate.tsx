@@ -1,4 +1,5 @@
 import { LockKeyhole } from "lucide-react";
+import { BackButton } from "@/components/back-button";
 import { Brand } from "@/components/brand";
 import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import Link from "next/link";
@@ -13,6 +14,9 @@ export function AuthGate({
   const setupRequired = title.toLowerCase().includes("setup required");
   return (
     <main className="auth-screen">
+      <div className="auth-back">
+        <BackButton />
+      </div>
       <div className="auth-card">
         <Brand />
         <span className="auth-icon">

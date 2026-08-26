@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import Link from "next/link";
+import { BackButton } from "@/components/back-button";
 
 export function StartApplication({ programId }: { programId: string }) {
   const [error, setError] = useState("");
@@ -27,6 +28,9 @@ export function StartApplication({ programId }: { programId: string }) {
   }, [programId]);
   return (
     <main className="auth-screen">
+      <div className="auth-back">
+        <BackButton fallback="/programs" />
+      </div>
       <div className="auth-card">
         <span className="auth-icon spinning">
           <LoaderCircle />

@@ -3,6 +3,7 @@
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
+import { BackButton } from "@/components/back-button";
 
 export default function Error({
   error,
@@ -32,6 +33,9 @@ export default function Error({
   }, [error]);
   return (
     <main className="route-state route-state-error">
+      <div className="auth-back">
+        <BackButton />
+      </div>
       <div className="route-state-icon">
         <AlertTriangle size={25} />
       </div>

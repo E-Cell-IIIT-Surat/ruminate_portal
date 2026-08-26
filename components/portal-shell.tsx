@@ -2,6 +2,7 @@ import { Brand } from "@/components/brand";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PortalNav } from "@/components/portal-nav";
 import { AnnouncementPopover } from "@/components/announcement-popover";
+import { BackButton } from "@/components/back-button";
 import { db } from "@/lib/db";
 
 const navSets = {
@@ -21,6 +22,7 @@ const navSets = {
     ["Workshop bookings", "/admin/workshops/bookings", "ClipboardList"],
     ["Reviews", "/admin/reviews", "FileCheck2"],
     ["Participants", "/admin/participants", "UsersRound"],
+    ["Teams", "/admin/teams", "UsersRound"],
     ["Announcements", "/admin/announcements", "Megaphone"],
     ["UdbhAV", "/admin/udbhav", "Rocket"],
     ["Analytics", "/admin/analytics", "Gauge"],
@@ -48,11 +50,16 @@ export async function PortalShell({
   children: React.ReactNode;
 }) {
   const announcement = user?.id
-    ? await db.notification.findFirst({
-        where: { userId: user.id, type: "ANNOUNCEMENT", readAt: null },
-        select: { id: true, title: true, body: true, href: true, createdAt: true },
-        orderBy: { createdAt: "desc" },
-      })
+    ? await db.notification
+        .findFirst({
+          where: { userId: user.id, type: "ANNOUNCEMENT", readAt: null },
+          select: { id: true, title: true, body: true, href: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        })
+        .catch((error) => {
+          console.error("[portal-shell] announcement lookup failed", error);
+          return null;
+        })
     : null;
   return (
     <div className="portal-layout">
@@ -70,6 +77,7 @@ export async function PortalShell({
       <main>
         <header className="portal-topbar">
           <Brand compact />
+          <BackButton fallback={mode === "admin" ? "/admin" : mode === "reviewer" ? "/reviewer" : "/dashboard"} />
           <span>{title}</span>
           <SignOutButton />
         </header>
