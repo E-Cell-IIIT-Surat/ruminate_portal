@@ -76,7 +76,6 @@
 // }
 
 
-
 "use client";
 
 import Image from "next/image";
@@ -96,13 +95,17 @@ export function RuminateLoader({ label = "Loading Ruminate", overlay = false }: 
     <div className={overlay ? "ruminate-loader-overlay" : "ruminate-loader-page"} role="status" aria-live="polite">
       <div className="ruminate-loader-card">
         <div className="ruminate-loader-orbit" aria-hidden="true">
+          <span className="ruminate-loader-glow" />
           <span className="ruminate-loader-ring" />
           <span className="ruminate-loader-flame">
-            <Image src="/logo_of_rumi.png" alt="" width={36} height={36} priority className="ruminate-loader-flame-img" />
+            <Image src="/ruminate-logo.png" alt="" width={40} height={40} priority className="ruminate-loader-flame-img" />
           </span>
         </div>
         <p className="ruminate-loader-eyebrow">Ruminate</p>
         <p className="ruminate-loader-title">{label}</p>
+        <div className="ruminate-loader-track" aria-hidden="true">
+          <span />
+        </div>
       </div>
     </div>
   );
