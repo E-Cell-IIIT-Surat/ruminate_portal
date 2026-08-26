@@ -77,9 +77,9 @@
 
 
 
-
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -97,7 +97,9 @@ export function RuminateLoader({ label = "Loading Ruminate", overlay = false }: 
       <div className="ruminate-loader-card">
         <div className="ruminate-loader-orbit" aria-hidden="true">
           <span className="ruminate-loader-ring" />
-          <span className="ruminate-loader-mark">R</span>
+          <span className="ruminate-loader-flame">
+            <Image src="/logo_of_rumi.png" alt="" width={36} height={36} priority className="ruminate-loader-flame-img" />
+          </span>
         </div>
         <p className="ruminate-loader-eyebrow">Ruminate</p>
         <p className="ruminate-loader-title">{label}</p>
