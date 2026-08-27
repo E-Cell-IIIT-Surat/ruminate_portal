@@ -58,8 +58,11 @@ export default async function ProgramsPage({
           </select>
           <input
             name="year"
+            type="number"
             inputMode="numeric"
-            pattern="\d{4}"
+            min="2000"
+            max="2100"
+            step="1"
             defaultValue={filters.year ?? ""}
             placeholder="Year"
             aria-label="Program year"

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { emailEnv } from "@/lib/env";
+import nodemailer from "nodemailer";
 
 export async function queueEmail(input: {
   recipientEmail: string;
@@ -28,6 +29,26 @@ export async function deliverEmail(id: string) {
   }
 
   try {
+    if (config.EMAIL_PROVIDER === "smtp") {
+      const fromAddress = config.EMAIL_FROM.match(/<([^>]+)>/)?.[1]?.trim() ?? config.EMAIL_FROM.trim();
+      const transporter = nodemailer.createTransport({
+        host: config.SMTP_HOST,
+        port: config.SMTP_PORT,
+        secure: config.SMTP_SECURE,
+        auth: { user: config.SMTP_USER, pass: config.SMTP_PASS },
+      });
+      const result = await transporter.sendMail({
+        from: { name: "Ruminate · E-Cell IIIT Surat", address: fromAddress },
+        to: delivery.recipientEmail,
+        subject: delivery.subject,
+        text: delivery.textBody,
+      });
+      return db.emailDelivery.update({
+        where: { id },
+        data: { status: "SENT", providerId: result.messageId, sentAt: new Date() },
+      });
+    }
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -49,6 +70,12 @@ export async function deliverEmail(id: string) {
     });
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 120) : "EMAIL_PROVIDER_ERROR";
+    console.error(`[email ${config.EMAIL_PROVIDER} delivery failed]`, {
+      deliveryId: id,
+      recipientEmail: delivery.recipientEmail,
+      templateKey: delivery.templateKey,
+      error,
+    });
     await db.emailDelivery.update({ where: { id }, data: { status: "FAILED", errorCode: code } });
     return null;
   }

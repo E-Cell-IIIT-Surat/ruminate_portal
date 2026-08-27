@@ -41,8 +41,11 @@ the normal Node.js runtime provided by Vercel.
 Required in production:
 
 - `DATABASE_URL`
+- `DIRECT_URL` (direct PostgreSQL endpoint used by Prisma migrations)
 - `AUTH_SECRET`
 - `AUTH_TRUST_HOST`
+- `AUTH_URL`
+- `NEXTAUTH_URL`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `SUPER_ADMIN_EMAILS`
@@ -54,7 +57,11 @@ Required in production:
 - `EMAIL_FROM`
 - `APP_URL`
 
-Optional/provider-specific: `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, and `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. No server secret uses the `NEXT_PUBLIC_` prefix.
+When `EMAIL_PROVIDER=resend`, add `RESEND_API_KEY`. When `EMAIL_PROVIDER=smtp`, add
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, and `SMTP_PASS`. Optional
+Turnstile values are `TURNSTILE_SECRET_KEY` and
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY`; no server secret uses the `NEXT_PUBLIC_`
+prefix.
 
 `CRON_SECRET` is required when a scheduler calls the protected email-queue processor. Generate a random value of at least 32 characters and send it as `Authorization: Bearer <CRON_SECRET>` to `POST /api/internal/email/process`.
 
@@ -85,7 +92,7 @@ Recommended bucket CORS permits `PUT` from the portal origin and the exact conte
 
 ## Email configuration
 
-`EMAIL_PROVIDER=console` is the safe development setting and must never contact a production provider. Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, and a verified `EMAIL_FROM` only in production. Delivery attempts belong in `EmailDelivery`; providers must be called from a queue or retry-capable server workflow.
+`EMAIL_PROVIDER=console` is the safe development setting and must never contact a production provider. Set `EMAIL_PROVIDER=resend` with `RESEND_API_KEY` and a verified `EMAIL_FROM`, or set `EMAIL_PROVIDER=smtp` with all five `SMTP_*` values. Delivery attempts belong in `EmailDelivery`; providers must be called from a queue or retry-capable server workflow.
 
 ## Seed data
 

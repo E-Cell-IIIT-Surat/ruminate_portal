@@ -142,7 +142,15 @@ export function TeamDirectory({
             </label>
             <label>
               Members needed *
-              <input className="input" name="requiredMembers" required type="number" min={2} max={12} defaultValue={4} />
+              <input
+                className="input"
+                name="requiredMembers"
+                required
+                type="number"
+                min={2}
+                max={12}
+                defaultValue={4}
+              />
             </label>
           </div>
           <label>

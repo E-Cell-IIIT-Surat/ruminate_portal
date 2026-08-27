@@ -17,9 +17,9 @@ import {
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-type NavItem = readonly [string, string, keyof typeof icons];
+export type NavItem = readonly [string, string, keyof typeof portalIcons];
 
-const icons = {
+export const portalIcons = {
   Bell,
   Blocks,
   BookOpenCheck,
@@ -39,7 +39,7 @@ export function PortalNav({ items }: { items: readonly NavItem[] }) {
   return (
     <nav aria-label="Portal navigation">
       {items.map(([label, href, iconName]) => {
-        const Icon = icons[iconName];
+        const Icon = portalIcons[iconName];
         const [targetPath, targetQuery] = href.split("?");
         const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
         const queryMatches = targetQuery

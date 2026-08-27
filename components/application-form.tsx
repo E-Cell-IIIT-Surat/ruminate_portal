@@ -470,6 +470,7 @@ function DynamicInput({
           className="input"
           id={field.id}
           disabled={locked}
+          required={field.required}
           type={
             field.type === "EMAIL"
               ? "email"
@@ -483,9 +484,19 @@ function DynamicInput({
                       ? "date"
                       : "text"
           }
+          inputMode={field.type === "NUMBER" ? "decimal" : field.type === "PHONE" ? "tel" : undefined}
+          pattern={field.type === "PHONE" ? "^[+\\d][\\d\\s().-]{7,24}$" : undefined}
           value={String(value ?? "")}
           placeholder={field.placeholder ?? ""}
-          onChange={(event) => onChange(field.type === "NUMBER" ? Number(event.target.value) : event.target.value)}
+          onChange={(event) =>
+            onChange(
+              field.type === "NUMBER"
+                ? event.target.value === ""
+                  ? ""
+                  : Number(event.target.value)
+                : event.target.value,
+            )
+          }
         />
       )}
       {field.helpText && !["CONSENT", "CHECKBOX"].includes(field.type) && <small>{field.helpText}</small>}

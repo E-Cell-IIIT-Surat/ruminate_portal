@@ -75,7 +75,6 @@
 //   return loading ? <RuminateLoader label="Opening your workspace" overlay /> : null;
 // }
 
-
 "use client";
 
 import Image from "next/image";
@@ -98,7 +97,14 @@ export function RuminateLoader({ label = "Loading Ruminate", overlay = false }: 
           <span className="ruminate-loader-glow" />
           <span className="ruminate-loader-ring" />
           <span className="ruminate-loader-flame">
-            <Image src="/ruminate-logo.png" alt="" width={40} height={40} priority className="ruminate-loader-flame-img" />
+            <Image
+              src="/ruminate-logo.png"
+              alt=""
+              width={40}
+              height={40}
+              priority
+              className="ruminate-loader-flame-img"
+            />
           </span>
         </div>
         <p className="ruminate-loader-eyebrow">Ruminate</p>

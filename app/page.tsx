@@ -165,7 +165,7 @@ export default function Home() {
               teams, reviewers, decisions, and updates into one calm workspace.
             </p>
             <Link className="text-link" href="https://ecelliiitsurat.in/" target="_blank" rel="noreferrer">
-             Official website <ArrowRight size={16} />
+              Official website <ArrowRight size={16} />
             </Link>
           </div>
           <div className="value-grid">
@@ -318,6 +318,8 @@ export default function Home() {
             <a href="https://teams.ecelliiitsurat.in/" target="_blank" rel="noreferrer">
               Ruminate network
             </a>
+            <Link href="/privacy">Privacy policy</Link>
+            <Link href="/terms">Terms of use</Link>
           </div>
         </div>
         <div className="footer-bottom">

@@ -4,12 +4,20 @@ const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/") && !safeMethods.has(request.method)) {
-    const isAuth = request.nextUrl.pathname.startsWith("/api/auth/");
+    const isAuth = request.nextUrl.pathname.startsWith("/api/auth/") && request.nextUrl.pathname !== "/api/auth/signup";
     const isInternal = request.nextUrl.pathname.startsWith("/api/internal/");
     if (!isAuth && !isInternal) {
       const fetchSite = request.headers.get("sec-fetch-site");
       const origin = request.headers.get("origin");
-      if (fetchSite === "cross-site" || (origin && new URL(origin).origin !== request.nextUrl.origin))
+      let crossOrigin = false;
+      if (origin) {
+        try {
+          crossOrigin = new URL(origin).origin !== request.nextUrl.origin;
+        } catch {
+          crossOrigin = true;
+        }
+      }
+      if (fetchSite === "cross-site" || crossOrigin)
         return NextResponse.json({ error: "Cross-site request rejected", code: "CSRF_REJECTED" }, { status: 403 });
     }
   }

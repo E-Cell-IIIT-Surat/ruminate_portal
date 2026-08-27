@@ -11,6 +11,7 @@ function isPostgresUrl(value: string) {
 
 const serverSchema = z.object({
   DATABASE_URL: z.string().refine(isPostgresUrl, "must be a PostgreSQL connection URL"),
+  DIRECT_URL: z.string().refine(isPostgresUrl, "must be a PostgreSQL connection URL"),
   AUTH_SECRET: z.string().min(32),
   AUTH_TRUST_HOST: z.enum(["true", "false"]),
   AUTH_URL: z.string().url(),
@@ -23,9 +24,14 @@ const serverSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().min(1),
   R2_SECRET_ACCESS_KEY: z.string().min(1),
   R2_PRIVATE_BUCKET: z.string().min(1),
-  EMAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
+  EMAIL_PROVIDER: z.enum(["console", "resend", "smtp"]).default("console"),
   EMAIL_FROM: z.string().min(3),
   RESEND_API_KEY: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_SECURE: z.enum(["true", "false"]).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
   CRON_SECRET: z.string().min(32).optional(),
   APP_URL: z.string().url(),
@@ -43,8 +49,25 @@ const emailSchema = serverSchema.pick({
   EMAIL_PROVIDER: true,
   EMAIL_FROM: true,
   RESEND_API_KEY: true,
+  SMTP_HOST: true,
+  SMTP_PORT: true,
+  SMTP_SECURE: true,
+  SMTP_USER: true,
+  SMTP_PASS: true,
   CRON_SECRET: true,
 });
+
+export type EmailConfig = {
+  EMAIL_PROVIDER: "console" | "resend" | "smtp";
+  EMAIL_FROM: string;
+  RESEND_API_KEY?: string;
+  SMTP_HOST?: string;
+  SMTP_PORT?: number;
+  SMTP_SECURE?: boolean;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  CRON_SECRET?: string;
+};
 
 let cached: ServerEnv | undefined;
 
@@ -68,11 +91,38 @@ export function r2Env() {
   return r2Schema.parse(process.env);
 }
 
-export function emailEnv() {
+export function emailEnv(): EmailConfig {
   const config = emailSchema.parse(process.env);
   if (config.EMAIL_PROVIDER === "resend" && !config.RESEND_API_KEY)
     throw new Error("RESEND_API_KEY is required when EMAIL_PROVIDER=resend");
-  return config;
+  if (config.EMAIL_PROVIDER !== "smtp")
+    return {
+      EMAIL_PROVIDER: config.EMAIL_PROVIDER,
+      EMAIL_FROM: config.EMAIL_FROM.trim(),
+      RESEND_API_KEY: config.RESEND_API_KEY,
+      CRON_SECRET: config.CRON_SECRET,
+    };
+
+  const missing = (["SMTP_HOST", "SMTP_PORT", "SMTP_SECURE", "SMTP_USER", "SMTP_PASS"] as const).filter(
+    (key) => !config[key]?.trim(),
+  );
+  if (missing.length) throw new Error(`SMTP configuration is incomplete: ${missing.join(", ")} is required`);
+
+  const port = Number(config.SMTP_PORT);
+  if (!Number.isInteger(port) || port < 1 || port > 65535)
+    throw new Error("SMTP_PORT must be an integer between 1 and 65535 when EMAIL_PROVIDER=smtp");
+
+  return {
+    EMAIL_PROVIDER: config.EMAIL_PROVIDER,
+    EMAIL_FROM: config.EMAIL_FROM.trim(),
+    RESEND_API_KEY: config.RESEND_API_KEY,
+    CRON_SECRET: config.CRON_SECRET,
+    SMTP_HOST: config.SMTP_HOST?.trim(),
+    SMTP_PORT: port,
+    SMTP_SECURE: config.SMTP_SECURE === "true",
+    SMTP_USER: config.SMTP_USER?.trim(),
+    SMTP_PASS: config.SMTP_PASS,
+  } satisfies EmailConfig;
 }
 
 export function validateProductionEnvironment() {
@@ -81,6 +131,13 @@ export function validateProductionEnvironment() {
   const issues: string[] = [];
   if (config.AUTH_SECRET.toLowerCase().includes("replace")) issues.push("AUTH_SECRET");
   if (config.EMAIL_PROVIDER === "resend" && !config.RESEND_API_KEY) issues.push("RESEND_API_KEY");
+  if (config.EMAIL_PROVIDER === "smtp") {
+    try {
+      emailEnv();
+    } catch (error) {
+      issues.push(error instanceof Error ? error.message : "SMTP configuration");
+    }
+  }
   const origins = [config.APP_URL, config.AUTH_URL, config.NEXTAUTH_URL].map((value) => new URL(value).origin);
   if (origins.some((origin) => !origin.startsWith("https://")))
     issues.push("APP_URL/AUTH_URL/NEXTAUTH_URL must use HTTPS");

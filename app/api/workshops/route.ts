@@ -23,7 +23,12 @@ const workshopSchema = z
     description: z.string().trim().min(20).max(10000),
     bannerUrl: z.string().trim().url("Use a complete banner image URL").optional().or(z.literal("")),
     batch: z.string().trim().max(80).optional().or(z.literal("")),
-    year: z.string().trim().max(20).optional().or(z.literal("")),
+    year: z
+      .string()
+      .trim()
+      .regex(/^20\d{2}$/, "Enter a valid year")
+      .optional()
+      .or(z.literal("")),
     venue: z.string().trim().max(180).optional().or(z.literal("")),
     capacity: optionalPositiveInt,
     startsAt: optionalDate,

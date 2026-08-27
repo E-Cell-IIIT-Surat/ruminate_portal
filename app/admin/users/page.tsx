@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { AccountAccessControl } from "@/components/account-access-control";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   await requirePermission("user:manage");
   await requirePermission("role:manage");
@@ -63,7 +64,14 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   <small>{user.email}</small>
                 </td>
                 <td>
-                  <RoleEditor userId={user.id} initial={user.roles.map(({ role }) => role.name)} />
+                  <RoleEditor
+                    key={`${user.id}:${user.roles
+                      .map(({ role }) => role.name)
+                      .sort()
+                      .join(",")}`}
+                    userId={user.id}
+                    initial={user.roles.map(({ role }) => role.name)}
+                  />
                 </td>
                 <td>{user.archivedAt ? "Disabled" : "Active"}</td>
                 <td>

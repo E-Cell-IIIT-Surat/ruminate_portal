@@ -5,10 +5,20 @@ import { safeError } from "@/lib/errors";
 
 const profileInput = z.object({
   name: z.string().min(2).max(120),
-  phone: z.string().max(30).nullable().optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^[+\d][\d\s().-]{7,24}$/, "Enter a valid phone number")
+    .nullable()
+    .optional(),
   institution: z.string().max(180).nullable().optional(),
   degree: z.string().max(120).nullable().optional(),
-  studyYear: z.string().max(60).nullable().optional(),
+  studyYear: z
+    .string()
+    .trim()
+    .regex(/^20\d{2}$/, "Enter a valid academic year")
+    .nullable()
+    .optional(),
   city: z.string().max(120).nullable().optional(),
   studentId: z.string().max(80).nullable().optional(),
 });

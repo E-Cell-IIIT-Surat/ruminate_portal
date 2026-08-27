@@ -7,16 +7,22 @@ export function UdbhavFileUpload({ submissionId, hasFile }: { submissionId: stri
   const [busy, setBusy] = useState(false);
   async function upload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setBusy(true);
     setState("Uploading…");
-    const response = await fetch(`/api/udbhav/submissions/${submissionId}/file`, {
-      method: "POST",
-      body: new FormData(event.currentTarget),
-    });
-    const result = (await response.json().catch(() => ({}))) as { error?: string };
-    setState(response.ok ? "Document uploaded securely." : (result.error ?? "Upload failed"));
-    setBusy(false);
-    if (response.ok) event.currentTarget.reset();
+    try {
+      const response = await fetch(`/api/udbhav/submissions/${submissionId}/file`, {
+        method: "POST",
+        body: new FormData(form),
+      });
+      const result = (await response.json().catch(() => ({}))) as { error?: string };
+      setState(response.ok ? "Document uploaded securely." : (result.error ?? "Upload failed"));
+      if (response.ok) form.reset();
+    } catch (error) {
+      setState(error instanceof Error ? error.message : "Upload failed. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
   async function download() {
     const response = await fetch(`/api/udbhav/submissions/${submissionId}/file`);
@@ -35,8 +41,14 @@ export function UdbhavFileUpload({ submissionId, hasFile }: { submissionId: stri
           {state}
         </span>
       </div>
-      <p className="muted-copy">PDF, Word, PowerPoint, or Excel · maximum 5 MB · stored in private R2 storage.</p>
-      <input className="input" name="file" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" required />
+      <p className="muted-copy">PDF or DOCX only · maximum 5 MB · stored in private R2 storage.</p>
+      <input
+        className="input"
+        name="file"
+        type="file"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        required
+      />
       <button className="button button-secondary" disabled={busy}>
         {busy ? "Uploading…" : "Upload document"}
       </button>

@@ -44,6 +44,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       update: { assignedById: current.id, status: "ASSIGNED" },
       include: { reviewer: { select: { id: true, name: true, email: true } } },
     });
+    await db.auditLog.create({
+      data: {
+        actorId: current.id,
+        action: "udbhav.reviewer.assigned",
+        entityType: "UdbhavSubmission",
+        entityId: id,
+        metadata: { reviewerId: reviewer.id, assignmentId: assignment.id },
+      },
+    });
     await db.notification.create({
       data: {
         userId: reviewer.id,
@@ -63,6 +72,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return Response.json({ assignment });
   } catch (error) {
-    return safeError(error);
+    return safeError(error, { route: "/api/udbhav/submissions/[id]/reviewers", method: "POST" });
   }
 }

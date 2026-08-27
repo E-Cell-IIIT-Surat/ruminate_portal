@@ -46,10 +46,29 @@ export function ProgramForm() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    const result = await response.json();
+    const result = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      fields?: Record<string, unknown>;
+      program?: { id: string };
+    };
     setBusy(false);
     if (!response.ok) {
-      setError(result.error ?? "Unable to create program");
+      const fieldErrors = result.fields
+        ? Object.entries(result.fields)
+            .flatMap(([field, messages]) =>
+              (Array.isArray(messages) ? messages : [messages]).map((message) => `${field}: ${String(message)}`),
+            )
+            .join(" ")
+        : "";
+      setError(
+        fieldErrors
+          ? `${result.error ?? "Please check the submitted information"} ${fieldErrors}`
+          : (result.error ?? "Unable to create program"),
+      );
+      return;
+    }
+    if (!result.program?.id) {
+      setError("The program was created but no program reference was returned. Refresh and check Programs.");
       return;
     }
     router.push(`/admin/programs/${result.program.id}`);
@@ -64,7 +83,7 @@ export function ProgramForm() {
         </div>
         <div className="field">
           <label htmlFor="slug">Slug</label>
-          <input className="input" id="slug" name="slug" required pattern="[a-z0-9-]+" placeholder="udbhav-2026" />
+          <input className="input" id="slug" name="slug" required pattern={"[a-z0-9\\-]+"} placeholder="udbhav-2026" />
         </div>
         <div className="field">
           <label htmlFor="type">Program type</label>

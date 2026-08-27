@@ -54,11 +54,11 @@ export default async function SsipPage() {
               </ButtonLink>
               <a
                 className="button button-secondary"
-                href="https://iiitsurat.ac.in/static/media/TNP_Brochure_2024_25_U1.ab56caebb7fda60d5b09.pdf"
+                href="https://ecelliiitsurat.in/ssip"
                 target="_blank"
                 rel="noreferrer"
               >
-                Official SSIP overview <ExternalLink size={15} />
+                Learn more about SSIP <ExternalLink size={15} />
               </a>
             </div>
           </div>

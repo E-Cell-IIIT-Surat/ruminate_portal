@@ -6,6 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -53,6 +54,7 @@ model User {
   udbhavSubmissions         UdbhavSubmission[]         @relation("UdbhavLeader")
   roles                     UserRole[]
   workshopsCreated          Workshop[]                 @relation("WorkshopCreator")
+  feedback                  Feedback[]
 }
 
 model Account {
@@ -803,6 +805,20 @@ model RateLimitBucket {
   @@index([expiresAt])
 }
 
+model Feedback {
+  id        String       @id @default(cuid())
+  userId    String?
+  email     String?
+  type      FeedbackType
+  message   String
+  pagePath  String?
+  createdAt DateTime     @default(now())
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+}
+
 enum RoleName {
   PARTICIPANT
   REVIEWER
@@ -930,6 +946,12 @@ enum EmailStatus {
   SENT
   FAILED
   SUPPRESSED
+}
+
+enum FeedbackType {
+  BUG
+  SUGGESTION
+  OTHER
 }
 
 enum WorkshopBookingStatus {

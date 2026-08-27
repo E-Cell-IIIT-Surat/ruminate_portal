@@ -1,13 +1,13 @@
 import { Brand } from "@/components/brand";
 import { SignOutButton } from "@/components/sign-out-button";
 import { PortalNav } from "@/components/portal-nav";
+import { MobilePortalNav } from "@/components/mobile-portal-nav";
 import { AnnouncementPopover } from "@/components/announcement-popover";
 import { db } from "@/lib/db";
 
 const navSets = {
   participant: [
     ["Dashboard", "/dashboard", "Gauge"],
-    ["Programs", "/programs", "Blocks"],
     ["Applications", "/applications", "ClipboardList"],
     ["Teams", "/teams", "UsersRound"],
     ["Notifications", "/notifications", "Bell"],
@@ -27,6 +27,7 @@ const navSets = {
     ["Analytics", "/admin/analytics", "Gauge"],
     ["Users & Roles", "/admin/users", "ShieldCheck"],
     ["Audit Logs", "/admin/audit-logs", "FileCheck2"],
+    ["Feedback", "/admin/feedback", "Megaphone"],
     ["Settings", "/admin/settings", "Settings"],
   ],
   reviewer: [
@@ -77,6 +78,7 @@ export async function PortalShell({
         <header className="portal-topbar">
           <Brand compact />
           <span>{title}</span>
+          <MobilePortalNav items={navSets[mode]} />
           <SignOutButton />
         </header>
         <div className="portal-content">

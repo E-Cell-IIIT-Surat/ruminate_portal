@@ -278,26 +278,29 @@ The origin must match the current browser host and the Google Cloud OAuth client
 
 The real `.env` must stay local/secret. This report records names and purpose only.
 
-| Variable                                   | Purpose                                     | Staging guidance                                                             |
-| ------------------------------------------ | ------------------------------------------- | ---------------------------------------------------------------------------- |
-| `DATABASE_URL`                             | PostgreSQL connection string                | Use a dedicated staging database; never use local credentials in production. |
-| `AUTH_SECRET`                              | Auth.js session/signing secret              | Generate a new random value for staging and production.                      |
-| `AUTH_TRUST_HOST`                          | Allows Auth.js to trust the deployment host | Set only according to the deployment’s Auth.js requirements.                 |
-| `AUTH_URL`, `NEXTAUTH_URL`                 | Canonical Auth.js origin                    | Set both to the exact staging HTTPS origin.                                  |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client credentials             | Use a client whose authorized redirect URI is the exact staging callback.    |
-| `SUPER_ADMIN_EMAILS`                       | Comma-separated global admin allow-list     | Keep minimal; audit every address.                                           |
-| `UDHBHAV_ADMIN_EMAILS`                     | Udbhav-specific allow-list/compatibility    | Keep aligned with the intended professor/admin policy.                       |
-| `R2_ACCOUNT_ID`                            | Cloudflare account identifier               | Configure as a secret/platform variable.                                     |
-| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 S3-compatible credentials                | Use least privilege and rotate if exposed.                                   |
-| `R2_PRIVATE_BUCKET`                        | Private object bucket name                  | Use a separate staging bucket and configure CORS.                            |
-| `EMAIL_PROVIDER`                           | `console` or `resend`                       | Use `console` locally; use `resend` only after sender/domain verification.   |
-| `EMAIL_FROM`                               | Sender identity                             | Must be a verified sender in the email provider.                             |
-| `RESEND_API_KEY`                           | Resend API key                              | Store only as a deployment secret.                                           |
-| `CRON_SECRET`                              | Protects internal email processing endpoint | Required when a scheduler calls the endpoint.                                |
-| `TURNSTILE_SECRET_KEY`                     | Optional server Turnstile validation        | Add only if guest forms use Turnstile.                                       |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`           | Optional browser Turnstile key              | Safe for browser exposure, paired with server secret.                        |
-| `APP_URL`                                  | Application canonical URL                   | Set to staging/production HTTPS origin.                                      |
-| `NODE_ENV`                                 | Runtime environment                         | `production` for deployed production.                                        |
+| Variable                                   | Purpose                                          | Staging guidance                                                               |
+| ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `DATABASE_URL`                             | PostgreSQL connection string                     | Use a dedicated staging database; never use local credentials in production.   |
+| `DIRECT_URL`                               | Direct PostgreSQL endpoint for Prisma migrations | Use the provider's direct/non-pooled endpoint; never expose it to the browser. |
+| `AUTH_SECRET`                              | Auth.js session/signing secret                   | Generate a new random value for staging and production.                        |
+| `AUTH_TRUST_HOST`                          | Allows Auth.js to trust the deployment host      | Set only according to the deployment’s Auth.js requirements.                   |
+| `AUTH_URL`, `NEXTAUTH_URL`                 | Canonical Auth.js origin                         | Set both to the exact staging HTTPS origin.                                    |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client credentials                  | Use a client whose authorized redirect URI is the exact staging callback.      |
+| `SUPER_ADMIN_EMAILS`                       | Comma-separated global admin allow-list          | Keep minimal; audit every address.                                             |
+| `UDHBHAV_ADMIN_EMAILS`                     | Udbhav-specific allow-list/compatibility         | Keep aligned with the intended professor/admin policy.                         |
+| `R2_ACCOUNT_ID`                            | Cloudflare account identifier                    | Configure as a secret/platform variable.                                       |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 S3-compatible credentials                     | Use least privilege and rotate if exposed.                                     |
+| `R2_PRIVATE_BUCKET`                        | Private object bucket name                       | Use a separate staging bucket and configure CORS.                              |
+| `EMAIL_PROVIDER`                           | `console`, `resend`, or `smtp`                   | Use `console` locally; configure one production provider only.                 |
+| `EMAIL_FROM`                               | Sender identity                                  | Must be a verified sender in the email provider.                               |
+| `RESEND_API_KEY`                           | Resend API key                                   | Store only as a deployment secret.                                             |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`    | SMTP server connection                           | Required only when `EMAIL_PROVIDER=smtp`; use `465/true` or `587/false`.       |
+| `SMTP_USER`, `SMTP_PASS`                   | SMTP authentication                              | Required only when `EMAIL_PROVIDER=smtp`; store as deployment secrets.         |
+| `CRON_SECRET`                              | Protects internal email processing endpoint      | Required when a scheduler calls the endpoint.                                  |
+| `TURNSTILE_SECRET_KEY`                     | Optional server Turnstile validation             | Add only if guest forms use Turnstile.                                         |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`           | Optional browser Turnstile key                   | Safe for browser exposure, paired with server secret.                          |
+| `APP_URL`                                  | Application canonical URL                        | Set to staging/production HTTPS origin.                                        |
+| `NODE_ENV`                                 | Runtime environment                              | `production` for deployed production.                                          |
 
 ## 9. What has already been verified
 
@@ -491,4 +494,98 @@ Current readiness is approximately 70% overall: the core app and checks pass, bu
 
 ## 16. Bottom line
 
-The project has moved beyond a UI prototype: it has a substantial working product, database model, authentication, role system, application/review workflows, file storage integration, workshop/Udbhav features, and a successful local build/test pipeline. The next step is to create a real staging deployment, connect and verify every external service, run the role-based acceptance matrix with teammates, fix the discovered defects, and only then promote to production.
+<!-- Latest production-readiness details are appended below. -->
+
+---
+
+# Latest production-readiness pass — 27 August 2026
+
+This section supersedes the historical estimate above for the changes made in this pass. It describes repository evidence, not a claim that external services have been tested in every Vercel environment.
+
+## 0. Domain and deployment target
+
+- The repository was searched for `ruminate-portal.vercel.app` and `ruminate-portal2.vercel.app`; no references remain in tracked source, docs, or configuration (generated dependency/build folders were excluded).
+- `AUTH_URL`, `NEXTAUTH_URL`, and `APP_URL` are read from the server environment in `lib/env.ts`; they are not hardcoded in auth or redirect code. Production validation requires all three to be the same HTTPS origin.
+- The intended production origin is `https://portal.ecelliiitsurat.in`.
+- External actions still required: attach/verify this domain in Vercel; set the Production (and, if used, Preview) variables on the Vercel project serving it; add `https://portal.ecelliiitsurat.in/api/auth/callback/google` and the matching HTTPS JavaScript origin to the Google OAuth client.
+
+## Exact environment contract
+
+Required in Vercel (exact casing):
+
+`DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `AUTH_TRUST_HOST`, `AUTH_URL`, `NEXTAUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PRIVATE_BUCKET`, `EMAIL_PROVIDER`, `EMAIL_FROM`, and `APP_URL`.
+
+Conditional/optional variables:
+
+- `RESEND_API_KEY` is required only when `EMAIL_PROVIDER=resend`.
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, and `SMTP_PASS` are required only when `EMAIL_PROVIDER=smtp`; the port must be 1–65535 and secure should normally be `true` for 465 and `false` for 587.
+- `CRON_SECRET` protects the email queue processor when configured.
+- `SUPER_ADMIN_EMAILS`, `UDHBHAV_ADMIN_EMAILS`, and `TURNSTILE_SECRET_KEY` are optional. `AUTH_DEBUG` is an optional direct read in `auth.ts` and should be unset/false in production. `NEXT_PUBLIC_TURNSTILE_SITE_KEY` appears only in legacy documentation/example material and is not read by the current server code.
+
+`NODE_ENV` is supplied by Vercel/Next.js. `AUTH_TRUST_HOST` must be the string `true` in production. No environment parser falls back to localhost or the old Vercel domains; invalid/missing required values throw a named configuration error.
+
+## Security (1–8)
+
+| Area                          | Result                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authentication abuse controls | Credentials sign-in and signup have independent IP/email rate limits. Failed credential attempts use a five-failure/15-minute backoff bucket and successful authentication clears it. There is no password-reset endpoint in this repository, so none was rate-limited.                                                                                      |
+| Password/session hardening    | `bcrypt-ts` hashes with cost 12. Passwords are not logged. Auth.js uses JWT sessions with a 30-day max age and its production cookie defaults (httpOnly, secure on HTTPS, sameSite=lax). Verify the deployed cookie flags in a browser before launch.                                                                                                        |
+| Authorization                 | Admin, reviewer, manager, faculty, and participant checks remain server-side in route handlers/services. Team join-request mutations verify team-leader ownership. Direct unauthorized API access is rejected.                                                                                                                                               |
+| Auditability                  | Existing audit events cover role, team, application, workshop/program, and evaluation actions. Udbhav status changes, reviewer assignments, and review submissions now also create audit events with actor, record, timestamp, and metadata.                                                                                                                 |
+| Validation/injection          | API payloads use Zod before database writes. No `$queryRawUnsafe` or raw SQL string concatenation was found. User content is rendered as React text; no `dangerouslySetInnerHTML` exists.                                                                                                                                                                    |
+| Upload safety                 | R2 and Udbhav uploads enforce allowlists, size limits, sanitized/random object keys, and private short-lived signed URLs. Malware scanning is not implemented and remains a launch decision/risk.                                                                                                                                                            |
+| HTTP headers/CSP              | `next.config.ts` adds nosniff, frame denial, strict-origin referrer policy, restrictive permissions, and a Content-Security-Policy-Report-Only policy with only the Google OAuth/font/image/connect exceptions currently needed. `/api/csp-report` records violation reports. Review reports before enforcing CSP.                                           |
+| CSRF/secrets/dependencies     | Middleware checks Origin/host on state-changing non-Auth.js API calls, including signup. `.env` has no Git history (`git log --all --full-history -- .env` returned no commits). No hardcoded secret fallback remains. `npm audit --audit-level=high` could not reach the registry in this environment; run it in CI/local network and apply reviewed fixes. |
+
+## Reliability (9–11)
+
+- `safeError` logs structured JSON (`timestamp`, route, method, error name/message/stack, request ID) server-side and returns a safe request-ID response. Auth, signup, workshop, Udbhav, feedback, and other route handlers use this pattern; the financial-literacy route is a deliberate re-export of the booking handler, which contains the try/catch.
+- `app/error.tsx` logs the actual error before rendering the friendly boundary and preserves an intended destination for session-expiry redirects.
+- `lib/db.ts` removed the invalid localhost fallback and validates production URLs. Prisma uses a small serverless-safe `pg` pool (max 5, idle timeout 10s, connection timeout 10s); `DATABASE_URL` is the pooled runtime URL and `DIRECT_URL` is reserved for migrations.
+- `/api/health` runs a real `SELECT 1`, validates production configuration, returns 200 only when ready, and returns 503 when the database/configuration is unhealthy.
+
+## UX and accessibility (12–18)
+
+- Branded loading/skeleton states now cover the dashboard, admin, reviewer, teams, and other data-heavy route groups. Existing forms retain inline status/error feedback and disabled in-flight actions; no new global toast library was introduced because this pass avoided changing business behavior.
+- Empty states are present for list surfaces, and destructive operations retain confirmation requirements where implemented.
+- Session failures show a clear message and redirect to sign-in with the original path preserved.
+- Authenticated navigation now has a mobile hamburger/scrim menu, active-route highlighting, keyboard Escape handling, and icon labels. The public navigation remains responsive. Dark-theme contrast and keyboard-friendly controls were reviewed in the touched surfaces.
+
+## Launch features (19–22)
+
+- `app/layout.tsx` now provides the Ruminate title/tagline, custom-domain metadata base, Open Graph/Twitter cards, icons, and theme color. Generated assets are present at `public/og-image.png` (1200×630), `public/icon.png` (512×512), `public/apple-touch-icon.png` (180×180), `public/favicon.ico`, and `public/icons/192x192.png`/`512x512.png`. Review the generated art/brand wording before launch.
+- `app/robots.ts` and `app/sitemap.ts` expose only public pages. The sitemap is dynamic so a Vercel build does not require database access.
+- `app/privacy/page.tsx` and `app/terms/page.tsx` match the dark/ember style. They are explicitly starter legal text and require lawyer/organisational review before being treated as final.
+- `components/feedback-widget.tsx`, `app/api/feedback/route.ts`, and `/admin/feedback` provide a persistent Bug/Suggestion/Other channel, optional signed-in email/page context, Zod validation, database storage, admin notification/email queueing, and newest-first filtering.
+- `app/manifest.ts` and `components/install-prompt.tsx` provide a manifest-only install experience. No service worker/offline cache was added, avoiding stale application data.
+
+## Files changed/added in this pass
+
+Key changed files include `lib/env.ts`, `lib/db.ts`, `lib/rate-limit.ts`, `lib/errors.ts`, `auth.ts`, `middleware.ts`, `next.config.ts`, `app/layout.tsx`, `app/error.tsx`, `app/globals.css`, the Auth/signup/Udbhav/team routes, and the navigation/loading components. New launch surfaces include `app/api/csp-report/route.ts`, `app/api/feedback/route.ts`, `app/admin/feedback/page.tsx`, `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/robots.ts`, `app/sitemap.ts`, `app/manifest.ts`, mobile/install/feedback components, launch assets, and the `Feedback` Prisma migration. `.env.example`, `README.md`, `docs/DEPLOYMENT.md`, and this report document the new contract.
+
+## Verification
+
+Passed in this workspace:
+
+- `npm.cmd run db:generate`
+- `npm.cmd run typecheck`
+- `npm.cmd run lint`
+- `npm.cmd run format:check`
+- `npm.cmd test` (12 tests)
+- `npm.cmd run build` (plain Next.js 15 output; no worker/Vinext output)
+
+`npm.cmd audit --audit-level=high` was attempted but the sandbox could not access the npm audit registry; this is an environment/network limitation, not a clean vulnerability result. No commit was created in this pass.
+
+## Manual pre-launch checklist and decisions
+
+1. Configure the custom domain/DNS and all exact variables above in the correct Vercel environment; redeploy after changing variables.
+2. Register the Google callback and JavaScript origin for the custom domain; test Google and credentials sign-in in a fresh browser session.
+3. Run `prisma migrate deploy` against the production database during deployment; verify pooled/direct Neon (or other provider) URLs and backups/restore.
+4. Configure the R2 private bucket, CORS for the custom domain, signed URL access, retention, and a malware/content-scanning policy.
+5. Choose and verify email delivery (Resend or SMTP), sender-domain authentication, queue processing, and a scheduled `POST /api/internal/email/process` job protected by `CRON_SECRET`.
+6. Review CSP Report-Only logs, then decide when to remove `unsafe-inline`/`unsafe-eval` and switch to enforcing CSP.
+7. Review the generated social images, privacy/terms text, retention/consent language, and institutional contacts.
+8. Execute a fresh-session role matrix (participant, reviewer, programme manager, content manager, faculty reviewer, super admin), including direct API 401/403 tests, Udbhav uploads/statuses, team approvals, exports, workshop bookings, announcements, and feedback.
+9. Configure Vercel runtime logs, uptime alerts, error tracking, database monitoring, rate-limit capacity, and an incident/rollback plan.
+
+Serious remaining risks requiring an explicit decision are malware scanning for uploaded documents, legal approval of the starter policies, final CSP enforcement, production email/provider limits, and the unverified npm audit result. Do not paste `.env` values or credentials into chat/screenshots; rotate any secret that has already been exposed.

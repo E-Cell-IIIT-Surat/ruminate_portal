@@ -50,7 +50,15 @@ export function WorkshopBookingForm({ className = "", workshopId, workshopName }
         </label>
         <label>
           Phone number *
-          <input name="phone" required type="tel" maxLength={25} placeholder="+91 98765 43210" />
+          <input
+            name="phone"
+            required
+            type="tel"
+            inputMode="tel"
+            pattern="^[+\d][\d\s().-]{7,24}$"
+            maxLength={25}
+            placeholder="+91 98765 43210"
+          />
         </label>
         <label>
           Batch *
@@ -58,7 +66,16 @@ export function WorkshopBookingForm({ className = "", workshopId, workshopName }
         </label>
         <label>
           Academic year *
-          <input name="year" required inputMode="numeric" pattern="20\d{2}" maxLength={4} placeholder="2026" />
+          <input
+            name="year"
+            required
+            type="number"
+            inputMode="numeric"
+            min={2000}
+            max={2100}
+            step={1}
+            placeholder="2026"
+          />
         </label>
         <label>
           Student ID

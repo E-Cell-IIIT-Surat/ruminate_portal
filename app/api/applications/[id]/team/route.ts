@@ -12,7 +12,12 @@ const schema = z
         z.object({
           name: z.string().min(2).max(100),
           email: z.string().email(),
-          phone: z.string().max(30).optional(),
+          phone: z
+            .string()
+            .trim()
+            .regex(/^[+\d][\d\s().-]{7,24}$/, "Enter a valid phone number")
+            .optional()
+            .or(z.literal("")),
           institution: z.string().max(180).optional(),
           role: z.string().max(100).optional(),
           isLeader: z.boolean().default(false),

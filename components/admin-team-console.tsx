@@ -77,7 +77,9 @@ export function AdminTeamConsole({ teams }: { teams: AdminTeam[] }) {
               Leader: {team.leaderName} · {team.leaderEmail}
             </small>
             <div className="team-stats-row">
-              <span>{team.memberCount}/{team.requiredMembers} members</span>
+              <span>
+                {team.memberCount}/{team.requiredMembers} members
+              </span>
               <span>{team.pendingRequests} join requests</span>
               <span>{new Date(team.createdAt).toLocaleDateString("en-IN")}</span>
             </div>

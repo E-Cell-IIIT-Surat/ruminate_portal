@@ -9,19 +9,22 @@ import type { Session } from "next-auth";
 
 export const dynamic = "force-dynamic";
 
-function teamPayload(team: {
-  id: string;
-  name: string;
-  motto: string | null;
-  projectSummary: string | null;
-  lookingFor: string | null;
-  requiredMembers: number;
-  status?: string;
-  leader: { name: string | null; email: string };
-  leaderId: string;
-  members: Array<{ userId: string | null; email: string }>;
-  joinRequests?: Array<{ status: string }>;
-}, userId: string) {
+function teamPayload(
+  team: {
+    id: string;
+    name: string;
+    motto: string | null;
+    projectSummary: string | null;
+    lookingFor: string | null;
+    requiredMembers: number;
+    status?: string;
+    leader: { name: string | null; email: string };
+    leaderId: string;
+    members: Array<{ userId: string | null; email: string }>;
+    joinRequests?: Array<{ status: string }>;
+  },
+  userId: string,
+) {
   return {
     id: team.id,
     name: team.name,

@@ -93,6 +93,10 @@ export function TeamEditor({
                 <input
                   id={`member-${index}-phone`}
                   className="input"
+                  type="tel"
+                  inputMode="tel"
+                  pattern="^[+\d][\d\s().-]{7,24}$"
+                  maxLength={25}
                   value={member.phone ?? ""}
                   disabled={locked}
                   onChange={(event) => update(index, "phone", event.target.value)}

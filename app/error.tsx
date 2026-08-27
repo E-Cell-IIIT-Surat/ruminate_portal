@@ -28,7 +28,8 @@ export default function Error({
     // strand the user on a runtime-error screen in that expected case; send
     // them through the full sign-in page so they can use Google or credentials.
     if (error.code === "UNAUTHORIZED" || error.status === 401 || error.message === "Authentication required") {
-      window.location.replace("/signin?reason=session");
+      const destination = `${window.location.pathname}${window.location.search}`;
+      window.location.replace(`/signin?reason=session&callbackUrl=${encodeURIComponent(destination)}`);
     }
   }, [error]);
   return (

@@ -38,6 +38,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       create: { submissionId: id, reviewerId: current.id, ...scores, totalScore, feedback: feedback || null },
       update: { ...scores, totalScore, feedback: feedback || null },
     });
+    await db.auditLog.create({
+      data: {
+        actorId: current.id,
+        action: "udbhav.review.submitted",
+        entityType: "UdbhavSubmission",
+        entityId: id,
+        metadata: { reviewId: review.id, totalScore },
+      },
+    });
     const aggregate = await db.udbhavReview.aggregate({ where: { submissionId: id }, _avg: { totalScore: true } });
     await db.udbhavSubmission.update({
       where: { id },
@@ -48,6 +57,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return Response.json({ review });
   } catch (error) {
-    return safeError(error);
+    return safeError(error, { route: "/api/udbhav/submissions/[id]/review", method: "POST" });
   }
 }

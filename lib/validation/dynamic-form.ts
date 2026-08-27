@@ -45,7 +45,10 @@ export function validateDynamicAnswers(fields: DynamicField[], answers: AnswerMa
       let stringSchema = z.string();
       if (field.minLength !== null) stringSchema = stringSchema.min(field.minLength);
       if (field.maxLength !== null) stringSchema = stringSchema.max(field.maxLength);
-      schema = stringSchema;
+      schema =
+        field.type === "PHONE"
+          ? stringSchema.regex(/^[+\d][\d\s().-]{7,24}$/, "Enter a valid phone number")
+          : stringSchema;
     } else if (field.type === "EMAIL") schema = z.string().email();
     else if (field.type === "URL") schema = z.string().url();
     else if (field.type === "DATE") schema = z.string().date();

@@ -3,6 +3,8 @@ import { hash } from "bcrypt-ts";
 import { db } from "@/lib/db";
 import { ensureUserRoles } from "@/lib/services/bootstrap";
 import { z } from "zod";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { safeError } from "@/lib/errors";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -14,9 +16,13 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { name, email, password } = signupSchema.parse(body);
+    const normalizedEmail = email.trim().toLowerCase();
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    await enforceRateLimit(`auth:signup:ip:${ip}`, 10, 60 * 60);
+    await enforceRateLimit(`auth:signup:email:${normalizedEmail}`, 3, 60 * 60);
 
     // 1. Check if user already exists (from Google or previous manual signup)
-    const existingUser = await db.user.findUnique({ where: { email } });
+    const existingUser = await db.user.findUnique({ where: { email: normalizedEmail } });
 
     if (existingUser) {
       // If they exist but have no passwordHash, they used Google originally.
@@ -30,7 +36,7 @@ export async function POST(req: Request) {
     const passwordHash = await hash(password, 12);
 
     const user = await db.user.create({
-      data: { name, email, passwordHash },
+      data: { name, email: normalizedEmail, passwordHash },
     });
 
     // 3. Assign PARTICIPANT by default, and SUPER_ADMIN if email is listed
@@ -42,6 +48,6 @@ export async function POST(req: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return safeError(error, { route: "/api/auth/signup", method: "POST" });
   }
 }

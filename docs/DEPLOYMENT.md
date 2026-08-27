@@ -18,7 +18,7 @@ Never use `prisma db push` for production and never run `db:seed` there.
 
 Create a Google OAuth 2.0 Web Application and configure its consent screen. Add `https://portal.ecelliiitsurat.in` as the JavaScript origin and `https://portal.ecelliiitsurat.in/api/auth/callback/google` as the exact redirect URI. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, and the canonical `APP_URL`.
 
-Set `SUPER_ADMIN_EMAILS` to the exact Google email allowed to bootstrap administration. Sign in once, confirm its stored database role, and then reduce or remove the bootstrap allowlist according to policy.
+Set `SUPER_ADMIN_EMAILS` to the exact Google email allowed to bootstrap administration. Sign in once, confirm its stored database role, and then reduce or remove the bootstrap allowlist according to policy. `nishad.deshpande@iiitsurat.ac.in` is also recognized as the professor-level global administrator by the application policy.
 
 ## Private Cloudflare R2
 
@@ -42,13 +42,16 @@ Do not permit public reads. The upload endpoint returns a short-lived signed URL
 
 ## Email
 
-Verify the sending domain in Resend and set `EMAIL_PROVIDER=resend`, `EMAIL_FROM`, `RESEND_API_KEY`, and a random `CRON_SECRET` of at least 32 characters. Schedule `POST /api/internal/email/process` with `Authorization: Bearer <CRON_SECRET>`.
+For Resend, verify the sending domain and set `EMAIL_PROVIDER=resend`, `EMAIL_FROM`, and `RESEND_API_KEY`. For SMTP, set `EMAIL_PROVIDER=smtp`, `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, and `SMTP_PASS`. In either case set a random `CRON_SECRET` of at least 32 characters and schedule `POST /api/internal/email/process` with `Authorization: Bearer <CRON_SECRET>`.
 
 ## Runtime variable names
 
 - `DATABASE_URL`
+- `DIRECT_URL`
 - `AUTH_SECRET`
 - `AUTH_TRUST_HOST`
+- `AUTH_URL`
+- `NEXTAUTH_URL`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `SUPER_ADMIN_EMAILS`
@@ -59,6 +62,11 @@ Verify the sending domain in Resend and set `EMAIL_PROVIDER=resend`, `EMAIL_FROM
 - `EMAIL_PROVIDER`
 - `EMAIL_FROM`
 - `RESEND_API_KEY`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
 - `CRON_SECRET`
 - `TURNSTILE_SECRET_KEY`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`

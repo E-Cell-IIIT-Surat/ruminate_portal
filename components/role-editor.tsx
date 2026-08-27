@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const roles = [
   "PARTICIPANT",
@@ -10,6 +11,7 @@ const roles = [
   "SUPER_ADMIN",
 ] as const;
 export function RoleEditor({ userId, initial }: { userId: string; initial: string[] }) {
+  const router = useRouter();
   const [selected, setSelected] = useState(new Set(initial));
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState("");
@@ -39,7 +41,10 @@ export function RoleEditor({ userId, initial }: { userId: string; initial: strin
       const result = (await response.json().catch(() => ({}))) as { error?: string; roles?: string[] };
       if (!response.ok) throw new Error(result.error ?? `Unable to save roles (${response.status}).`);
       if (result.roles) setSelected(new Set(result.roles));
-      setState("Roles saved");
+      setState("Roles saved and reloaded");
+      // The users page is server-rendered from Prisma. Refresh the route so
+      // subsequent navigation/reloads use the just-persisted role assignments.
+      router.refresh();
     } catch (error) {
       setState(error instanceof Error ? error.message : "Unable to save roles.");
     } finally {

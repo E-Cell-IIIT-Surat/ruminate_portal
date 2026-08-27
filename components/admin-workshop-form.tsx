@@ -56,7 +56,18 @@ export function AdminWorkshopForm() {
         </div>
         <div className="field">
           <label htmlFor="workshop-year">Year</label>
-          <input className="input" id="workshop-year" name="year" placeholder="2026" />
+          <input
+            className="input"
+            id="workshop-year"
+            name="year"
+            type="number"
+            inputMode="numeric"
+            min="2000"
+            max="2100"
+            step="1"
+            pattern="20\d{2}"
+            placeholder="2026"
+          />
         </div>
         <div className="field">
           <label htmlFor="workshop-venue">Venue</label>

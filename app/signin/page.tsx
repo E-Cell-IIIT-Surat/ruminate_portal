@@ -19,7 +19,7 @@
 //     const oauthError = searchParams.get("error");
 //     if (!oauthError) return "";
 //     return oauthError === "Configuration"
-//       ? "Google OAuth is not configured for this URL. Add https://ruminate-portal.vercel.app/api/auth/callback/google to the Google OAuth client, then restart the server."
+//       ? "Google OAuth is not configured for this URL. Add https://portal.ecelliiitsurat.in/api/auth/callback/google to the Google OAuth client, then restart the server."
 //       : `Google sign-in failed (${oauthError}). Please try again.`;
 //   });
 //   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
@@ -182,29 +182,13 @@
 //   );
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use client";
 
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BackButton } from "@/components/back-button";
 import { Brand } from "@/components/brand";
 import { SparkField } from "@/components/spark-field";
@@ -243,11 +227,16 @@ export default function SignInPage() {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     setFormData((current) => ({ ...current, [event.target.name]: event.target.value }));
 
+  function callbackUrl() {
+    const value = new URLSearchParams(window.location.search).get("callbackUrl");
+    return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+  }
+
   async function handleGoogleSignIn() {
     setIsLoading(true);
     setError("");
     try {
-      await startGoogleOAuth("/dashboard");
+      await startGoogleOAuth(callbackUrl());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Google sign-in could not be started. Please try again.");
       setIsLoading(false);
@@ -280,7 +269,7 @@ export default function SignInPage() {
             : "Invalid email or password.",
         );
       }
-      router.push("/dashboard");
+      router.push(callbackUrl());
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -302,7 +291,9 @@ export default function SignInPage() {
             <Sparkles size={15} /> Ruminate operations platform
           </span>
           <h1>{isLogin ? "Ideas move forward when the process does." : "Your next chapter starts with one spark."}</h1>
-          <p className="auth-quote">&quot;The future belongs to those who believe in the beauty of their dreams.&quot;</p>
+          <p className="auth-quote">
+            &quot;The future belongs to those who believe in the beauty of their dreams.&quot;
+          </p>
           <p>One secure home for SSIP, UdbhAV, workshops, applications, reviews, and outcomes at E-Cell IIIT Surat.</p>
           <div className="auth-trust">
             <ShieldCheck size={18} /> Private by design · structured by purpose
@@ -384,6 +375,12 @@ export default function SignInPage() {
               {isLoading ? "Processing…" : isLogin ? "Sign in" : "Create account"}
             </button>
           </form>
+          {!isLogin && (
+            <p className="auth-legal">
+              By creating an account, you agree to our <Link href="/terms">Terms</Link> and{" "}
+              <Link href="/privacy">Privacy Policy</Link>.
+            </p>
+          )}
           <p className="auth-toggle">
             {isLogin ? "New to Ruminate?" : "Already have an account?"}{" "}
             <button

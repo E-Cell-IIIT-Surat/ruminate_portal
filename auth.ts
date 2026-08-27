@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { ensureUserRoles } from "@/lib/services/bootstrap";
 import { compare } from "bcrypt-ts";
 import { superAdminEmails } from "@/lib/env";
+import { assertAuthBackoff, clearAuthFailures, recordAuthFailure } from "@/lib/rate-limit";
 
 // Explicitly read environment variables for the server runtime
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -97,23 +98,32 @@ export const authConfig = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        const email = String(credentials.email).trim().toLowerCase();
+        await assertAuthBackoff(email);
+
         const user = await db.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         });
 
         if (!user || !user.passwordHash) {
+          await recordAuthFailure(email);
           throw new Error("No password found for this account. Try signing in with Google.");
         }
 
         const isPasswordValid = await compare(credentials.password as string, user.passwordHash);
 
-        if (!isPasswordValid) throw new Error("Invalid credentials");
+        if (!isPasswordValid) {
+          await recordAuthFailure(email);
+          throw new Error("Invalid credentials");
+        }
+
+        await clearAuthFailures(email);
 
         return user;
       },
     }),
   ],
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   pages: { signIn: "/signin", error: "/signin" },
   callbacks: {
     async signIn({ user }) {

@@ -58,6 +58,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           changedById: current.id,
         },
       });
+      await tx.auditLog.create({
+        data: {
+          actorId: current.id,
+          action: "udbhav.status.updated",
+          entityType: "UdbhavSubmission",
+          entityId: id,
+          metadata: {
+            fromStatus: existing.status,
+            toStatus: input.status,
+            stage: input.currentStage ?? existing.currentStage,
+            reason: input.reason || null,
+          },
+        },
+      });
       await tx.notification.create({
         data: {
           userId: existing.leaderId,
@@ -79,6 +93,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     });
     return Response.json({ submission: updated });
   } catch (error) {
-    return safeError(error);
+    return safeError(error, { route: "/api/udbhav/submissions/[id]", method: "PATCH" });
   }
 }

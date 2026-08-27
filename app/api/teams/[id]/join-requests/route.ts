@@ -22,7 +22,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     if (!team.isPublic || team.status !== "PUBLIC") throw new AppError("This team is not open for join requests", 409);
     if (team.leaderId === current.id) throw new AppError("You already lead this team", 409);
-    if (team.members.length >= team.requiredMembers) throw new AppError("This team already has the required members", 409);
+    if (team.members.length >= team.requiredMembers)
+      throw new AppError("This team already has the required members", 409);
     const user = await db.user.findUniqueOrThrow({
       where: { id: current.id },
       select: { id: true, name: true, email: true },

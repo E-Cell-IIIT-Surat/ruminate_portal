@@ -52,7 +52,16 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         </div>
         <div className="field">
           <label htmlFor="phone">Phone</label>
-          <input className="input" id="phone" name="phone" defaultValue={profile.phone ?? ""} />
+          <input
+            className="input"
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            pattern="^[+\d][\d\s().-]{7,24}$"
+            maxLength={25}
+            defaultValue={profile.phone ?? ""}
+          />
         </div>
         <div className="field">
           <label htmlFor="institution">College / institution</label>
@@ -64,7 +73,17 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         </div>
         <div className="field">
           <label htmlFor="studyYear">Year of study</label>
-          <input className="input" id="studyYear" name="studyYear" defaultValue={profile.studyYear ?? ""} />
+          <input
+            className="input"
+            id="studyYear"
+            name="studyYear"
+            type="number"
+            inputMode="numeric"
+            min={2000}
+            max={2100}
+            step={1}
+            defaultValue={profile.studyYear ?? ""}
+          />
         </div>
         <div className="field">
           <label htmlFor="city">City</label>

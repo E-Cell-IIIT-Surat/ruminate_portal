@@ -1,41 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { PutObjectCommand, GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { db } from "@/lib/db";
-import { r2Env } from "@/lib/env";
 import { requireUdbhavViewer } from "@/lib/udbhav";
 import { safeError, AppError } from "@/lib/errors";
-
-const allowedTypes = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-]);
-const maxBytes = 5 * 1024 * 1024;
-
-function storage() {
-  const config = r2Env();
-  return {
-    client: new S3Client({
-      region: "auto",
-      endpoint: `https://${config.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId: config.R2_ACCESS_KEY_ID, secretAccessKey: config.R2_SECRET_ACCESS_KEY },
-    }),
-    bucket: config.R2_PRIVATE_BUCKET,
-  };
-}
-
-function safeName(name: string) {
-  return (
-    name
-      .normalize("NFKD")
-      .replace(/[^a-zA-Z0-9._-]/g, "-")
-      .slice(-120) || "supporting-document"
-  );
-}
+import { udbhavStorage as storage, safeName, validateUdbhavDocument } from "@/lib/services/udbhav-files";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -63,10 +31,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) throw new AppError("Choose a supporting document", 422);
-    if (file.size <= 0 || file.size > maxBytes) throw new AppError("The document must be smaller than 5 MB", 422);
-    if (!allowedTypes.has(file.type)) throw new AppError("Only PDF, Word, PowerPoint, or Excel files are allowed", 422);
+    try {
+      validateUdbhavDocument(file);
+    } catch (error) {
+      throw new AppError(error instanceof Error ? error.message : "Only PDF or DOCX files are allowed", 422);
+    }
     const { client, bucket } = storage();
-    const key = `udbhav/${id}/${randomUUID()}-${safeName(file.name)}`;
+    const key = `udbhav/${id}/${crypto.randomUUID()}-${safeName(file.name)}`;
     await client.send(
       new PutObjectCommand({
         Bucket: bucket,

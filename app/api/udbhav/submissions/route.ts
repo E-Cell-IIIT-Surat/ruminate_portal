@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/authz";
-import { safeError } from "@/lib/errors";
+import { AppError, safeError } from "@/lib/errors";
 import { defaultUdbhavWindow } from "@/lib/udbhav";
+import { removeUdbhavDocument, uploadUdbhavDocument, validateUdbhavDocument } from "@/lib/services/udbhav-files";
 
 const memberSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -12,7 +13,9 @@ const memberSchema = z.object({
 const submissionSchema = z.object({
   cycleId: z.string().cuid().optional(),
   teamName: z.string().trim().min(2).max(120),
-  teamMembers: z.array(memberSchema).min(1).max(8),
+  // The authenticated applicant is the team leader and is stored as leaderId.
+  // Additional collaborators are optional, so a solo idea is valid.
+  teamMembers: z.array(memberSchema).max(8),
   title: z.string().trim().min(5).max(200),
   challenge: z.string().trim().min(20).max(6000),
   proposal: z.string().trim().min(20).max(10000),
@@ -47,9 +50,48 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let uploaded: Awaited<ReturnType<typeof uploadUdbhavDocument>> | undefined;
+  let submissionCreated = false;
   try {
     const current = await requireUser();
-    const input = submissionSchema.parse(await request.json());
+    const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+    if (!contentType.startsWith("multipart/form-data"))
+      throw new AppError("Attach a PDF or DOCX supporting document before submitting", 422);
+    const form = await request.formData();
+    const text = (key: string) => {
+      const value = form.get(key);
+      return typeof value === "string" ? value : "";
+    };
+    const rawMembers = text("teamMembers");
+    let teamMembers: unknown = [];
+    try {
+      teamMembers = rawMembers ? JSON.parse(rawMembers) : [];
+    } catch {
+      throw new AppError("Team member details are invalid", 422);
+    }
+    const input = submissionSchema.parse({
+      cycleId: text("cycleId") || undefined,
+      teamName: text("teamName"),
+      teamMembers,
+      title: text("title"),
+      challenge: text("challenge"),
+      proposal: text("proposal"),
+      solution: text("solution"),
+      technology: text("technology"),
+      estimatedBudget: text("estimatedBudget") || null,
+      distributionPlan: text("distributionPlan"),
+      milestones: text("milestones"),
+    });
+    const file = form.get("supportingFile");
+    try {
+      validateUdbhavDocument(file);
+    } catch (error) {
+      throw new AppError(
+        error instanceof Error ? error.message : "Only PDF or DOCX supporting documents are allowed",
+        422,
+      );
+    }
+    uploaded = await uploadUdbhavDocument(file, current.id);
     const window = defaultUdbhavWindow();
     let cycle = input.cycleId
       ? await db.udbhavCycle.findUnique({ where: { id: input.cycleId } })
@@ -89,11 +131,13 @@ export async function POST(request: Request) {
         estimatedBudget: input.estimatedBudget ?? null,
         distributionPlan: input.distributionPlan,
         milestones: input.milestones || null,
+        supportingFileKey: uploaded.key,
         status: "SUBMITTED",
         submittedAt: now,
       },
       select: { id: true, referenceId: true, status: true },
     });
+    submissionCreated = true;
     await db.udbhavStatusHistory.create({
       data: {
         submissionId: submission.id,
@@ -150,6 +194,11 @@ export async function POST(request: Request) {
     }
     return Response.json({ submission }, { status: 201 });
   } catch (error) {
+    if (uploaded && !submissionCreated) {
+      await removeUdbhavDocument(uploaded.client, uploaded.bucket, uploaded.key).catch((cleanupError) =>
+        console.error("[udbhav] failed to clean up uploaded document after submission failure", cleanupError),
+      );
+    }
     return safeError(error);
   }
 }
