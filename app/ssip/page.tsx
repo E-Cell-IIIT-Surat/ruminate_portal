@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   ArrowRight,
   BookOpen,
+  CalendarClock,
   CheckCircle2,
   ExternalLink,
   GraduationCap,
@@ -17,25 +18,37 @@ import { hasDatabaseConfig } from "@/lib/env";
 export const metadata: Metadata = { title: "SSIP · Student Startup & Innovation Policy" };
 export const dynamic = "force-dynamic";
 
-function ssipProgramQuery() {
-  return db.program.findFirst({
-    where: { slug: { in: ["ssip", "ssip-demo"] }, archivedAt: null },
-    select: { slug: true, status: true },
-  });
+function ssipSettingsQuery() {
+  return db.sSIPSettings.findUnique({ where: { id: "default" } });
+}
+
+function isSubmissionWindowOpen(settings: Awaited<ReturnType<typeof ssipSettingsQuery>>) {
+  if (!settings?.isOpen) return false;
+  const now = Date.now();
+  if (settings.opensAt && now < settings.opensAt.getTime()) return false;
+  if (settings.closesAt && now > settings.closesAt.getTime()) return false;
+  return true;
+}
+
+function formatDate(value: Date | null | undefined) {
+  return value ? value.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : null;
 }
 
 export default async function SsipPage() {
-  let program: Awaited<ReturnType<typeof ssipProgramQuery>> = null;
+  let settings: Awaited<ReturnType<typeof ssipSettingsQuery>> = null;
 
   if (hasDatabaseConfig()) {
     try {
-      program = await ssipProgramQuery();
+      settings = await ssipSettingsQuery();
     } catch (error) {
       console.error("[ssip] database read failed", error);
     }
   }
 
-  const formHref = program ? `/programs/${program.slug}` : "/programs";
+  const submissionOpen = isSubmissionWindowOpen(settings);
+  const formHref = submissionOpen ? "/ssip/apply" : "#ssip-status";
+  const closeDate = formatDate(settings?.closesAt);
+  const openDate = formatDate(settings?.opensAt);
   return (
     <div className="public-page ssip-page">
       <PublicHeader />
@@ -50,7 +63,7 @@ export default async function SsipPage() {
             </p>
             <div className="hero-actions">
               <ButtonLink href={formHref}>
-                {program ? "Open the SSIP application" : "Explore SSIP opportunities"} <ArrowRight size={17} />
+                {submissionOpen ? "Submit your SSIP idea" : "View application status"} <ArrowRight size={17} />
               </ButtonLink>
               <a
                 className="button button-secondary"
@@ -155,6 +168,36 @@ export default async function SsipPage() {
             </div>
           </aside>
         </div>
+
+        <section className="panel ssip-application-panel" id="ssip-status" aria-labelledby="ssip-apply-title">
+          <div className="panel-header">
+            <div>
+              <p className="eyebrow">Submit your idea</p>
+              <h2 id="ssip-apply-title">SSIP application window</h2>
+            </div>
+            <Badge tone={submissionOpen ? "green" : "orange"}>{submissionOpen ? "OPEN" : "CLOSED"}</Badge>
+          </div>
+          <div className="ssip-window-notice">
+            <CalendarClock size={22} />
+            <div>
+              <h3>{submissionOpen ? "Applications are open" : "Applications are not open right now"}</h3>
+              <p>
+                {submissionOpen
+                  ? "Sign in to submit your proposal. After submission, track the reference, status, and review updates from your portal."
+                  : openDate
+                    ? `The next window opens ${openDate}. `
+                    : "The next application window will be announced soon. "}
+                {!submissionOpen &&
+                  (closeDate ? `This window closes ${closeDate}.` : "Please check back for the next cycle.")}
+              </p>
+              {submissionOpen && (
+                <ButtonLink href="/ssip/apply">
+                  Open SSIP application <ArrowRight size={16} />
+                </ButtonLink>
+              )}
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

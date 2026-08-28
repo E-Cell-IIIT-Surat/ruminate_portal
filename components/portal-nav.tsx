@@ -2,11 +2,13 @@
 
 import {
   Bell,
+  BarChart3,
   Blocks,
   BookOpenCheck,
   ClipboardList,
   FileCheck2,
   Gauge,
+  Lightbulb,
   Megaphone,
   Rocket,
   Settings,
@@ -21,11 +23,13 @@ export type NavItem = readonly [string, string, keyof typeof portalIcons];
 
 export const portalIcons = {
   Bell,
+  BarChart3,
   Blocks,
   BookOpenCheck,
   ClipboardList,
   FileCheck2,
   Gauge,
+  Lightbulb,
   Megaphone,
   Rocket,
   Settings,

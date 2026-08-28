@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { superAdminEmails } from "@/lib/env";
-import { queueEmail } from "@/lib/services/email";
+import { queueAndDeliverEmail } from "@/lib/services/email";
 
 async function notifyUser(input: {
   userId: string;
@@ -20,7 +20,7 @@ async function notifyUser(input: {
       href: input.href,
     },
   });
-  await queueEmail({
+  await queueAndDeliverEmail({
     recipientEmail: input.email,
     templateKey: input.templateKey,
     subject: input.subject,

@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/ui";
+import { InfoTip, PageHeader } from "@/components/ui";
 import { RoleEditor } from "@/components/role-editor";
 import { requirePermission } from "@/lib/authz";
 import { db } from "@/lib/db";
@@ -40,6 +40,16 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         eyebrow="Access control"
         title="Users and roles"
         description="Roles control portal-wide capabilities. Program Manager access is additionally scoped per program."
+        action={
+          <InfoTip label="Explain portal roles">
+            <strong>Role guide</strong>
+            <span>
+              Participants submit applications and manage teams. Reviewers score assigned applications. Program and
+              content managers operate their areas. Faculty reviewers provide elevated review. Super admins control
+              the entire portal.
+            </span>
+          </InfoTip>
+        }
       />
       <form className="filter-bar">
         <input name="q" defaultValue={q} placeholder="Search name or email" aria-label="Search users" />

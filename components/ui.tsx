@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
+import { Info, type LucideIcon } from "lucide-react";
 
 export function ButtonLink({
   href,
@@ -82,5 +82,19 @@ export function Metric({ label, value, note }: { label: string; value: number | 
       <strong>{value}</strong>
       {note && <small>{note}</small>}
     </article>
+  );
+}
+
+/** Small, keyboard-accessible contextual help popover used on operational pages. */
+export function InfoTip({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <span className="info-tip">
+      <button className="info-tip-trigger" type="button" aria-label={label}>
+        <Info size={15} />
+      </button>
+      <span className="info-tip-content" role="tooltip">
+        {children}
+      </span>
+    </span>
   );
 }

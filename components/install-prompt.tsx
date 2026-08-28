@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 type InstallState = "waiting" | "native" | "fallback" | "installed";
+const INSTALL_SEEN_KEY = "ruminate.install-prompt.seen";
 
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
@@ -12,6 +13,14 @@ function isStandaloneMode() {
     window.matchMedia("(display-mode: standalone)").matches ||
     Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
   );
+}
+
+function markInstallPromptSeen() {
+  try {
+    window.localStorage.setItem(INSTALL_SEEN_KEY, "1");
+  } catch {
+    // Storage can be unavailable in private browsing; the prompt still works for this session.
+  }
 }
 
 export function InstallPrompt() {
@@ -22,13 +31,26 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (isStandaloneMode()) return;
+    try {
+      if (window.localStorage.getItem(INSTALL_SEEN_KEY) === "1") {
+        // Defer the state update until after the effect tick so the initial
+        // render remains hydration-safe and React does not flag a cascading
+        // render from inside an effect.
+        window.setTimeout(() => setDismissed(true), 0);
+        return;
+      }
+    } catch {
+      // Continue without persistence when storage is blocked.
+    }
 
     const onBeforeInstall = (event: Event) => {
       event.preventDefault();
+      markInstallPromptSeen();
       setInstallEvent(event as InstallEvent);
       setState("native");
     };
     const onInstalled = () => {
+      markInstallPromptSeen();
       setInstallEvent(null);
       setDismissed(true);
     };
@@ -37,7 +59,13 @@ export function InstallPrompt() {
     // Some browsers emit beforeinstallprompt before React mounts, and some
     // browsers never emit it at all. Keep a visible, actionable fallback.
     const timer = window.setTimeout(() => {
-      setState((current) => (current === "waiting" ? "fallback" : current));
+      setState((current) => {
+        if (current === "waiting") {
+          markInstallPromptSeen();
+          return "fallback";
+        }
+        return current;
+      });
     }, 1500);
     return () => {
       window.clearTimeout(timer);
@@ -53,6 +81,7 @@ export function InstallPrompt() {
   async function install() {
     const event = installEvent;
     if (!event) return;
+    markInstallPromptSeen();
     setInstallEvent(null);
     try {
       await event.prompt();
@@ -88,7 +117,10 @@ export function InstallPrompt() {
         className="icon-button"
         type="button"
         aria-label="Dismiss install prompt"
-        onClick={() => setDismissed(true)}
+        onClick={() => {
+          markInstallPromptSeen();
+          setDismissed(true);
+        }}
       >
         <X size={16} />
       </button>

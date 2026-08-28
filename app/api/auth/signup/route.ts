@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hash } from "bcrypt-ts";
 import { db } from "@/lib/db";
 import { ensureUserRoles } from "@/lib/services/bootstrap";
+import { sendWelcomeEmail } from "@/lib/services/email";
 import { z } from "zod";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { safeError } from "@/lib/errors";
@@ -42,6 +43,10 @@ export async function POST(req: Request) {
     // 3. Assign PARTICIPANT by default, and SUPER_ADMIN if email is listed
     // in SUPER_ADMIN_EMAILS. Roles are stored in UserRole, not User.role.
     await ensureUserRoles(user);
+    // Send the onboarding message immediately for manual sign-ups. The
+    // idempotency guard in sendWelcomeEmail prevents duplicates if the user
+    // subsequently signs in (or Google linking triggers Auth.js events).
+    await sendWelcomeEmail(user);
 
     return NextResponse.json({ message: "User created successfully" }, { status: 201 });
   } catch (error) {

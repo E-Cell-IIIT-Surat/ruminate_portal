@@ -72,6 +72,39 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const { id } = await params;
     const action = programActionInput.parse(await request.json());
     const actor = await requirePermission("program:update", id);
+    if (action.action === "set_status") {
+      const existing = await db.program.findUnique({
+        where: { id },
+        include: { form: { include: { versions: { where: { status: "PUBLISHED" }, take: 1 } } } },
+      });
+      if (!existing) throw notFound("Program");
+      if (action.status === existing.status) return Response.json({ program: existing });
+      if (!transitions[existing.status]?.includes(action.status))
+        throw new AppError(`Cannot move ${existing.status} to ${action.status}`, 409, "INVALID_TRANSITION");
+      if (["PUBLISHED", "REGISTRATION_OPEN"].includes(action.status) && !existing.form?.versions.length)
+        throw new AppError("Publish the application form before opening registration", 409, "FORM_NOT_PUBLISHED");
+      const program = await db.$transaction(async (tx) => {
+        const updated = await tx.program.update({
+          where: { id },
+          data: {
+            status: action.status,
+            archivedAt: action.status === "ARCHIVED" ? new Date() : action.status === "DRAFT" ? null : undefined,
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: actor.id,
+            programId: id,
+            action: "program.status.update",
+            entityType: "Program",
+            entityId: id,
+            metadata: { changed: ["status"], fromStatus: existing.status, toStatus: action.status },
+          },
+        });
+        return updated;
+      });
+      return Response.json({ program });
+    }
     if (action.action === "publish_results") {
       const publication = await db.program.findUnique({ where: { id }, select: { resultsPublishedAt: true } });
       if (!publication) throw notFound("Program");

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, Clock3, Send, UsersRound, X } from "lucide-react";
-import { Badge } from "@/components/ui";
+import { Badge, InfoTip } from "@/components/ui";
 
 type PublicTeam = {
   id: string;
@@ -130,7 +130,13 @@ export function TeamDirectory({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Create a public team</span>
-            <h2>Request team approval</h2>
+            <h2 className="heading-with-help">
+              Request team approval
+              <InfoTip label="How team approval works">
+                Submit your team details first. A super admin or professor reviews the request; once approved, the team
+                appears in the public directory and other participants can request to join.
+              </InfoTip>
+            </h2>
           </div>
           <Badge tone="orange">Admin reviewed</Badge>
         </div>
@@ -189,7 +195,13 @@ export function TeamDirectory({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Directory</span>
-            <h2>Public teams looking for members</h2>
+            <h2 className="heading-with-help">
+              Public teams looking for members
+              <InfoTip label="How joining a team works">
+                Choose a team with an open member slot and send a short message. Its leader accepts or rejects your
+                request, and you will see the decision in My teams and requests.
+              </InfoTip>
+            </h2>
           </div>
           <Badge tone="green">{publicTeams.length} live</Badge>
         </div>

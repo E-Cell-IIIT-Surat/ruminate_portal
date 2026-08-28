@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { Badge, ButtonLink, Metric, PageHeader } from "@/components/ui";
+import { Badge, Metric, PageHeader } from "@/components/ui";
+import { ProgramLaunchChecklist } from "@/components/program-launch-checklist";
 import { requirePermission } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
@@ -48,24 +49,12 @@ export default async function ProgramOverview({ params }: { params: Promise<{ id
         <Metric label="Stages" value={program.stages.length} />
         <Metric label="Rubrics" value={program.rubrics.length} />
       </div>
-      <div className="panel overview-next">
-        <div>
-          <p className="eyebrow">Next step</p>
-          <h2>
-            {program.form?.versions[0]?.status === "PUBLISHED"
-              ? "Registration form is published"
-              : "Build the application form"}
-          </h2>
-          <p>
-            {program.form?.versions[0]?.status === "PUBLISHED"
-              ? `Version ${program.form.versions[0].version} is accepting responses.`
-              : "Add sections and fields, preview the experience, then publish an immutable version."}
-          </p>
-        </div>
-        <ButtonLink href={`/admin/programs/${id}/form`}>
-          {program.form?.versions[0]?.status === "PUBLISHED" ? "Manage form" : "Build form"}
-        </ButtonLink>
-      </div>
+      <ProgramLaunchChecklist
+        programId={id}
+        status={program.status}
+        formPublished={program.form?.versions[0]?.status === "PUBLISHED"}
+        formVersion={program.form?.versions[0]?.version}
+      />
     </>
   );
 }

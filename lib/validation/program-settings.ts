@@ -49,6 +49,10 @@ export const programSettingsInput = z.object({
 export const programActionInput = z.discriminatedUnion("action", [
   z.object({ action: z.literal("publish_results") }),
   z.object({
+    action: z.literal("set_status"),
+    status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "REGISTRATION_CLOSED", "IN_PROGRESS", "COMPLETED", "ARCHIVED"]),
+  }),
+  z.object({
     action: z.literal("duplicate"),
     name: z.string().min(3).max(120),
     slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),

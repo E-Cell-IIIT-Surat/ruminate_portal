@@ -2,6 +2,7 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { notFound, safeError } from "@/lib/errors";
+import { queueAndDeliverEmail } from "@/lib/services/email";
 
 const statusSchema = z.object({ status: z.enum(["PENDING", "CONFIRMED", "CANCELLED"]) });
 
@@ -25,13 +26,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         metadata: { workshop: existing.workshop, status },
       },
     });
-    await db.emailDelivery.create({
-      data: {
-        recipientEmail: existing.email,
-        templateKey: `workshop.booking.${status.toLowerCase()}`,
-        subject: `Workshop booking ${status.toLowerCase()}`,
-        textBody: `Hello ${existing.name}, your booking for ${existing.workshop} is now ${status.toLowerCase()}.`,
-      },
+    await queueAndDeliverEmail({
+      recipientEmail: existing.email,
+      templateKey: `workshop.booking.${status.toLowerCase()}`,
+      subject: `Workshop booking ${status.toLowerCase()}`,
+      textBody: `Hello ${existing.name}, your booking for ${existing.workshop} is now ${status.toLowerCase()}.`,
     });
     return Response.json({ booking: { id: booking.id, status: booking.status } });
   } catch (error) {

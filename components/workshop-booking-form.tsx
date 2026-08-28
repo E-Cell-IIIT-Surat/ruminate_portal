@@ -56,13 +56,13 @@ export function WorkshopBookingForm({ className = "", workshopId, workshopName }
             type="tel"
             inputMode="tel"
             pattern="^[+\d][\d\s().-]{7,24}$"
-            maxLength={25}
+            maxLength={12}
             placeholder="+91 98765 43210"
           />
         </label>
         <label>
           Batch *
-          <input name="batch" required maxLength={80} placeholder="B.Tech / MBA / PhD" />
+          <input name="batch" required maxLength={15} placeholder="B.Tech / MBA / PhD" />
         </label>
         <label>
           Academic year *
@@ -79,12 +79,12 @@ export function WorkshopBookingForm({ className = "", workshopId, workshopName }
         </label>
         <label>
           Student ID
-          <input name="studentId" maxLength={80} placeholder="Optional" />
+          <input name="studentId" maxLength={20} placeholder="Optional" />
         </label>
       </div>
       <label>
         Department / programme
-        <input name="department" maxLength={120} placeholder="Computer Science, ECE, Management…" />
+        <input name="department" maxLength={30} placeholder="Computer Science, ECE, Management…" />
       </label>
       <label>
         Why would you like to attend?

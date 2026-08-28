@@ -9,6 +9,7 @@ import { ensureUserRoles } from "@/lib/services/bootstrap";
 import { compare } from "bcrypt-ts";
 import { superAdminEmails } from "@/lib/env";
 import { assertAuthBackoff, clearAuthFailures, recordAuthFailure } from "@/lib/rate-limit";
+import { sendWelcomeEmail } from "@/lib/services/email";
 
 // Explicitly read environment variables for the server runtime
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -163,9 +164,11 @@ export const authConfig = {
   events: {
     async createUser({ user }) {
       await ensureUserRoles(user);
+      await sendWelcomeEmail(user);
     },
     async signIn({ user }) {
       await ensureUserRoles(user);
+      await sendWelcomeEmail(user);
     },
   },
   // Vercel terminates TLS in front of the Node runtime. Auth.js must trust the

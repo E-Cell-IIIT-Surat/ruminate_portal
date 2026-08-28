@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const labels: Record<FeedbackType, string> = { BUG: "Bug", SUGGESTION: "Suggestion", OTHER: "Other" };
 
 export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
-  await requirePermission("user:manage");
+  await requirePermission("program:update");
   const { type } = await searchParams;
   const filter = type === "BUG" || type === "SUGGESTION" || type === "OTHER" ? type : undefined;
   const feedback = await db.feedback.findMany({

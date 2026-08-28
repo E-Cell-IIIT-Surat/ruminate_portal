@@ -2,6 +2,7 @@ import type { ApplicationStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { AppError, notFound } from "@/lib/errors";
 import { canTransitionApplication, isPrivateDecision } from "@/lib/domain/status";
+import { queueAndDeliverEmail } from "@/lib/services/email";
 
 export async function transitionApplication(
   applicationId: string,
@@ -20,7 +21,7 @@ export async function transitionApplication(
     throw new AppError(`Cannot move ${application.status} to ${status}`, 409, "INVALID_TRANSITION");
   if (stageId && !(await db.programStage.findFirst({ where: { id: stageId, programId: application.programId } })))
     throw new AppError("The selected stage does not belong to this program", 422, "INVALID_STAGE");
-  return db.$transaction(async (tx) => {
+  const updated = await db.$transaction(async (tx) => {
     const updated = await tx.application.update({
       where: { id: applicationId },
       data: { status, stageId: stageId ?? undefined, withdrawnAt: status === "WITHDRAWN" ? new Date() : undefined },
@@ -52,15 +53,6 @@ export async function transitionApplication(
           href: `/applications/${applicationId}`,
         },
       });
-      await tx.emailDelivery.create({
-        data: {
-          programId: application.programId,
-          recipientEmail: application.user.email,
-          templateKey: "application.status",
-          subject: `${application.program.name}: application update`,
-          textBody: `Your application is now ${statusLabel}. Sign in to Ruminate Portal for details.`,
-        },
-      });
     }
     await tx.auditLog.create({
       data: {
@@ -74,4 +66,15 @@ export async function transitionApplication(
     });
     return updated;
   });
+  if (!isPrivateDecision(status) || application.program.resultsPublishedAt !== null) {
+    const statusLabel = status.toLowerCase().replaceAll("_", " ");
+    await queueAndDeliverEmail({
+      programId: application.programId,
+      recipientEmail: application.user.email,
+      templateKey: "application.status",
+      subject: `${application.program.name}: application update`,
+      textBody: `Your application is now ${statusLabel}. Sign in to Ruminate Portal for details.`,
+    });
+  }
+  return updated;
 }

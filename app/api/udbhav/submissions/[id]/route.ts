@@ -2,6 +2,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { safeError } from "@/lib/errors";
 import { requireUdbhavAdmin, requireUdbhavViewer, statusMessage, udbhavStatuses } from "@/lib/udbhav";
+import { queueAndDeliverEmail } from "@/lib/services/email";
 
 const updateSchema = z.object({
   status: z.enum(udbhavStatuses),
@@ -81,15 +82,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           href: `/udbhav/submissions/${id}`,
         },
       });
-      await tx.emailDelivery.create({
-        data: {
-          recipientEmail: existing.leader.email,
-          templateKey: `udbhav.status.${input.status.toLowerCase()}`,
-          subject: `UdbhAV update: ${input.status.replaceAll("_", " ")}`,
-          textBody: `${message}${input.secretMessage ? `\n\nPrivate note from the program team:\n${input.secretMessage}` : ""}`,
-        },
-      });
       return saved;
+    });
+    await queueAndDeliverEmail({
+      recipientEmail: existing.leader.email,
+      templateKey: `udbhav.status.${input.status.toLowerCase()}`,
+      subject: `UdbhAV update: ${input.status.replaceAll("_", " ")}`,
+      textBody: `${message}${input.secretMessage ? `\n\nPrivate note from the program team:\n${input.secretMessage}` : ""}`,
     });
     return Response.json({ submission: updated });
   } catch (error) {

@@ -41,38 +41,43 @@ export function ProgramForm() {
         .map((item) => item.trim())
         .filter(Boolean),
     };
-    const response = await fetch("/api/programs", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const result = (await response.json().catch(() => ({}))) as {
-      error?: string;
-      fields?: Record<string, unknown>;
-      program?: { id: string };
-    };
-    setBusy(false);
-    if (!response.ok) {
-      const fieldErrors = result.fields
-        ? Object.entries(result.fields)
-            .flatMap(([field, messages]) =>
-              (Array.isArray(messages) ? messages : [messages]).map((message) => `${field}: ${String(message)}`),
-            )
-            .join(" ")
-        : "";
-      setError(
-        fieldErrors
-          ? `${result.error ?? "Please check the submitted information"} ${fieldErrors}`
-          : (result.error ?? "Unable to create program"),
-      );
-      return;
+    try {
+      const response = await fetch("/api/programs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        fields?: Record<string, unknown>;
+        program?: { id: string };
+      };
+      if (!response.ok) {
+        const fieldErrors = result.fields
+          ? Object.entries(result.fields)
+              .flatMap(([field, messages]) =>
+                (Array.isArray(messages) ? messages : [messages]).map((message) => `${field}: ${String(message)}`),
+              )
+              .join(" ")
+          : "";
+        setError(
+          fieldErrors
+            ? `${result.error ?? "Please check the submitted information"} ${fieldErrors}`
+            : (result.error ?? "Unable to create program"),
+        );
+        return;
+      }
+      if (!result.program?.id) {
+        setError("The program was created but no program reference was returned. Refresh and check Programs.");
+        return;
+      }
+      router.push(`/admin/programs/${result.program.id}`);
+      router.refresh();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to reach the server. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    if (!result.program?.id) {
-      setError("The program was created but no program reference was returned. Refresh and check Programs.");
-      return;
-    }
-    router.push(`/admin/programs/${result.program.id}`);
-    router.refresh();
   }
   return (
     <form className="panel form-panel" onSubmit={submit}>
@@ -202,6 +207,9 @@ export function ProgramForm() {
             {error}
           </div>
         )}
+        <p className="field-help field-full">
+          New programs start as drafts. After creation, publish the form, then launch registration from the program overview.
+        </p>
         <div className="form-actions">
           <Link className="button button-secondary" href="/admin/programs">
             Cancel

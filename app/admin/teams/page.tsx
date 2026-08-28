@@ -1,5 +1,5 @@
 import { AdminTeamConsole } from "@/components/admin-team-console";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, InfoTip, PageHeader } from "@/components/ui";
 import { db } from "@/lib/db";
 import { UsersRound } from "lucide-react";
 
@@ -24,6 +24,15 @@ export default async function AdminTeamsPage() {
         eyebrow="Teams"
         title="Team directory control"
         description="Approve new public team requests, monitor members, and close listings when teams are full."
+        action={
+          <InfoTip label="How team moderation works">
+            <strong>Team operations</strong>
+            <span>
+              Review pending requests, approve only complete teams, and archive listings when recruiting is finished.
+              Team leaders handle member join requests from the participant directory.
+            </span>
+          </InfoTip>
+        }
       />
       {teams.length ? (
         <AdminTeamConsole
