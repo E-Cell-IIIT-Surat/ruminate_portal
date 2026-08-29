@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 :root {
   --ink: #070706;
   --surface: #11110f;
@@ -35,7 +36,7 @@ body {
   background: var(--ink);
   color: var(--cream);
   font-family:
-    Inter,
+    Inter ,
     ui-sans-serif,
     system-ui,
     -apple-system,

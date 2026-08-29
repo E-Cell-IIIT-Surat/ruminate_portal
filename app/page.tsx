@@ -276,16 +276,6 @@ export default function Home() {
             ))}
           </div>
         </section>
-
-        <section className="closing-cta reveal">
-          <div>
-            <p className="eyebrow">Your idea has a place here</p>
-            <h2>Ready to give it a little momentum?</h2>
-          </div>
-          <ButtonLink href="/programs">
-            Start exploring <ArrowRight size={17} />
-          </ButtonLink>
-        </section>
       </main>
       <footer className="site-footer">
         <div className="footer-main">
