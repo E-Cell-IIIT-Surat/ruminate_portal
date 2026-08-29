@@ -116,9 +116,28 @@ export default async function UdbhavPage() {
             <strong>Be the change.</strong>
           </p>
         </section>
-        <section className="detail-layout">
-          <article className="rich-panel">
-            <h2>Innovation proposal</h2>
+        <section className="udbhav-detail-layout">
+          <aside className="udbhav-info-row">
+            <div className="udbhav-info-card">
+              <CalendarDays size={20} />
+              <span>Submission window</span>
+              <strong>1st–3rd monthly</strong>
+            </div>
+            <div className="udbhav-info-card">
+              <Rocket size={20} />
+              <span>Journey</span>
+              <strong>Idea → mentorship → funding</strong>
+            </div>
+            <div className="udbhav-info-card">
+              <UsersRound size={20} />
+              <span>Format</span>
+              <strong>Student teams</strong>
+            </div>
+          </aside>
+          <article className="rich-panel udbhav-form-panel">
+            <h2>
+              <Lightbulb size={20} /> Innovation proposal
+            </h2>
             <p>
               Tell us about the challenge, your solution, the technology behind it, estimated costs, distribution plan,
               and the milestones that will turn the idea into impact.
@@ -140,23 +159,6 @@ export default async function UdbhavPage() {
               </div>
             )}
           </article>
-          <aside className="detail-sidebar">
-            <div>
-              <CalendarDays />
-              <span>Submission window</span>
-              <strong>1st–3rd monthly</strong>
-            </div>
-            <div>
-              <Rocket />
-              <span>Journey</span>
-              <strong>Idea → mentorship → funding</strong>
-            </div>
-            <div>
-              <UsersRound />
-              <span>Format</span>
-              <strong>Student teams</strong>
-            </div>
-          </aside>
         </section>
         {ownSubmissions.length > 0 && (
           <section className="panel udbhav-your-ideas">
