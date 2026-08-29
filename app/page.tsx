@@ -21,7 +21,7 @@ import { ButtonLink } from "@/components/ui";
 const initiatives = [
   {
     label: "Flagship event",
-    title: "UdbhAV",
+    title: "UDHBAV",
     body: "Take an idea from first spark to a sharper, more confident pitch.",
     href: "/udbhav",
     accent: "orange",
@@ -61,12 +61,12 @@ export default function Home() {
           <div className="hero-grid" aria-hidden="true" />
           <div className="hero-content">
             <div className="kicker">
-              <Sparkles size={15} /> Ruminate operations platform
+              <Sparkles size={15} /> Ruminate portal
             </div>
             <h1>
-              Make the spark
+              Where every spark
               <br />
-              <span>easier to follow.</span>
+              <span>finds its path.</span>
             </h1>
             <p>
               Ruminate is the digital home for entrepreneurship at E-Cell IIIT Surat — where students discover
@@ -293,7 +293,7 @@ export default function Home() {
           <div className="footer-links">
             <span>Explore</span>
             <Link href="/programs">Programs</Link>
-            <Link href="/udbhav">UdbhAV</Link>
+            <Link href="/udbhav">UDBHAV</Link>
             <Link href="/ssip">SSIP</Link>
             <Link href="/financial-literacy-workshop">Workshop</Link>
           </div>

@@ -3453,10 +3453,10 @@ td {
   font-size: 11px;
   font-weight: 800;
 }
-footer-links a { display: inline-block; 
-  transition: color 0.2s ease,
-   transform 0.2s ease;
-   } 
+.footer-links a {
+  display: inline-block;
+  transition: color 0.2s ease, transform 0.2s ease;
+} 
 
 .footer-links a:hover { color: #f5a15e; transform: translateX(3px); }
 
@@ -5551,3 +5551,67 @@ h3 {
     0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 6px 16px rgba(0, 0, 0, 0.24);
 }
+
+.udbhav-detail-layout {
+  display: grid;
+  gap: 22px;
+}
+
+.udbhav-info-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.udbhav-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(249, 115, 22, 0.08), rgba(255, 255, 255, 0.015)), #12110f;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.udbhav-info-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.udbhav-info-card svg {
+  color: var(--orange);
+}
+
+.udbhav-info-card span {
+  color: #9d9185;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.udbhav-info-card strong {
+  color: #f5eee6;
+  font-size: 15px;
+}
+
+.udbhav-form-panel {
+  background: radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.1), transparent 40%), var(--surface);
+}
+
+.udbhav-form-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.udbhav-form-panel h2 svg {
+  color: var(--orange);
+}
+
+@media (max-width: 700px) {
+  .udbhav-info-row {
+    grid-template-columns: 1fr;
+  }
+}
+
