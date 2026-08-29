@@ -36,7 +36,7 @@ body {
   background: var(--ink);
   color: var(--cream);
   font-family:
-    Inter ,
+    Inter,
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -45,6 +45,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+h1, h2 , h3{ font-family: var(--font-heading), Inter, sans-serif; font-weight: 700; }
+
 a {
   color: inherit;
   text-decoration: none;
@@ -61,15 +64,23 @@ select {
   -webkit-appearance: none;
   -moz-appearance: none;
   cursor: pointer;
+  min-height: 44px;
+  padding-left: 14px;
   padding-right: 34px !important;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cream);
+  background-color: #131211;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaa198' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
+
 select:hover {
   border-color: rgba(249, 115, 22, 0.4);
+  background-color: #17150f;
 }
 select:focus {
   border-color: rgba(249, 115, 22, 0.65);
@@ -1339,7 +1350,6 @@ td {
   border: 1px solid #302d28;
   border-radius: 10px;
   background: #0d0d0c;
-  color: #aaa198;
   padding: 0 10px;
 }
 .pagination {
@@ -3149,8 +3159,8 @@ td {
 .process-card p,
 .initiative-card p {
   margin: 0;
-  color: #8d857b;
-  line-height: 1.65;
+  color: #a89e93;
+  line-height: 1.7;
   font-size: 13px;
 }
 .process-section {
@@ -3358,6 +3368,12 @@ td {
   font-size: 12px;
   font-weight: 800;
 }
+.initiative-cta svg{
+  transition: transform 0.2s ease;
+}
+ .initiative-card :hover .initiative-cta svg{
+  transform: translateX(4px);
+ }
 .closing-cta {
   max-width: 1184px;
   min-height: 190px;
@@ -3437,9 +3453,13 @@ td {
   font-size: 11px;
   font-weight: 800;
 }
-.footer-links a:hover {
-  color: #f5a15e;
-}
+footer-links a { display: inline-block; 
+  transition: color 0.2s ease,
+   transform 0.2s ease;
+   } 
+
+.footer-links a:hover { color: #f5a15e; transform: translateX(3px); }
+
 .footer-bottom {
   padding-top: 18px;
   display: flex;
@@ -5284,7 +5304,14 @@ td {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #000000, #8e2e02); 
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.24); 
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.06); }
 
 .brand-logo {
   width: 100%;
@@ -5458,4 +5485,69 @@ td {
   .ruminate-loader-glow {
     opacity: 0.5;
   }
+}
+ 
+/* Premium polish pass */
+
+.value-card,
+.team-card,
+.program-card,
+.initiative-card,
+.workshop-card,
+.metric-card,
+.panel,
+.settings-card,
+.ssip-facts article {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.22),
+    0 14px 34px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.value-card:hover,
+.team-card:hover,
+.program-card:hover,
+.initiative-card:hover,
+.workshop-card:hover,
+.settings-card:hover,
+.ssip-facts article:hover {
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    0 26px 62px rgba(0, 0, 0, 0.32);
+}
+
+.button {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 6px 18px rgba(0, 0, 0, 0.26);
+}
+
+.button-primary {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 12px 30px rgba(249, 115, 22, 0.3);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
+.brand-mark,
+.value-icon,
+.evaluation-mark,
+.settings-icon,
+.item-icon,
+.team-avatar {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 6px 16px rgba(0, 0, 0, 0.24);
 }
