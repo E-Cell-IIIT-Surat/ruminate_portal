@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 :root {
   --ink: #070706;
   --surface: #11110f;
@@ -29,12 +30,13 @@ html {
   color-scheme: dark;
   scroll-behavior: smooth;
 }
+
 body {
   margin: 0;
   background: var(--ink);
   color: var(--cream);
   font-family:
-    Inter,
+    Inter ,
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -53,6 +55,28 @@ textarea,
 select {
   font: inherit;
 }
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 34px !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaa198' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+select:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+}
+select:focus {
+  border-color: rgba(249, 115, 22, 0.65);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;
