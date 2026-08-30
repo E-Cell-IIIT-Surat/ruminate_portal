@@ -84,7 +84,7 @@ export function ProgramForm() {
       <div className="form-grid">
         <div className="field">
           <label htmlFor="name">Program name</label>
-          <input className="input" id="name" name="name" required minLength={3} placeholder="UdbhAV 2026" />
+          <input className="input" id="name" name="name" required minLength={3} placeholder="UDHBHAV 2026" />
         </div>
         <div className="field">
           <label htmlFor="slug">Slug</label>

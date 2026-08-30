@@ -33,7 +33,7 @@ export default async function AdminUdbhavPage() {
   return (
     <>
       <PageHeader
-        eyebrow="UdbhAV control room"
+        eyebrow="UDHBHAV control room"
         title="Ideas, status, and evaluation"
         description="Professor and super-admin access for monthly windows, live statuses, private team messages, scoring, and exports."
         action={
@@ -114,7 +114,7 @@ export default async function AdminUdbhavPage() {
         ) : (
           <EmptyState
             icon={Lightbulb}
-            title="No UdbhAV ideas yet"
+            title="No UDHBHAV ideas yet"
             body="Ideas submitted during an open cycle will appear here."
           />
         )}

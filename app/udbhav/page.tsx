@@ -9,7 +9,7 @@ import { hasDatabaseConfig } from "@/lib/env";
 import { defaultUdbhavWindow } from "@/lib/udbhav";
 import type { Session } from "next-auth";
 
-export const metadata: Metadata = { title: "UdbhAV" };
+export const metadata: Metadata = { title: "UDHBHAV" };
 export const dynamic = "force-dynamic";
 
 function activeCycleQuery() {
@@ -78,9 +78,9 @@ export default async function UdbhavPage() {
           <div className="udbhav-definition">
             <Lightbulb size={34} />
             <div>
-              <strong>What is UdbhAV?</strong>
+              <strong>What is UDHBHAV?</strong>
               <p>
-                UdbhAV means rise, progress, upliftment. It is our commitment to uplift ideas, empower innovators, and
+                UDHBHAV means rise, progress, upliftment. It is our commitment to uplift ideas, empower innovators, and
                 build a better tomorrow.
               </p>
             </div>
@@ -153,7 +153,7 @@ export default async function UdbhavPage() {
                 <Rocket size={22} />
                 <strong>Submissions are closed right now</strong>
                 <p>
-                  The UdbhAV form opens on the first three days of every month. Your progress will be saved in the
+                  The UDHBHAV form opens on the first three days of every month. Your progress will be saved in the
                   portal when the next window opens.
                 </p>
               </div>

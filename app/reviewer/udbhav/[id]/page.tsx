@@ -12,13 +12,13 @@ export default async function ReviewerUdbhavDetail({ params }: { params: Promise
   try {
     viewer = await requireUdbhavViewer(id);
   } catch {
-    return <AuthGate title="Idea unavailable" body="You do not have access to this UdbhAV idea." />;
+    return <AuthGate title="Idea unavailable" body="You do not have access to this UDHBHAV idea." />;
   }
   const submission = await db.udbhavSubmission.findUnique({
     where: { id: viewer.submission.id },
     include: { cycle: true, reviews: { where: { reviewerId: viewer.current.id } } },
   });
-  if (!submission) return <AuthGate title="Idea unavailable" body="This UdbhAV idea could not be found." />;
+  if (!submission) return <AuthGate title="Idea unavailable" body="This UDHBHAV idea could not be found." />;
   const review = submission.reviews[0];
   const initialReview = review
     ? {

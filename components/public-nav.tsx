@@ -55,7 +55,7 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
           )}
         </div>
         <Link className={`public-nav-link ${active("/udbhav") ? "active" : ""}`} href="/udbhav">
-          UDBHAV
+          UDHBHAV
         </Link>
         <Link className={`public-nav-link ${active("/ssip") ? "active" : ""}`} href="/ssip">
           SSIP
@@ -98,7 +98,7 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
             href="/udbhav"
             onClick={closeMobile}
           >
-            UDBHAV
+            UDHBHAV
           </Link>
           <Link
             className={`public-nav-mobile-link ${active("/ssip") ? "active" : ""}`}

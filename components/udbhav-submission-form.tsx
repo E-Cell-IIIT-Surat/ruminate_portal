@@ -259,7 +259,7 @@ export function UdbhavSubmissionForm({ cycleId }: { cycleId?: string }) {
           {state}
         </span>
         <button className="button button-primary" disabled={busy}>
-          {busy ? "Submitting…" : "Submit UdbhAV idea"}
+          {busy ? "Submitting…" : "Submit UDHBHAV idea"}
         </button>
       </div>
     </form>
