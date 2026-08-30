@@ -21,7 +21,7 @@ import { ButtonLink } from "@/components/ui";
 const initiatives = [
   {
     label: "Flagship event",
-    title: "UDHBAV",
+    title: "UDHBHAV",
     body: "Take an idea from first spark to a sharper, more confident pitch.",
     href: "/udbhav",
     accent: "orange",
@@ -293,7 +293,7 @@ export default function Home() {
           <div className="footer-links">
             <span>Explore</span>
             <Link href="/programs">Programs</Link>
-            <Link href="/udbhav">UDBHAV</Link>
+            <Link href="/udbhav">UDHBHAV</Link>
             <Link href="/ssip">SSIP</Link>
             <Link href="/financial-literacy-workshop">Workshop</Link>
           </div>

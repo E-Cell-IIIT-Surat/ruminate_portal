@@ -30,7 +30,7 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
       },
     },
   });
-  if (!submission) return <AuthGate title="Idea unavailable" body="This UdbhAV idea could not be found." />;
+  if (!submission) return <AuthGate title="Idea unavailable" body="This UDHBHAV idea could not be found." />;
 
   const reviewers = await db.user.findMany({
     where: {

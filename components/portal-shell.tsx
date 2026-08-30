@@ -23,7 +23,7 @@ const navSets = {
     ["Participants", "/admin/participants", "UsersRound"],
     ["Teams", "/admin/teams", "UsersRound"],
     ["Announcements", "/admin/announcements", "Megaphone"],
-    ["UdbhAV", "/admin/udbhav", "Rocket"],
+    ["UDHBHAV", "/admin/udbhav", "Rocket"],
     ["SSIP", "/admin/ssip", "Lightbulb"],
     ["Analytics", "/admin/analytics", "BarChart3"],
     ["Users & Roles", "/admin/users", "ShieldCheck"],
@@ -35,7 +35,7 @@ const navSets = {
     ["Dashboard", "/reviewer", "Gauge"],
     ["Pending reviews", "/reviewer?view=pending", "FileCheck2"],
     ["Completed reviews", "/reviewer?view=completed", "ClipboardList"],
-    ["UdbhAV reviews", "/reviewer/udbhav", "Rocket"],
+    ["UDHBHAV reviews", "/reviewer/udbhav", "Rocket"],
   ],
 } as const;
 

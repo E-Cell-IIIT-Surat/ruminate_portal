@@ -294,7 +294,7 @@ export default function SignInPage() {
           <p className="auth-quote">
             &quot;The future belongs to those who believe in the beauty of their dreams.&quot;
           </p>
-          <p>One secure home for SSIP, UdbhAV, workshops, applications, reviews, and outcomes at E-Cell IIIT Surat.</p>
+          <p>One secure home for SSIP, UDHBHAV, workshops, applications, reviews, and outcomes at E-Cell IIIT Surat.</p>
           <div className="auth-trust">
             <ShieldCheck size={18} /> Private by design · structured by purpose
           </div>
