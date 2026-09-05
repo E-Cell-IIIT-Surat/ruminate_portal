@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FileUp } from "lucide-react";
 
 type Member = { name: string; email: string; role: string };
 
@@ -12,6 +13,7 @@ export function UdbhavSubmissionForm({ cycleId }: { cycleId?: string }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState("");
+  const [fileName, setFileName] = useState("");
   function updateMember(index: number, key: keyof Member, value: string) {
     setMembers((current) =>
       current.map((member, itemIndex) => (itemIndex === index ? { ...member, [key]: value } : member)),
@@ -190,16 +192,25 @@ export function UdbhavSubmissionForm({ cycleId }: { cycleId?: string }) {
           />
         </div>
         <div className="field field-full">
-          <label htmlFor="udbhav-supporting-file">Supporting document (PDF or DOCX) *</label>
-          <input
-            className="input"
-            id="udbhav-supporting-file"
-            name="supportingFile"
-            type="file"
-            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            required
-          />
-          <p className="muted-copy">Upload your proposal or supporting material. Maximum size: 5 MB.</p>
+          <label>Supporting document (PDF or DOCX) *</label>
+          <div className="custom-file-dropzone">
+            <span className="custom-file-icon">
+              <FileUp size={22} />
+            </span>
+            <div className="custom-file-info">
+              <strong>{fileName || "Choose proposal file"}</strong>
+              <small>PDF or DOCX · Maximum 5 MB</small>
+            </div>
+            <span className="custom-file-browse-btn">Browse</span>
+            <input
+              id="udbhav-supporting-file"
+              name="supportingFile"
+              type="file"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              required
+              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
+            />
+          </div>
         </div>
       </div>
       <section className="team-capture">
