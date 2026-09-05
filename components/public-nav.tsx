@@ -60,11 +60,6 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
         <Link className={`public-nav-link ${active("/ssip") ? "active" : ""}`} href="/ssip">
           SSIP
         </Link>
-        {!signedIn && (
-          <Link className="public-nav-link" href="/signin">
-            Sign in
-          </Link>
-        )}
         <Link className="button button-secondary public-portal-link" href={signedIn ? "/dashboard" : "/signin"}>
           My portal
         </Link>
@@ -107,11 +102,6 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
           >
             SSIP
           </Link>
-          {!signedIn && (
-            <Link className="public-nav-mobile-link" href="/signin" onClick={closeMobile}>
-              Sign in
-            </Link>
-          )}
           <Link
             className="button button-secondary public-nav-mobile-portal"
             href={signedIn ? "/dashboard" : "/signin"}

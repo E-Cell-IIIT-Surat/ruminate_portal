@@ -124,15 +124,17 @@ a {
   line-height: 1.05;
 }
 .brand-copy strong {
-  font-size: 16px;
+  color: #fff9f4;
+  font-size: 19px;
   letter-spacing: -0.02em;
+  font-weight: 800;
 }
 .brand-copy small {
-  margin-top: 5px;
-  color: #938b81;
+  margin-top: 4px;
+  color: #cbbcb0;
   text-transform: uppercase;
-  font-size: 8px;
-  letter-spacing: 0.17em;
+  font-size: 10px;
+  letter-spacing: 0.15em;
   font-weight: 700;
 }
 
@@ -1953,14 +1955,20 @@ td {
 }
 .udbhav-quote {
   margin: 28px auto 0;
-  max-width: 650px;
-  color: #d6c8b8;
-  font-size: 18px;
+  max-width: 680px;
+  color: #f7ebe0;
+  font-size: 20px;
+  font-weight: 600;
   line-height: 1.7;
 }
 .udbhav-quote em {
-  color: #9d9185;
-  font-size: 13px;
+  display: block;
+  margin-top: 8px;
+  color: #f8ad6d;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 .udbhav-definition {
   position: relative;
@@ -2010,12 +2018,13 @@ td {
 .udbhav-journey strong {
   color: #ff9b32;
   text-transform: uppercase;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0.06em;
 }
 .udbhav-journey span {
-  color: #a79b8e;
-  font-size: 13px;
+  color: #dcd0c4;
+  font-size: 15px;
+  line-height: 1.45;
 }
 .udbhav-window {
   display: flex;
@@ -2037,10 +2046,11 @@ td {
   flex: 1;
 }
 .udbhav-window small {
-  color: #9d9185;
+  color: #f0e2d5;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 9px;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 700;
 }
 .udbhav-window strong {
   color: #f6e6d2;
@@ -3440,8 +3450,9 @@ td {
 }
 .footer-tagline > span {
   color: #f99854;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 800;
+  letter-spacing: 0.02em;
 }
 .footer-tagline p {
   max-width: 230px;
@@ -3545,6 +3556,20 @@ td {
 .feedback-modal select,
 .feedback-modal textarea {
   width: 100%;
+  background-color: #1c1916;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  color: #f7eee6;
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.feedback-modal select:focus,
+.feedback-modal textarea:focus {
+  border-color: rgba(249, 115, 22, 0.7);
+  background-color: #211e1a;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 .feedback-close {
   position: absolute;
@@ -5593,34 +5618,181 @@ h3 {
 }
 
 .udbhav-info-card span {
-  color: #9d9185;
-  font-size: 11px;
+  color: #e5d7ca;
+  font-size: 13px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
 
 .udbhav-info-card strong {
-  color: #f5eee6;
-  font-size: 15px;
+  color: #fff8f0;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .udbhav-form-panel {
-  background: radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.1), transparent 40%), var(--surface);
+  background: radial-gradient(circle at 100% 0%, rgba(249, 115, 22, 0.12), transparent 45%), #141311;
+  border: 1px solid rgba(255, 247, 235, 0.14);
+  padding: 32px;
 }
 
 .udbhav-form-panel h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #fff6ee;
+  font-size: 22px;
 }
 
 .udbhav-form-panel h2 svg {
   color: var(--orange);
 }
 
-@media (max-width: 700px) {
-  .udbhav-info-row {
-    grid-template-columns: 1fr;
-  }
+.udbhav-form-panel > p {
+  color: #dfd4ca;
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 12px 0 24px;
 }
+
+.udbhav-form-panel > .button,
+.udbhav-form-panel > a.button {
+  margin-top: 8px;
+  display: inline-flex;
+}
+
+.udbhav-form .field label {
+  color: #f0e6dd;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin-bottom: 7px;
+}
+
+.udbhav-form .input,
+.udbhav-form .textarea {
+  background-color: #1a1815;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fbf7f3;
+  font-size: 14px;
+  line-height: 1.55;
+  padding: 12px 16px;
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.udbhav-form .input::placeholder,
+.udbhav-form .textarea::placeholder {
+  color: #8c8278;
+}
+
+.udbhav-form .input:focus,
+.udbhav-form .textarea:focus {
+  border-color: rgba(249, 115, 22, 0.7);
+  background-color: #1e1c18;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+
+.udbhav-form .team-capture {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.udbhav-form .team-capture h3 {
+  color: #f8f2ec;
+  font-size: 16px;
+  margin: 0;
+}
+
+.udbhav-form .team-capture p {
+  color: #bfaaa0;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+
+.custom-file-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border: 1.5px dashed rgba(249, 115, 22, 0.35);
+  border-radius: 16px;
+  background: radial-gradient(circle at 0% 0%, rgba(249, 115, 22, 0.08), transparent 70%), #141311;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-file-dropzone:hover {
+  border-color: rgba(249, 115, 22, 0.7);
+  background-color: #1a1815;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.12);
+}
+
+.custom-file-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.custom-file-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--orange);
+  flex-shrink: 0;
+}
+
+.custom-file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.custom-file-info strong {
+  color: #f5eee6;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-file-info small {
+  color: #a3998e;
+  font-size: 12px;
+}
+
+.custom-file-browse-btn {
+  margin-left: auto;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f5eee6;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  pointer-events: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.custom-file-dropzone:hover .custom-file-browse-btn {
+  background: rgba(249, 115, 22, 0.2);
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #fff;
+}
+
 
