@@ -5615,3 +5615,318 @@ h3 {
   }
 }
 
+/* Custom orbiting-spark loader */
+.ruminate-spark-orbit {
+  position: absolute;
+  inset: 0;
+  animation: ruminate-spark-spin linear infinite;
+}
+
+.ruminate-spark-orbit-1 {
+  animation-duration: 2.4s;
+}
+
+.ruminate-spark-orbit-2 {
+  animation-duration: 3.2s;
+  animation-direction: reverse;
+}
+
+.ruminate-spark-orbit-3 {
+  animation-duration: 4s;
+  animation-delay: -1.2s;
+}
+
+.ruminate-spark {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd88a, #ff7a1f 70%);
+  box-shadow: 0 0 8px 2px rgba(255, 140, 40, 0.55);
+}
+
+.ruminate-spark-orbit-2 .ruminate-spark {
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  top: 8px;
+  opacity: 0.85;
+}
+
+.ruminate-spark-orbit-3 .ruminate-spark {
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  top: -4px;
+  opacity: 0.7;
+}
+
+@keyframes ruminate-spark-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ruminate-loader-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.ruminate-loader-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ruminate-ember-2);
+  opacity: 0.35;
+  animation: ruminate-dot-pulse 1.1s ease-in-out infinite;
+}
+
+.ruminate-loader-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.ruminate-loader-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes ruminate-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ruminate-spark-orbit {
+    animation: none;
+  }
+  .ruminate-loader-dots span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* Homepage "How to use this portal" section */
+.howto-section {
+  max-width: 1184px;
+  margin: 0 auto 130px;
+  padding-inline: 28px;
+}
+
+.howto-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 46px;
+}
+
+.howto-card {
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.008)), #12110f;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.howto-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(249, 115, 22, 0.32);
+}
+
+.howto-number {
+  color: #f28f4d;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  font-weight: 800;
+}
+
+.howto-card h3 {
+  margin: 12px 0 8px;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.howto-card p {
+  margin: 0;
+  color: #a89e93;
+  line-height: 1.7;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .howto-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.home-hero {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+  padding-block: 100px 90px;
+}
+
+.home-hero .hero-content {
+  max-width: 780px;
+}
+
+.home-hero .kicker {
+  margin-inline: auto;
+}
+
+.home-hero .hero-content > p {
+  margin-inline: auto;
+}
+
+.home-hero .hero-actions,
+.home-hero .trust-row {
+  justify-content: center;
+}
+.hero-brand-mark {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 12px;
+}
+
+.home-hero .hero-logo-card {
+  position: static;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto;
+  transform: none;
+  animation: float-card-center 6s ease-in-out infinite;
+}
+
+.home-hero .hero-logo-glow {
+  width: 42px;
+  height: 42px;
+  left: 27px;
+  top: 16px;
+}
+
+@keyframes float-card-center {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.home-hero .hero-logo-card {
+  position: relative;
+  overflow: visible;
+}
+
+.home-hero .hero-logo-card img {
+  animation: hero-flame-flicker 2.2s ease-in-out infinite;
+  transform-origin: 50% 85%;
+}
+
+@keyframes hero-flame-flicker {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 8px rgba(255, 120, 40, 0.35));
+  }
+  30% {
+    transform: scale(1.05) rotate(-1.5deg);
+    filter: drop-shadow(0 0 14px rgba(255, 170, 60, 0.55));
+  }
+  55% {
+    transform: scale(0.97) rotate(1deg);
+    filter: drop-shadow(0 0 6px rgba(255, 100, 30, 0.3));
+  }
+  80% {
+    transform: scale(1.03) rotate(-0.5deg);
+    filter: drop-shadow(0 0 12px rgba(255, 150, 50, 0.5));
+  }
+}
+
+.home-hero .hero-logo-glow {
+  width: 70px;
+  height: 70px;
+  left: 13px;
+  top: 13px;
+  background: radial-gradient(circle, rgba(255, 140, 40, 0.45), transparent 70%);
+  animation: hero-glow-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes hero-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.hero-ember {
+  position: absolute;
+  bottom: 10px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffd88a, #ff7a1f 70%);
+  box-shadow: 0 0 6px 2px rgba(255, 140, 40, 0.5);
+  opacity: 0;
+  animation: hero-ember-rise 3.4s ease-in infinite;
+}
+
+.hero-ember-1 {
+  left: 22px;
+  animation-delay: 0s;
+}
+
+.hero-ember-2 {
+  left: 48px;
+  animation-delay: 0.9s;
+}
+
+.hero-ember-3 {
+  left: 66px;
+  animation-delay: 1.8s;
+}
+
+.hero-ember-4 {
+  left: 38px;
+  animation-delay: 2.6s;
+}
+
+@keyframes hero-ember-rise {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-70px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero .hero-logo-card img,
+  .home-hero .hero-logo-glow,
+  .hero-ember {
+    animation: none;
+  }
+}
