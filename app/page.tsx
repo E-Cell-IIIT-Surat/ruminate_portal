@@ -58,7 +58,17 @@ export default function Home() {
         <section className="hero home-hero">
           <div className="hero-orb hero-orb-one" />
           <div className="hero-orb hero-orb-two" />
-          <div className="hero-grid" aria-hidden="true" />
+                    <div className="hero-grid" aria-hidden="true" />
+          <div className="hero-brand-mark">
+                        <div className="hero-logo-card" aria-label="Ruminate, E-Cell IIIT Surat">
+              <Image src="/ruminate-logo.png" alt="Ruminate — E-Cell IIIT Surat" width={96} height={96} priority />
+              <span className="hero-logo-glow" />
+              <i className="hero-ember hero-ember-1" />
+              <i className="hero-ember hero-ember-2" />
+              <i className="hero-ember hero-ember-3" />
+              <i className="hero-ember hero-ember-4" />
+            </div>
+          </div>
           <div className="hero-content">
             <div className="kicker">
               <Sparkles size={15} /> Ruminate portal
@@ -90,50 +100,6 @@ export default function Home() {
               <span>
                 <ClipboardCheck size={16} /> Structured reviews
               </span>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="hero-logo-card" aria-label="Ruminate, E-Cell IIIT Surat">
-              <Image src="/ruminate-logo.png" alt="Ruminate — E-Cell IIIT Surat" width={260} height={260} priority />
-              <span className="hero-logo-glow" />
-            </div>
-            <div className="workflow-card">
-              <div className="workflow-top">
-                <span>APPLICATION JOURNEY</span>
-                <span className="live-dot">Live</span>
-              </div>
-              <div className="workflow-item done">
-                <span>01</span>
-                <div>
-                  <strong>Application submitted</strong>
-                  <small>Responses and documents received</small>
-                </div>
-                <b>✓</b>
-              </div>
-              <div className="workflow-line" />
-              <div className="workflow-item active">
-                <span>02</span>
-                <div>
-                  <strong>Under review</strong>
-                  <small>Thoughtful feedback from reviewers</small>
-                </div>
-                <b>67%</b>
-              </div>
-              <div className="workflow-progress">
-                <i />
-              </div>
-              <div className="workflow-line muted" />
-              <div className="workflow-item">
-                <span>03</span>
-                <div>
-                  <strong>Decision</strong>
-                  <small>Published when ready</small>
-                </div>
-              </div>
-              <div className="workflow-foot">
-                <span>Reference</span>
-                <strong>UDB-2026-0182</strong>
-              </div>
             </div>
           </div>
         </section>
@@ -274,6 +240,35 @@ export default function Home() {
                 </span>
               </Link>
             ))}
+          </div>
+        </section>
+
+        <section className="howto-section reveal">
+          <div className="section-heading centered-heading">
+            <p className="eyebrow">Get started</p>
+            <h2>How to use this portal.</h2>
+          </div>
+          <div className="howto-grid">
+            <div className="howto-card">
+              <span className="howto-number">01</span>
+              <h3>Sign in</h3>
+              <p>Use Google or create an account with your email and password.</p>
+            </div>
+            <div className="howto-card">
+              <span className="howto-number">02</span>
+              <h3>Read the brief</h3>
+              <p>Check eligibility, dates, team size, and what evidence is expected.</p>
+            </div>
+            <div className="howto-card">
+              <span className="howto-number">03</span>
+              <h3>Submit once, improve continuously</h3>
+              <p>Save a draft, upload supporting files, and respond to review feedback.</p>
+            </div>
+            <div className="howto-card">
+              <span className="howto-number">04</span>
+              <h3>Follow the decision</h3>
+              <p>See status updates, reviewer progress, and announcements from your portal.</p>
+            </div>
           </div>
         </section>
       </main>
