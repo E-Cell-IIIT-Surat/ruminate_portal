@@ -58,17 +58,7 @@ export default function Home() {
         <section className="hero home-hero">
           <div className="hero-orb hero-orb-one" />
           <div className="hero-orb hero-orb-two" />
-                    <div className="hero-grid" aria-hidden="true" />
-          <div className="hero-brand-mark">
-                        <div className="hero-logo-card" aria-label="Ruminate, E-Cell IIIT Surat">
-              <Image src="/ruminate-logo.png" alt="Ruminate — E-Cell IIIT Surat" width={96} height={96} priority />
-              <span className="hero-logo-glow" />
-              <i className="hero-ember hero-ember-1" />
-              <i className="hero-ember hero-ember-2" />
-              <i className="hero-ember hero-ember-3" />
-              <i className="hero-ember hero-ember-4" />
-            </div>
-          </div>
+          <div className="hero-grid" aria-hidden="true" />
           <div className="hero-content">
             <div className="kicker">
               <Sparkles size={15} /> Ruminate portal
