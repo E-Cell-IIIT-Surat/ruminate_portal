@@ -109,7 +109,7 @@ a {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #000000, #8e2e02);
+  background: #000000;
   box-shadow: 0 8px 24px rgba(249, 115, 22, 0.24);
 }
 .brand-mark span {
@@ -5307,7 +5307,7 @@ td {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: linear-gradient(145deg, #000000, #8e2e02); 
+  background: #000000; 
   box-shadow: 0 8px 24px rgba(249, 115, 22, 0.24); 
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -5929,4 +5929,48 @@ h3 {
   .hero-ember {
     animation: none;
   }
+}
+
+.social-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 38px;
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a89e93;
+  background: rgba(255, 255, 255, 0.03);
+  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.social-link:hover {
+  color: #ffb266;
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.08);
+  transform: translateY(-2px);
+}
+
+.auth-card-brand .brand-mark {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+}
+
+.auth-card-brand .brand-logo {
+  width: 44px;
+  height: 44px;
+}
+
+.auth-card {
+  background: rgba(20, 19, 17, 0.45);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
