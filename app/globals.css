@@ -5974,3 +5974,78 @@ h3 {
   -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
 }
+
+/* SSIP blue theme redesign */
+.ssip-page {
+  background: radial-gradient(circle at 80% 0, rgba(25, 134, 230, 0.1), transparent 30%), var(--ink);
+}
+
+.ssip-page .button-primary {
+  background: linear-gradient(135deg, #1986e6, #2f9bff);
+  box-shadow: 0 10px 30px rgba(25, 134, 230, 0.28);
+  color: #fff;
+}
+
+.ssip-page .button-primary:hover {
+  background: linear-gradient(135deg, #2f9bff, #57b0ff);
+}
+
+.ssip-page .ssip-hero-stat {
+  border-color: rgba(25, 134, 230, 0.32);
+  background: linear-gradient(145deg, rgba(25, 134, 230, 0.18), rgba(20, 19, 17, 0.75));
+  color: #bfdbfe;
+}
+
+.ssip-page .ssip-hero-stat svg {
+  color: #57b0ff;
+}
+
+.ssip-page .ssip-facts span {
+  color: #57b0ff;
+}
+
+.ssip-page .ssip-facts article:hover {
+  border-color: rgba(25, 134, 230, 0.45);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
+.ssip-page .ssip-path svg {
+  color: #57b0ff;
+}
+
+.ssip-page .ssip-path > div:hover {
+  border-color: rgba(25, 134, 230, 0.45);
+}
+
+.ssip-page .ssip-sidebar svg {
+  color: #57b0ff;
+}
+
+.ssip-page .ssip-application-panel {
+  background: radial-gradient(circle at 100% 0, rgba(25, 134, 230, 0.16), transparent 34%), var(--surface);
+}
+
+.ssip-page .ssip-window-notice {
+  border-color: rgba(25, 134, 230, 0.32);
+  background: rgba(25, 134, 230, 0.07);
+  color: #bcd9f7;
+}
+
+.ssip-page .ssip-window-notice svg {
+  color: #57b0ff;
+}
+
+.ssip-page .ssip-window-notice h3 {
+  color: #eaf3ff;
+}
+
+.ssip-page .badge-blue {
+  color: #eaf3ff;
+  background: rgba(25, 134, 230, 0.16);
+  border-color: rgba(25, 134, 230, 0.4);
+}
+
+.ssip-page .rich-panel,
+.ssip-page .detail-sidebar {
+  border-color: rgba(25, 134, 230, 0.16);
+}
