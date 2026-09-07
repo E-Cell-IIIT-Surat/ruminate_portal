@@ -4,10 +4,10 @@ import {
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
-  Blocks,
-  ClipboardCheck,
   FileCheck2,
-  LockKeyhole,
+  Instagram,
+  Linkedin,
+  MessageCircle,
   Search,
   ShieldCheck,
   Sparkles,
@@ -80,16 +80,34 @@ export default function Home() {
                 Go to my portal
               </ButtonLink>
             </div>
-            <div className="trust-row">
-              <span>
-                <LockKeyhole size={16} /> Private by design
-              </span>
-              <span>
-                <Blocks size={16} /> One reusable engine
-              </span>
-              <span>
-                <ClipboardCheck size={16} /> Structured reviews
-              </span>
+            <div className="social-row">
+              
+              <a  href="https://www.instagram.com/ecell_iiits/"
+                target="_blank"
+                rel="noreferrer"
+                className="social-link"
+                aria-label="Instagram"
+              >
+                <Instagram size={18} />
+              </a>
+              
+               <a href="https://www.linkedin.com/company/ecell_iiits/"
+                target="_blank"
+                rel="noreferrer"
+                className="social-link"
+                aria-label="LinkedIn"
+              >
+                <Linkedin size={18} />
+              </a>
+              
+               <a href="https://chat.whatsapp.com/GxghMWE4anWIl4I57lFQXK"
+                target="_blank"
+                rel="noreferrer"
+                className="social-link"
+                aria-label="WhatsApp community"
+              >
+                <MessageCircle size={18} />
+              </a>
             </div>
           </div>
         </section>
