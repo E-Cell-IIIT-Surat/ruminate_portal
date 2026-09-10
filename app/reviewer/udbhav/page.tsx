@@ -27,7 +27,7 @@ export default async function ReviewerUdbhavPage() {
   return (
     <>
       <PageHeader
-        eyebrow="UdbhAV evaluation"
+        eyebrow="UDHBHAV evaluation"
         title="Idea review queue"
         description="Score the ten dimensions consistently and leave feedback the program team can act on."
       />
@@ -74,7 +74,7 @@ export default async function ReviewerUdbhavPage() {
         ) : (
           <EmptyState
             icon={Lightbulb}
-            title="No UdbhAV ideas to review"
+            title="No UDHBHAV ideas to review"
             body="Ideas will appear here after participants submit during an open cycle."
           />
         )}

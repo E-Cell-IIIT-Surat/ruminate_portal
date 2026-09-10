@@ -20,13 +20,13 @@ export default async function UdbhavSubmissionPage({ params }: { params: Promise
     },
   });
   if (!submission)
-    return <AuthGate title="Idea unavailable" body="This UdbhAV idea does not belong to your account." />;
+    return <AuthGate title="Idea unavailable" body="This UDHBHAV idea does not belong to your account." />;
   return (
     <PortalShell mode="participant" title="Participant portal" user={session.user}>
       <PageHeader
         eyebrow={submission.referenceId}
         title={submission.title}
-        description={`${submission.teamName} · UdbhAV ${submission.cycle.year}`}
+        description={`${submission.teamName} · UDHBHAV ${submission.cycle.year}`}
         action={
           <Badge
             tone={submission.status === "ACCEPTED" ? "green" : submission.status === "REJECTED" ? "red" : "orange"}

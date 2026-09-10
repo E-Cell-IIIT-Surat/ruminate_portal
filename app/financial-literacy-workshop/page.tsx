@@ -111,7 +111,7 @@ export default async function FinancialLiteracyWorkshopPage() {
           <article className="rich-panel">
             <h2>What you will find here</h2>
             <p>
-              From financial literacy and founder sessions to UdbhAV-style idea challenges, every listing has a clear
+              From financial literacy and founder sessions to UDHBHAV-style idea challenges, every listing has a clear
               overview, dates, eligibility, and a single place to register. Forms stay hidden until you choose the
               specific event, so the catalogue remains easy to scan on desktop and mobile.
             </p>

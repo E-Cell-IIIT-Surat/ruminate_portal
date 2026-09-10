@@ -4,10 +4,10 @@ import {
   ArrowRight,
   ArrowUpRight,
   BadgeCheck,
-  Blocks,
-  ClipboardCheck,
   FileCheck2,
-  LockKeyhole,
+  Instagram,
+  Linkedin,
+  MessageCircle,
   Search,
   ShieldCheck,
   Sparkles,
@@ -21,7 +21,7 @@ import { ButtonLink } from "@/components/ui";
 const initiatives = [
   {
     label: "Flagship event",
-    title: "UdbhAV",
+    title: "UDHBHAV",
     body: "Take an idea from first spark to a sharper, more confident pitch.",
     href: "/udbhav",
     accent: "orange",
@@ -61,12 +61,12 @@ export default function Home() {
           <div className="hero-grid" aria-hidden="true" />
           <div className="hero-content">
             <div className="kicker">
-              <Sparkles size={15} /> Ruminate operations platform
+              <Sparkles size={15} /> Ruminate portal
             </div>
             <h1>
-              Make the spark
+              Where every spark
               <br />
-              <span>easier to follow.</span>
+              <span>finds its path.</span>
             </h1>
             <p>
               Ruminate is the digital home for entrepreneurship at E-Cell IIIT Surat — where students discover
@@ -80,60 +80,34 @@ export default function Home() {
                 Go to my portal
               </ButtonLink>
             </div>
-            <div className="trust-row">
-              <span>
-                <LockKeyhole size={16} /> Private by design
-              </span>
-              <span>
-                <Blocks size={16} /> One reusable engine
-              </span>
-              <span>
-                <ClipboardCheck size={16} /> Structured reviews
-              </span>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="hero-logo-card" aria-label="Ruminate, E-Cell IIIT Surat">
-              <Image src="/ruminate-logo.png" alt="Ruminate — E-Cell IIIT Surat" width={260} height={260} priority />
-              <span className="hero-logo-glow" />
-            </div>
-            <div className="workflow-card">
-              <div className="workflow-top">
-                <span>APPLICATION JOURNEY</span>
-                <span className="live-dot">Live</span>
-              </div>
-              <div className="workflow-item done">
-                <span>01</span>
-                <div>
-                  <strong>Application submitted</strong>
-                  <small>Responses and documents received</small>
-                </div>
-                <b>✓</b>
-              </div>
-              <div className="workflow-line" />
-              <div className="workflow-item active">
-                <span>02</span>
-                <div>
-                  <strong>Under review</strong>
-                  <small>Thoughtful feedback from reviewers</small>
-                </div>
-                <b>67%</b>
-              </div>
-              <div className="workflow-progress">
-                <i />
-              </div>
-              <div className="workflow-line muted" />
-              <div className="workflow-item">
-                <span>03</span>
-                <div>
-                  <strong>Decision</strong>
-                  <small>Published when ready</small>
-                </div>
-              </div>
-              <div className="workflow-foot">
-                <span>Reference</span>
-                <strong>UDB-2026-0182</strong>
-              </div>
+            <div className="social-row">
+              
+              <a  href="https://www.instagram.com/ecell_iiits/"
+                target="_blank"
+                rel="noreferrer"
+                className="social-link"
+                aria-label="Instagram"
+              >
+                <Instagram size={18} />
+              </a>
+              
+               <a href="https://www.linkedin.com/company/ecell_iiits/"
+                target="_blank"
+                rel="noreferrer"
+                className="social-link"
+                aria-label="LinkedIn"
+              >
+                <Linkedin size={18} />
+              </a>
+              
+               <a href="https://chat.whatsapp.com/GxghMWE4anWIl4I57lFQXK"
+                target="_blank"
+                rel="noreferrer"
+                className="social-link"
+                aria-label="WhatsApp community"
+              >
+                <MessageCircle size={18} />
+              </a>
             </div>
           </div>
         </section>
@@ -277,14 +251,33 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="closing-cta reveal">
-          <div>
-            <p className="eyebrow">Your idea has a place here</p>
-            <h2>Ready to give it a little momentum?</h2>
+        <section className="howto-section reveal">
+          <div className="section-heading centered-heading">
+            <p className="eyebrow">Get started</p>
+            <h2>How to use this portal.</h2>
           </div>
-          <ButtonLink href="/programs">
-            Start exploring <ArrowRight size={17} />
-          </ButtonLink>
+          <div className="howto-grid">
+            <div className="howto-card">
+              <span className="howto-number">01</span>
+              <h3>Sign in</h3>
+              <p>Use Google or create an account with your email and password.</p>
+            </div>
+            <div className="howto-card">
+              <span className="howto-number">02</span>
+              <h3>Read the brief</h3>
+              <p>Check eligibility, dates, team size, and what evidence is expected.</p>
+            </div>
+            <div className="howto-card">
+              <span className="howto-number">03</span>
+              <h3>Submit once, improve continuously</h3>
+              <p>Save a draft, upload supporting files, and respond to review feedback.</p>
+            </div>
+            <div className="howto-card">
+              <span className="howto-number">04</span>
+              <h3>Follow the decision</h3>
+              <p>See status updates, reviewer progress, and announcements from your portal.</p>
+            </div>
+          </div>
         </section>
       </main>
       <footer className="site-footer">
@@ -303,7 +296,7 @@ export default function Home() {
           <div className="footer-links">
             <span>Explore</span>
             <Link href="/programs">Programs</Link>
-            <Link href="/udbhav">UdbhAV</Link>
+            <Link href="/udbhav">UDHBHAV</Link>
             <Link href="/ssip">SSIP</Link>
             <Link href="/financial-literacy-workshop">Workshop</Link>
           </div>

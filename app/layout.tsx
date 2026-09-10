@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Space_Grotesk } from "next/font/google";
 import { Suspense } from "react";
 import { NetworkStatus } from "@/components/network-status";
 import { FeedbackWidget } from "@/components/feedback-widget";
@@ -6,6 +7,12 @@ import { InstallPrompt } from "@/components/install-prompt";
 import { NavigationLoader } from "@/components/ruminate-loader";
 import "./globals.css";
 import "./portal-polish.css";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500" , "700"],
+  variable: "--font-heading",
+});
 
 const siteUrl = process.env.APP_URL ?? "https://portal.ecelliiitsurat.in";
 const tagline =
@@ -44,7 +51,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+   <html lang="en" className={spaceGrotesk.variable}>
       <body>
         {children}
         <Suspense fallback={null}>

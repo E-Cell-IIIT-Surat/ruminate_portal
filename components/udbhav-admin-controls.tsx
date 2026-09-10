@@ -40,7 +40,7 @@ export function UdbhavCycleControl({
       <div className="panel-header">
         <div>
           <span className="eyebrow">Monthly form control</span>
-          <h2>UdbhAV cycle window</h2>
+          <h2>UDHBHAV cycle window</h2>
         </div>
         <span className="config-state" role="status">
           {state}

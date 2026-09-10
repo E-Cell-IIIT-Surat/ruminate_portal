@@ -95,7 +95,15 @@ export function RuminateLoader({ label = "Loading Ruminate", overlay = false }: 
       <div className="ruminate-loader-card">
         <div className="ruminate-loader-orbit" aria-hidden="true">
           <span className="ruminate-loader-glow" />
-          <span className="ruminate-loader-ring" />
+          <span className="ruminate-spark-orbit ruminate-spark-orbit-1">
+            <i className="ruminate-spark" />
+          </span>
+          <span className="ruminate-spark-orbit ruminate-spark-orbit-2">
+            <i className="ruminate-spark" />
+          </span>
+          <span className="ruminate-spark-orbit ruminate-spark-orbit-3">
+            <i className="ruminate-spark" />
+          </span>
           <span className="ruminate-loader-flame">
             <Image
               src="/ruminate-logo.png"
@@ -109,7 +117,9 @@ export function RuminateLoader({ label = "Loading Ruminate", overlay = false }: 
         </div>
         <p className="ruminate-loader-eyebrow">Ruminate</p>
         <p className="ruminate-loader-title">{label}</p>
-        <div className="ruminate-loader-track" aria-hidden="true">
+        <div className="ruminate-loader-dots" aria-hidden="true">
+          <span />
+          <span />
           <span />
         </div>
       </div>

@@ -65,8 +65,8 @@ export default async function SsipPage() {
               <ButtonLink href={formHref}>
                 {submissionOpen ? "Submit your SSIP idea" : "View application status"} <ArrowRight size={17} />
               </ButtonLink>
-              <a
-                className="button button-secondary"
+              
+                <a className="button button-secondary"
                 href="https://ecelliiitsurat.in/ssip"
                 target="_blank"
                 rel="noreferrer"
@@ -130,25 +130,6 @@ export default async function SsipPage() {
                 <span>Track decisions, revisions, funding steps, and next actions in one place.</span>
               </div>
             </div>
-            <h2>How to use this portal</h2>
-            <ol className="ssip-steps">
-              <li>
-                <b>Sign in</b>
-                <span>Use Google or create an account with your email and password.</span>
-              </li>
-              <li>
-                <b>Read the brief</b>
-                <span>Check eligibility, dates, team size, and what evidence is expected.</span>
-              </li>
-              <li>
-                <b>Submit once, improve continuously</b>
-                <span>Save a draft, upload supporting files, and respond to review feedback.</span>
-              </li>
-              <li>
-                <b>Follow the decision</b>
-                <span>See status updates, reviewer progress, and announcements from your portal.</span>
-              </li>
-            </ol>
           </article>
           <aside className="detail-sidebar ssip-sidebar">
             <div>
