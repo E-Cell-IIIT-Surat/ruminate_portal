@@ -992,7 +992,7 @@ footer {
 }
 .page-header p:not(.eyebrow) {
   margin: 8px 0 0;
-  color: #8f877e;
+  color: var(--muted);
   font-size: 14px;
 }
 .metric-grid {
@@ -1119,7 +1119,7 @@ table {
 }
 th {
   padding: 12px 18px;
-  color: #777068;
+  color: var(--muted);
   text-align: left;
   text-transform: uppercase;
   letter-spacing: 0.08em;

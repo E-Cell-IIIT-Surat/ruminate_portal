@@ -786,6 +786,9 @@ model EmailDelivery {
   templateKey    String
   providerId     String?
   status         EmailStatus @default(QUEUED)
+  claimedAt      DateTime?
+  claimedBy      String?
+  nextAttemptAt  DateTime?
   errorCode      String?
   createdAt      DateTime    @default(now())
   sentAt         DateTime?
@@ -796,6 +799,7 @@ model EmailDelivery {
   program        Program?    @relation(fields: [programId], references: [id])
 
   @@index([status, createdAt])
+  @@index([status, nextAttemptAt])
   @@index([recipientEmail, createdAt])
 }
 
@@ -983,6 +987,7 @@ enum NotificationType {
 
 enum EmailStatus {
   QUEUED
+  PROCESSING
   SENT
   FAILED
   SUPPRESSED

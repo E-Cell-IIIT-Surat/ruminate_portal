@@ -3,22 +3,17 @@
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDialogFocus } from "@/components/use-dialog-focus";
 import { portalIcons, type NavItem } from "@/components/portal-nav";
+import { activeNavHref } from "@/lib/domain/navigation";
 
 export function MobilePortalNav({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname() ?? "/";
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  const panelRef = useDialogFocus(open, () => setOpen(false));
+  const activeHref = activeNavHref(items, pathname, new URLSearchParams(searchParams.toString()));
 
   return (
     <div className="mobile-portal-nav">
@@ -40,15 +35,13 @@ export function MobilePortalNav({ items }: { items: readonly NavItem[] }) {
             aria-label="Close navigation"
             onClick={() => setOpen(false)}
           />
-          <nav className="mobile-portal-panel" id="mobile-portal-menu" aria-label="Portal navigation">
+          <nav ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" className="mobile-portal-panel" id="mobile-portal-menu" aria-label="Portal navigation">
+            <button className="button button-secondary" type="button" onClick={() => setOpen(false)}>
+              <X size={18} aria-hidden="true" /> Close menu
+            </button>
             {items.map(([label, href, iconName]) => {
               const Icon = portalIcons[iconName];
-              const [targetPath, targetQuery] = href.split("?");
-              const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
-              const queryMatches = targetQuery
-                ? new URLSearchParams(targetQuery).get("view") === searchParams.get("view")
-                : !["/reviewer"].includes(targetPath) || !searchParams.get("view");
-              const active = pathMatches && queryMatches;
+              const active = href === activeHref;
               return (
                 <Link
                   href={href}

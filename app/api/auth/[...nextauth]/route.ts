@@ -17,7 +17,7 @@ function requestIp(request: Request) {
 export async function POST(request: Request) {
   // Auth.js owns its OAuth CSRF flow. Credentials sign-in is additionally
   // rate-limited by source IP; auth.ts applies a separate per-email backoff.
-  if (new URL(request.url).pathname.endsWith("/signin/credentials")) {
+  if (/\/(signin|callback)\/credentials$/.test(new URL(request.url).pathname)) {
     try {
       await enforceRateLimit(`auth:credentials:ip:${requestIp(request)}`, 20, 15 * 60);
     } catch (error) {

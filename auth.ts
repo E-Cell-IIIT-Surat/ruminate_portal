@@ -10,6 +10,7 @@ import { compare } from "bcrypt-ts";
 import { superAdminEmails } from "@/lib/env";
 import { assertAuthBackoff, clearAuthFailures, recordAuthFailure } from "@/lib/rate-limit";
 import { sendWelcomeEmail } from "@/lib/services/email";
+import { hasVerifiedEmailAccess } from "@/lib/domain/identity";
 
 // Explicitly read environment variables for the server runtime
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -59,8 +60,8 @@ const rolePriority: RoleName[] = [
 ];
 
 async function getPrimaryRole(userId: string): Promise<RoleName> {
-  const user = await db.user.findUnique({ where: { id: userId }, select: { email: true } });
-  if (user?.email && superAdminEmails().has(user.email.toLowerCase())) return "SUPER_ADMIN";
+  const user = await db.user.findUnique({ where: { id: userId }, select: { email: true, emailVerified: true } });
+  if (user && hasVerifiedEmailAccess(user, superAdminEmails())) return "SUPER_ADMIN";
   const assignments = await db.userRole.findMany({
     where: { userId },
     select: { role: { select: { name: true } } },
@@ -166,7 +167,12 @@ export const authConfig = {
       await ensureUserRoles(user);
       await sendWelcomeEmail(user);
     },
-    async signIn({ user }) {
+    async signIn({ user, account, profile }) {
+      // Only Google's authenticated, verified profile can establish ownership.
+      // A credentials signup must never self-verify an allowlisted address.
+      if (user.id && account?.provider === "google" && profile?.email_verified === true) {
+        await db.user.update({ where: { id: user.id }, data: { emailVerified: new Date() } });
+      }
       await ensureUserRoles(user);
       await sendWelcomeEmail(user);
     },

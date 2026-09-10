@@ -6,6 +6,8 @@ The operations platform for Ruminate — E-Cell IIIT Surat. This is a separate p
 
 Ruminate Portal is one reusable program engine for registrations, UdbhAV, SSIP, Abhyudaya, hackathons, workshops, industry visits, mentorship, pitch competitions, and future initiatives. Program behavior comes from database configuration—forms, team limits, stages, capacity, rubrics, and permissions—not event-specific code.
 
+For the complete product, user, developer, architecture, security, route, environment, and deployment guide, see [docs/RUMINATE_PLATFORM_GUIDE.md](docs/RUMINATE_PLATFORM_GUIDE.md).
+
 ## Architecture
 
 - `app/` — App Router pages and protected route handlers

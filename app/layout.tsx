@@ -5,6 +5,7 @@ import { FeedbackWidget } from "@/components/feedback-widget";
 import { InstallPrompt } from "@/components/install-prompt";
 import { NavigationLoader } from "@/components/ruminate-loader";
 import "./globals.css";
+import "./portal-polish.css";
 
 const siteUrl = process.env.APP_URL ?? "https://portal.ecelliiitsurat.in";
 const tagline =

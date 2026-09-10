@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { auth } from "@/auth";
+import { requireUser } from "@/lib/authz";
 import { db } from "@/lib/db";
-import { AppError, safeError, unauthorized } from "@/lib/errors";
+import { AppError, safeError } from "@/lib/errors";
 import { hasDatabaseConfig } from "@/lib/env";
 import { queueAndDeliverEmail } from "@/lib/services/email";
 
@@ -34,11 +34,10 @@ function isSubmissionWindowOpen(settings: { isOpen: boolean; opensAt: Date | nul
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session?.user?.id) throw unauthorized();
+    const user = await requireUser();
     const submissions = hasDatabaseConfig()
       ? await db.sSIPSubmission.findMany({
-          where: { userId: session.user.id },
+          where: { userId: user.id },
           orderBy: { createdAt: "desc" },
           select: { id: true, referenceId: true, title: true, status: true, createdAt: true, updatedAt: true },
         })
@@ -51,8 +50,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) throw unauthorized();
+    const user = await requireUser();
     const settings = await db.sSIPSettings.findUnique({ where: { id: "default" } });
     if (!isSubmissionWindowOpen(settings))
       throw new AppError("SSIP submissions are currently closed", 409, "SSIP_CLOSED");
@@ -62,7 +60,7 @@ export async function POST(request: Request) {
     const submission = await db.sSIPSubmission.create({
       data: {
         referenceId,
-        userId: session.user.id,
+        userId: user.id,
         name: input.name,
         email: input.email,
         phone: input.phone,
@@ -82,7 +80,7 @@ export async function POST(request: Request) {
     await Promise.allSettled([
       db.notification.create({
         data: {
-          userId: session.user.id,
+          userId: user.id,
           type: "APPLICATION",
           title: "SSIP idea submitted",
           body: `Your idea “${input.title}” was received. Reference ${referenceId}.`,

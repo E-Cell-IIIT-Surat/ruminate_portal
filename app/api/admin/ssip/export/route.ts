@@ -2,10 +2,7 @@ import { db } from "@/lib/db";
 import { requirePermission } from "@/lib/authz";
 import { safeError } from "@/lib/errors";
 
-function csvCell(value: unknown) {
-  const text = value === null || value === undefined ? "" : String(value);
-  return `"${text.replaceAll('"', '""')}"`;
-}
+import { csvCell } from "@/lib/domain/csv";
 
 export async function GET() {
   try {

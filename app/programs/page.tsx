@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CalendarDays, Layers3 } from "lucide-react";
 import { PublicHeader } from "@/components/public-header";
 import { Badge, EmptyState, PageHeader } from "@/components/ui";
-import { publicPrograms } from "@/lib/data/public";
+import { publicPrograms, PublicDataError } from "@/lib/data/public";
 import { hasDatabaseConfig } from "@/lib/env";
 import { registrationState } from "@/lib/domain/program";
 import Link from "next/link";
@@ -23,7 +23,29 @@ export default async function ProgramsPage({
 }) {
   const filters = await searchParams;
   const year = filters.year && /^\d{4}$/.test(filters.year) ? Number(filters.year) : undefined;
-  const programs = await publicPrograms({ type: filters.type, state: filters.state, year });
+  let programs;
+  try {
+    programs = await publicPrograms({ type: filters.type, state: filters.state, year });
+  } catch (error) {
+    if (!(error instanceof PublicDataError)) throw error;
+    return (
+      <div className="public-page">
+        <PublicHeader />
+        <main className="public-container">
+          <PageHeader
+            eyebrow="Temporarily unavailable"
+            title="Programs could not load"
+            description="We could not reach the programme catalogue. Please refresh and try again."
+          />
+          <div className="panel route-state-actions">
+            <Link className="button button-primary" href="/programs">
+              Try again
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
   return (
     <div className="public-page">
       <PublicHeader />

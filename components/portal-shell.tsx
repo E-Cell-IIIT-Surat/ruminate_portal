@@ -64,6 +64,9 @@ export async function PortalShell({
     : null;
   return (
     <div className="portal-layout">
+      <a className="skip-link" href="#portal-content">
+        Skip to content
+      </a>
       <aside className="sidebar">
         <Brand />
         <PortalNav items={navSets[mode]} />
@@ -82,7 +85,7 @@ export async function PortalShell({
           <MobilePortalNav items={navSets[mode]} />
           <SignOutButton />
         </header>
-        <div className="portal-content">
+        <div className="portal-content" id="portal-content" tabIndex={-1}>
           {announcement && (
             <AnnouncementPopover item={{ ...announcement, createdAt: announcement.createdAt.toISOString() }} />
           )}

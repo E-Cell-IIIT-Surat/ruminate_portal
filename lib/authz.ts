@@ -6,10 +6,16 @@ import { canEditSubmitted } from "@/lib/domain/program";
 import { AppError } from "@/lib/errors";
 import { canAccessApplication } from "@/lib/domain/access";
 import { superAdminEmails } from "@/lib/env";
+import { hasVerifiedEmailAccess } from "@/lib/domain/identity";
 
 export async function requireUser() {
   const session = await auth();
   if (!session?.user?.id) throw unauthorized();
+  const active = await db.user.findUnique({
+    where: { id: session.user.id, archivedAt: null },
+    select: { id: true },
+  });
+  if (!active) throw unauthorized();
   return session.user;
 }
 
@@ -19,6 +25,7 @@ export async function userAuthorization(userId: string) {
     select: {
       id: true,
       email: true,
+      emailVerified: true,
       roles: {
         select: {
           role: {
@@ -34,7 +41,7 @@ export async function userAuthorization(userId: string) {
   const grants = new Set<PermissionKey>(
     user.roles.flatMap(({ role }) => role.permissions.map(({ permission }) => permission.key as PermissionKey)),
   );
-  const isGlobalAdmin = superAdminEmails().has(user.email.toLowerCase());
+  const isGlobalAdmin = hasVerifiedEmailAccess(user, superAdminEmails());
   if (isGlobalAdmin) {
     roles.add("SUPER_ADMIN");
     permissions.forEach((permission) => grants.add(permission));

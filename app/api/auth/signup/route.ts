@@ -8,9 +8,9 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { safeError } from "@/lib/errors";
 
 const signupSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z.string().trim().min(2, "Name is required").max(120),
+  email: z.string().trim().email("Invalid email address").max(254),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 
 export async function POST(req: Request) {

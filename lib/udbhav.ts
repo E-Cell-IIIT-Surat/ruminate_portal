@@ -44,7 +44,11 @@ export async function requireUdbhavAdmin() {
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-  if (!authorization.isSuperAdmin && !special.includes((current.email ?? "").toLowerCase())) throw forbidden();
+  if (
+    !authorization.isSuperAdmin &&
+    !(authorization.emailVerified && special.includes(authorization.email.toLowerCase()))
+  )
+    throw forbidden();
   return { current, authorization };
 }
 
@@ -57,7 +61,9 @@ export async function requireUdbhavViewer(submissionId: string) {
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-  const isAdmin = authorization.isSuperAdmin || special.includes((current.email ?? "").toLowerCase());
+  const isAdmin =
+    authorization.isSuperAdmin ||
+    Boolean(authorization.emailVerified && special.includes(authorization.email.toLowerCase()));
   const isReviewer = authorization.roles.has("REVIEWER") || authorization.roles.has("FACULTY_REVIEWER");
   const assignment = isReviewer
     ? await db.udbhavReviewerAssignment.findUnique({

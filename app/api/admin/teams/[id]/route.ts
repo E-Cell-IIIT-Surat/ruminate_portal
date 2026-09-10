@@ -29,6 +29,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
             ? { status: "CLOSED" as const, isPublic: false }
             : { status: "ARCHIVED" as const, isPublic: false };
     const updated = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`team:${id}`}))`;
       const saved = await tx.team.update({ where: { id }, data });
       await tx.auditLog.create({
         data: {

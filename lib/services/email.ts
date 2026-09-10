@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { emailEnv } from "@/lib/env";
 import nodemailer from "nodemailer";
+import { randomUUID } from "node:crypto";
 
 export async function queueEmail(input: {
   recipientEmail: string;
@@ -53,28 +54,39 @@ export async function queueAndDeliverEmail(input: {
  */
 export async function sendWelcomeEmail(user: { id?: string | null; email?: string | null; name?: string | null }) {
   if (!user.id || !user.email) return false;
+  const userId = user.id;
+  const userEmail = user.email;
   try {
-    const claimed = await db.user.updateMany({
-      where: { id: user.id, welcomeEmailSentAt: null },
-      data: { welcomeEmailSentAt: new Date() },
-    });
-    if (claimed.count !== 1) return false;
-
     const firstName = user.name?.trim().split(/\s+/)[0] || "there";
-    await queueAndDeliverEmail({
-      recipientEmail: user.email,
-      templateKey: "welcome",
-      subject: "Welcome to Ruminate · E-Cell IIIT Surat",
-      textBody: `Hi ${firstName},\n\nWelcome to Ruminate, the digital home for entrepreneurship at E-Cell IIIT Surat.\n\nYou can now discover programmes, build teams, submit applications, follow reviews, and receive important updates in one secure portal. Start by visiting your dashboard and exploring the currently open opportunities.\n\nIf you need help, reply to this email or use the Feedback button in the portal.\n\nWarm regards,\nRuminate · E-Cell IIIT Surat`,
+    const queued = await db.$transaction(async (tx) => {
+      const claimed = await tx.user.updateMany({
+        where: { id: userId, welcomeEmailSentAt: null },
+        data: { welcomeEmailSentAt: new Date() },
+      });
+      if (claimed.count !== 1) return null;
+
+      const queued = await tx.emailDelivery.create({
+        data: {
+          recipientEmail: userEmail,
+          templateKey: "welcome",
+          subject: "Welcome to Ruminate · E-Cell IIIT Surat",
+          textBody: `Hi ${firstName},\n\nWelcome to Ruminate, the digital home for entrepreneurship at E-Cell IIIT Surat.\n\nYou can now discover programmes, build teams, submit applications, follow reviews, and receive important updates in one secure portal. Start by visiting your dashboard and exploring the currently open opportunities.\n\nIf you need help, reply to this email or use the Feedback button in the portal.\n\nWarm regards,\nRuminate · E-Cell IIIT Surat`,
+        },
+      });
+      await tx.notification.create({
+        data: {
+          userId,
+          type: "SYSTEM",
+          title: "Welcome to Ruminate",
+          body: "Your workspace is ready. Explore programmes, teams, and upcoming workshops.",
+          href: "/dashboard",
+        },
+      });
+      return queued;
     });
-    await db.notification.create({
-      data: {
-        userId: user.id,
-        type: "SYSTEM",
-        title: "Welcome to Ruminate",
-        body: "Your workspace is ready. Explore programmes, teams, and upcoming workshops.",
-        href: "/dashboard",
-      },
+    if (!queued) return false;
+    await deliverEmail(queued.id).catch((error) => {
+      console.error("[email welcome delivery failed]", { deliveryId: queued.id, error });
     });
     return true;
   } catch (error) {
@@ -84,19 +96,54 @@ export async function sendWelcomeEmail(user: { id?: string | null; email?: strin
 }
 
 export async function deliverEmail(id: string) {
-  const delivery = await db.emailDelivery.findFirst({
-    where: { id, status: { in: ["QUEUED", "FAILED"] }, attempts: { lt: 5 } },
+  const claimId = randomUUID();
+  const now = new Date();
+  const claimed = await db.emailDelivery.updateMany({
+    where: {
+      id,
+      attempts: { lt: 5 },
+      OR: [
+        { status: "QUEUED", OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
+        { status: "FAILED", OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] },
+        // Recover a worker that was interrupted after claiming.
+        { status: "PROCESSING", claimedAt: { lt: new Date(now.getTime() - 2 * 60 * 1000) } },
+      ],
+    },
+    data: {
+      status: "PROCESSING",
+      claimedAt: now,
+      claimedBy: claimId,
+      attempts: { increment: 1 },
+      lastAttemptAt: now,
+      errorCode: null,
+    },
   });
+  if (claimed.count !== 1) return null;
+  const delivery = await db.emailDelivery.findFirst({ where: { id, status: "PROCESSING", claimedBy: claimId } });
   if (!delivery) return null;
-  const config = emailEnv();
-  await db.emailDelivery.update({
-    where: { id },
-    data: { attempts: { increment: 1 }, lastAttemptAt: new Date(), errorCode: null },
-  });
+  let config;
+  try {
+    config = emailEnv();
+  } catch (error) {
+    await db.emailDelivery.update({
+      where: { id, claimedBy: claimId },
+      data: {
+        status: "FAILED",
+        errorCode: "INVALID_EMAIL_CONFIGURATION",
+        nextAttemptAt: null,
+        claimedAt: null,
+        claimedBy: null,
+      },
+    });
+    throw error;
+  }
 
   if (config.EMAIL_PROVIDER === "console") {
     console.info(`[email suppressed] ${delivery.templateKey} -> ${delivery.recipientEmail}`);
-    return db.emailDelivery.update({ where: { id }, data: { status: "SUPPRESSED" } });
+    return db.emailDelivery.update({
+      where: { id, claimedBy: claimId },
+      data: { status: "SUPPRESSED", claimedAt: null, claimedBy: null },
+    });
   }
 
   try {
@@ -106,6 +153,9 @@ export async function deliverEmail(id: string) {
         host: config.SMTP_HOST,
         port: config.SMTP_PORT,
         secure: config.SMTP_SECURE,
+        connectionTimeout: 10_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 20_000,
         auth: { user: config.SMTP_USER, pass: config.SMTP_PASS },
       });
       const result = await transporter.sendMail({
@@ -116,11 +166,19 @@ export async function deliverEmail(id: string) {
       });
       return db.emailDelivery.update({
         where: { id },
-        data: { status: "SENT", providerId: result.messageId, sentAt: new Date() },
+        data: {
+          status: "SENT",
+          providerId: result.messageId,
+          sentAt: new Date(),
+          claimedAt: null,
+          claimedBy: null,
+          nextAttemptAt: null,
+        },
       });
     }
 
     const response = await fetch("https://api.resend.com/emails", {
+      signal: AbortSignal.timeout(20_000),
       method: "POST",
       headers: {
         authorization: `Bearer ${config.RESEND_API_KEY}`,
@@ -137,7 +195,14 @@ export async function deliverEmail(id: string) {
     if (!response.ok) throw new Error(result.name ?? result.message ?? `HTTP_${response.status}`);
     return db.emailDelivery.update({
       where: { id },
-      data: { status: "SENT", providerId: result.id, sentAt: new Date() },
+      data: {
+        status: "SENT",
+        providerId: result.id,
+        sentAt: new Date(),
+        claimedAt: null,
+        claimedBy: null,
+        nextAttemptAt: null,
+      },
     });
   } catch (error) {
     const code = error instanceof Error ? error.message.slice(0, 120) : "EMAIL_PROVIDER_ERROR";
@@ -147,14 +212,22 @@ export async function deliverEmail(id: string) {
       templateKey: delivery.templateKey,
       error,
     });
-    await db.emailDelivery.update({ where: { id }, data: { status: "FAILED", errorCode: code } });
+    const retryAt = new Date(Date.now() + Math.min(60 * 60 * 1000, 2 ** delivery.attempts * 60 * 1000));
+    await db.emailDelivery.update({
+      where: { id, claimedBy: claimId },
+      data: { status: "FAILED", errorCode: code, nextAttemptAt: retryAt, claimedAt: null, claimedBy: null },
+    });
     return null;
   }
 }
 
 export async function processEmailQueue(limit = 20) {
   const pending = await db.emailDelivery.findMany({
-    where: { status: { in: ["QUEUED", "FAILED"] }, attempts: { lt: 5 } },
+    where: {
+      status: { in: ["QUEUED", "FAILED"] },
+      attempts: { lt: 5 },
+      OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: new Date() } }],
+    },
     orderBy: { createdAt: "asc" },
     take: Math.min(Math.max(limit, 1), 50),
     select: { id: true },

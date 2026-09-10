@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { superAdminEmails } from "@/lib/env";
 import { permissions, rolePermissionMap } from "@/lib/permissions";
+import { hasVerifiedEmailAccess } from "@/lib/domain/identity";
 
 export async function ensureUserRoles(user: { id?: string; email?: string | null }) {
   if (!user.id || !user.email) return;
@@ -42,7 +43,8 @@ export async function ensureUserRoles(user: { id?: string; email?: string | null
       });
     }
 
-    if (superAdminEmails().has(email)) {
+    const account = await tx.user.findUnique({ where: { id: userId }, select: { emailVerified: true } });
+    if (account && hasVerifiedEmailAccess({ email, emailVerified: account.emailVerified }, superAdminEmails())) {
       const admin = roles.find((role) => role.name === "SUPER_ADMIN");
       if (admin) {
         await tx.userRole.upsert({

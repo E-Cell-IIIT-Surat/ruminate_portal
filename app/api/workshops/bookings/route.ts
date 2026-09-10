@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { safeError } from "@/lib/errors";
+import { AppError, safeError } from "@/lib/errors";
 
 const bookingSchema = z.object({
   workshopId: z.string().trim().min(2).max(100).default("financial-literacy"),
@@ -34,7 +34,8 @@ export async function POST(request: Request) {
         status: true,
       },
     });
-    const workshopKey = workshop?.slug ?? input.workshopId;
+    const workshopKey = workshop?.slug ?? (input.workshopId === "financial-literacy" ? "financial-literacy" : null);
+    if (!workshopKey) throw new AppError("This workshop is not available", 404, "WORKSHOP_NOT_FOUND");
     if (workshop && workshop.status !== "PUBLISHED")
       return Response.json({ error: "Bookings are not open for this workshop" }, { status: 422 });
     const now = new Date();
@@ -42,25 +43,29 @@ export async function POST(request: Request) {
       return Response.json({ error: "Registration has not opened yet" }, { status: 422 });
     if (workshop?.registrationCloseAt && workshop.registrationCloseAt < now)
       return Response.json({ error: "Registration for this workshop has closed" }, { status: 422 });
-    if (workshop?.capacity) {
-      const count = await db.workshopBooking.count({ where: { workshop: workshopKey, status: { not: "CANCELLED" } } });
-      if (count >= workshop.capacity)
-        return Response.json({ error: "This workshop is currently full" }, { status: 409 });
-    }
-    const booking = await db.workshopBooking.create({
-      data: {
-        workshop: workshopKey,
-        workshopId: workshop?.id ?? null,
-        name: input.name,
-        batch: input.batch,
-        year: input.year,
-        email: input.email.toLowerCase(),
-        phone: input.phone,
-        studentId: input.studentId || null,
-        department: input.department || null,
-        reason: input.reason || null,
-      },
-      select: { id: true, name: true, email: true, status: true, createdAt: true },
+    const booking = await db.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`workshop:${workshopKey}`}))`;
+      if (workshop?.capacity) {
+        const count = await tx.workshopBooking.count({
+          where: { workshop: workshopKey, status: { not: "CANCELLED" } },
+        });
+        if (count >= workshop.capacity) throw new AppError("This workshop is currently full", 409, "WORKSHOP_FULL");
+      }
+      return tx.workshopBooking.create({
+        data: {
+          workshop: workshopKey,
+          workshopId: workshop?.id ?? null,
+          name: input.name,
+          batch: input.batch,
+          year: input.year,
+          email: input.email.toLowerCase(),
+          phone: input.phone,
+          studentId: input.studentId || null,
+          department: input.department || null,
+          reason: input.reason || null,
+        },
+        select: { id: true, name: true, email: true, status: true, createdAt: true },
+      });
     });
     return Response.json({ booking }, { status: 201 });
   } catch (error) {

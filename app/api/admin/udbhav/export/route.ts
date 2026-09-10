@@ -2,11 +2,7 @@ import { requireUdbhavAdmin } from "@/lib/udbhav";
 import { db } from "@/lib/db";
 import { safeError } from "@/lib/errors";
 
-function csv(value: unknown) {
-  return `"${String(value ?? "")
-    .replaceAll('"', '""')
-    .replaceAll("\n", " ")}"`;
-}
+import { csvCell as csv } from "@/lib/domain/csv";
 
 export async function GET() {
   try {

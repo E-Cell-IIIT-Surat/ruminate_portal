@@ -28,7 +28,20 @@ export async function PATCH(request: Request) {
     const user = await requireUser();
     const input = profileInput.parse(await request.json());
     const profile = await db.$transaction(async (tx) => {
-      const updated = await tx.user.update({ where: { id: user.id }, data: input });
+      const updated = await tx.user.update({
+        where: { id: user.id },
+        data: input,
+        select: {
+          name: true,
+          email: true,
+          phone: true,
+          institution: true,
+          degree: true,
+          studyYear: true,
+          city: true,
+          studentId: true,
+        },
+      });
       await tx.auditLog.create({
         data: { actorId: user.id, action: "profile.update", entityType: "User", entityId: user.id },
       });

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { activeNavHref } from "@/lib/domain/navigation";
 
 export type NavItem = readonly [string, string, keyof typeof portalIcons];
 
@@ -40,16 +41,12 @@ export const portalIcons = {
 export function PortalNav({ items }: { items: readonly NavItem[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const activeHref = activeNavHref(items, pathname, new URLSearchParams(searchParams.toString()));
   return (
     <nav aria-label="Portal navigation">
       {items.map(([label, href, iconName]) => {
         const Icon = portalIcons[iconName];
-        const [targetPath, targetQuery] = href.split("?");
-        const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
-        const queryMatches = targetQuery
-          ? new URLSearchParams(targetQuery).get("view") === searchParams.get("view")
-          : !["/reviewer"].includes(targetPath) || !searchParams.get("view");
-        const active = pathMatches && queryMatches;
+        const active = href === activeHref;
         return (
           <Link
             href={href}
@@ -65,5 +62,3 @@ export function PortalNav({ items }: { items: readonly NavItem[] }) {
     </nav>
   );
 }
-
-

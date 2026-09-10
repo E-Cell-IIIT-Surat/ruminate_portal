@@ -18,26 +18,32 @@ export function ProfileForm({ profile }: { profile: Profile }) {
   const [busy, setBusy] = useState(false);
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setState("Saving…");
     const data = new FormData(event.currentTarget);
     const value = (key: string) => String(data.get(key) ?? "").trim() || null;
-    const response = await fetch("/api/profile", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: value("name"),
-        phone: value("phone"),
-        institution: value("institution"),
-        degree: value("degree"),
-        studyYear: value("studyYear"),
-        city: value("city"),
-        studentId: value("studentId"),
-      }),
-    });
-    const result = await response.json();
-    setBusy(false);
-    setState(response.ok ? "Profile saved" : (result.error ?? "Save failed"));
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: value("name"),
+          phone: value("phone"),
+          institution: value("institution"),
+          degree: value("degree"),
+          studyYear: value("studyYear"),
+          city: value("city"),
+          studentId: value("studentId"),
+        }),
+      });
+      const result = await response.json();
+      setState(response.ok ? "Profile saved" : (result.error ?? "Save failed"));
+    } catch {
+      setState("Could not save. Your changes are still here — check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <form className="panel form-panel" onSubmit={save}>
@@ -58,7 +64,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             name="phone"
             type="tel"
             inputMode="tel"
-            pattern="^[+\d][\d\s().-]{7,24}$"
+            pattern={String.raw`^[+\d][\d\s\(\).\-]{7,24}$`}
             maxLength={25}
             defaultValue={profile.phone ?? ""}
           />

@@ -2,6 +2,13 @@ import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { registrationState } from "@/lib/domain/program";
 
+export class PublicDataError extends Error {
+  constructor(message = "Public data is temporarily unavailable") {
+    super(message);
+    this.name = "PublicDataError";
+  }
+}
+
 export async function publicPrograms(filters: { type?: string; state?: string; year?: number } = {}) {
   if (!hasDatabaseConfig()) return [];
   try {
@@ -39,6 +46,6 @@ export async function publicPrograms(filters: { type?: string; state?: string; y
     return filters.state ? programs.filter((program) => registrationState(program) === filters.state) : programs;
   } catch (error) {
     console.error("[publicPrograms] database read failed", error);
-    return [];
+    throw new PublicDataError();
   }
 }

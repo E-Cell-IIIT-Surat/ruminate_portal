@@ -14,27 +14,31 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const authorization = await userAuthorization(current.id);
     const { id, requestId } = await params;
     const input = decisionSchema.parse(await request.json());
-    const joinRequest = await db.teamJoinRequest.findUniqueOrThrow({
-      where: { id: requestId },
-      include: {
-        requester: { select: { id: true, name: true, email: true, phone: true, institution: true } },
-        team: {
-          include: {
-            members: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] },
+    const accepted = input.action === "ACCEPT";
+    const joinRequest = await db.$transaction(async (tx) => {
+      // Serialize decisions and directory status changes for this team before reading capacity.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`team:${id}`}))`;
+      const joinRequest = await tx.teamJoinRequest.findUniqueOrThrow({
+        where: { id: requestId },
+        include: {
+          requester: { select: { id: true, name: true, email: true, phone: true, institution: true } },
+          team: {
+            include: {
+              members: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] },
+            },
           },
         },
-      },
-    });
-    if (joinRequest.teamId !== id) throw new AppError("Join request does not belong to this team", 400);
-    if (joinRequest.team.leaderId !== current.id && !authorization.isSuperAdmin) throw forbidden();
-    if (joinRequest.status !== "PENDING") throw new AppError("This request has already been reviewed", 409);
+      });
+      if (joinRequest.teamId !== id) throw new AppError("Join request does not belong to this team", 400);
+      if (joinRequest.team.leaderId !== current.id && !authorization.isSuperAdmin) throw forbidden();
+      if (joinRequest.status !== "PENDING") throw new AppError("This request has already been reviewed", 409);
 
-    const accepted = input.action === "ACCEPT";
-    if (accepted && joinRequest.team.members.length >= joinRequest.team.requiredMembers) {
-      throw new AppError("This team already has the required members", 409);
-    }
+      if (accepted && (joinRequest.team.status !== "PUBLIC" || !joinRequest.team.isPublic))
+        throw new AppError("This team is no longer accepting members", 409);
+      if (accepted && joinRequest.team.members.length >= joinRequest.team.requiredMembers) {
+        throw new AppError("This team already has the required members", 409);
+      }
 
-    await db.$transaction(async (tx) => {
       await tx.teamJoinRequest.update({
         where: { id: joinRequest.id },
         data: {
@@ -68,6 +72,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           metadata: { teamId: joinRequest.teamId, requesterId: joinRequest.requesterId },
         },
       });
+      return joinRequest;
     });
 
     await notifyJoinRequestDecision({

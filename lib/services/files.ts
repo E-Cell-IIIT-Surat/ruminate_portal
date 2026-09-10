@@ -61,6 +61,20 @@ function matchesSignature(mimeType: string, bytes: Uint8Array) {
   return ["text/plain", "text/csv"].includes(mimeType);
 }
 
+function hasOoxmlStructure(mimeType: string, bytes: Uint8Array) {
+  if (!mimeType.includes("openxmlformats")) return true;
+  // The central directory stores every entry name in plaintext. This verifies
+  // the container is the expected OOXML package without executing its content.
+  const text = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  if (!text.includes("[Content_Types].xml") || !text.includes("_rels/.rels")) return false;
+  const required = mimeType.includes("wordprocessing")
+    ? "word/document.xml"
+    : mimeType.includes("presentation")
+      ? "ppt/presentation.xml"
+      : "xl/workbook.xml";
+  return text.includes(required);
+}
+
 export async function createUploadUrl(
   applicationId: string,
   fieldId: string,
@@ -117,11 +131,17 @@ export async function finalizeUpload(input: {
   )
     throw new AppError("Uploaded file metadata does not match", 422);
   const object = await client().send(
-    new GetObjectCommand({ Bucket: r2Env().R2_PRIVATE_BUCKET, Key: input.objectKey, Range: "bytes=0-31" }),
+    new GetObjectCommand({
+      Bucket: r2Env().R2_PRIVATE_BUCKET,
+      Key: input.objectKey,
+      Range: input.mimeType.includes("openxmlformats") ? "bytes=0-1048575" : "bytes=0-31",
+    }),
   );
   const bytes = object.Body ? await object.Body.transformToByteArray() : new Uint8Array();
   if (!matchesSignature(input.mimeType, bytes))
     throw new AppError("The uploaded file content does not match its declared type", 422, "INVALID_FILE_CONTENT");
+  if (!hasOoxmlStructure(input.mimeType, bytes))
+    throw new AppError("The uploaded Office file structure is invalid", 422, "INVALID_FILE_STRUCTURE");
   const existing = await db.applicationFile.findUnique({ where: { objectKey: input.objectKey } });
   if (existing) return existing;
   return db.applicationFile.create({

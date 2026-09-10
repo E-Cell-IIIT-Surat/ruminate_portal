@@ -3,11 +3,7 @@ import { db } from "@/lib/db";
 import { safeError } from "@/lib/errors";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
-const csv = (value: unknown) => {
-  let text = String(value ?? "");
-  if (/^[=+\-@]/.test(text)) text = `'${text}`;
-  return `"${text.replaceAll('"', '""')}"`;
-};
+import { csvCell as csv } from "@/lib/domain/csv";
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
