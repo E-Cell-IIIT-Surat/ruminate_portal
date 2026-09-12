@@ -47,10 +47,24 @@ export const programSettingsInput = z.object({
 });
 
 export const programActionInput = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("launch"),
+    mode: z.enum(["now", "schedule"]),
+    opensAt: z.coerce.date().optional(),
+    closesAt: z.coerce.date(),
+  }),
   z.object({ action: z.literal("publish_results") }),
   z.object({
     action: z.literal("set_status"),
-    status: z.enum(["DRAFT", "PUBLISHED", "REGISTRATION_OPEN", "REGISTRATION_CLOSED", "IN_PROGRESS", "COMPLETED", "ARCHIVED"]),
+    status: z.enum([
+      "DRAFT",
+      "PUBLISHED",
+      "REGISTRATION_OPEN",
+      "REGISTRATION_CLOSED",
+      "IN_PROGRESS",
+      "COMPLETED",
+      "ARCHIVED",
+    ]),
   }),
   z.object({
     action: z.literal("duplicate"),

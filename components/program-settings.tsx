@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { eventTimeToIso } from "@/lib/domain/event-time";
 
 type ProgramSettingsProps = {
   program: {
@@ -66,16 +67,16 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
       visibility: data.get("visibility"),
       type: data.get("type"),
       participationMode: data.get("participationMode"),
-      registrationOpenAt: data.get("registrationOpenAt") || null,
-      registrationCloseAt: data.get("registrationCloseAt") || null,
-      startAt: data.get("startAt") || null,
-      endAt: data.get("endAt") || null,
+      registrationOpenAt: eventTimeToIso(data.get("registrationOpenAt")),
+      registrationCloseAt: eventTimeToIso(data.get("registrationCloseAt")),
+      startAt: eventTimeToIso(data.get("startAt")),
+      endAt: eventTimeToIso(data.get("endAt")),
       capacity: data.get("capacity") ? Number(data.get("capacity")) : null,
       waitlistEnabled: data.get("waitlistEnabled") === "on",
       teamMinSize: Number(data.get("teamMinSize")),
       teamMaxSize: Number(data.get("teamMaxSize")),
       allowsEditAfterSubmit: data.get("allowsEditAfterSubmit") === "on",
-      editDeadline: data.get("editDeadline") || null,
+      editDeadline: eventTimeToIso(data.get("editDeadline")),
       requiresReview: data.get("requiresReview") === "on",
       allowsDrafts: data.get("allowsDrafts") === "on",
       requiresAuth: data.get("requiresAuth") === "on",
@@ -118,6 +119,7 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
   return (
     <>
       <form className="panel form-panel" onSubmit={save} onChange={() => setDirty(true)}>
+        <p>All event and registration times are in India Standard Time (IST, UTC+05:30).</p>
         <div className="form-grid">
           <div className="field">
             <label htmlFor="name">Program name</label>

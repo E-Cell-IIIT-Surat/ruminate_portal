@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { hasDatabaseConfig } from "@/lib/env";
 import { registrationState } from "@/lib/domain/program";
 import { auth } from "@/auth";
+import { BackButton } from "@/components/back-button";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,9 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
     <div className="public-page">
       <PublicHeader />
       <main className="public-container">
+        <div className="page-back">
+          <BackButton fallback="/programs" />
+        </div>
         <div className="program-detail-hero">
           <Badge tone={state === "OPEN" ? "green" : state === "UPCOMING" ? "blue" : "neutral"}>{state}</Badge>
           <h1>{program.name}</h1>

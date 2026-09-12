@@ -2,6 +2,7 @@ import { requirePermission } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { AppError, notFound, safeError } from "@/lib/errors";
 import { programActionInput, programSettingsInput } from "@/lib/validation/program-settings";
+import { launchWindow } from "@/lib/domain/program";
 
 const transitions: Record<string, string[]> = {
   DRAFT: ["PUBLISHED", "REGISTRATION_OPEN", "ARCHIVED"],
@@ -67,11 +68,69 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const actor = await requirePermission("program:update", id);
+    await db.$transaction(async (tx) => {
+      await tx.program.update({ where: { id }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+      await tx.auditLog.create({
+        data: { actorId: actor.id, programId: id, action: "program.delete", entityType: "Program", entityId: id },
+      });
+    });
+    return Response.json({ success: true });
+  } catch (error) {
+    return safeError(error);
+  }
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const action = programActionInput.parse(await request.json());
     const actor = await requirePermission("program:update", id);
+    if (action.action === "launch") {
+      const { registrationOpenAt: opensAt } = launchWindow(action.mode, action.closesAt, action.opensAt);
+      const program = await db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`program:${id}`}))`;
+        const existing = await tx.program.findUnique({
+          where: { id },
+          include: { form: { include: { versions: { where: { status: "PUBLISHED" }, take: 1 } } } },
+        });
+        if (!existing || existing.archivedAt) throw notFound("Program");
+        if (!existing.form?.versions.length)
+          throw new AppError(
+            "Publish your form first, then return here to launch registration.",
+            409,
+            "FORM_NOT_PUBLISHED",
+          );
+        const updated = await tx.program.update({
+          where: { id },
+          data: {
+            status: action.mode === "now" ? "REGISTRATION_OPEN" : "PUBLISHED",
+            registrationOpenAt: opensAt,
+            registrationCloseAt: action.closesAt,
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: actor.id,
+            programId: id,
+            action: "program.launch",
+            entityType: "Program",
+            entityId: id,
+            metadata: {
+              mode: action.mode,
+              fromStatus: existing.status,
+              opensAt: opensAt.toISOString(),
+              closesAt: action.closesAt.toISOString(),
+            },
+          },
+        });
+        return updated;
+      });
+      return Response.json({ program });
+    }
     if (action.action === "set_status") {
       const existing = await db.program.findUnique({
         where: { id },

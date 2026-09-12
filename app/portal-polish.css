@@ -126,3 +126,57 @@
     transform: none !important;
   }
 }
+.page-back {
+  margin-bottom: 1.25rem;
+}
+.home-programs {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+.home-programs h2 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+.home-programs > p {
+  margin: 1rem 0 1.5rem;
+}
+.home-programs > .button {
+  margin-top: 1.5rem;
+}
+.launch-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  margin: 1.5rem 0;
+}
+.launch-controls label {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1 1 220px;
+}
+.launch-controls input,
+.launch-controls select {
+  min-width: 0;
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #51463a;
+  border-radius: 0.7rem;
+  background: #14110e;
+  color: #f5efe6;
+  color-scheme: dark;
+}
+.launch-guide {
+  padding: clamp(1.25rem, 4vw, 3rem);
+}
+.launch-guide ol {
+  padding-left: 1.5rem;
+}
+.launch-guide li {
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+}
+.launch-guide p {
+  line-height: 1.8;
+  max-width: 80ch;
+}

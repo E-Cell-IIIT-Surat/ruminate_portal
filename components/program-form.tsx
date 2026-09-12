@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { eventTimeToIso } from "@/lib/domain/event-time";
 
 export function ProgramForm() {
   const router = useRouter();
@@ -21,10 +22,10 @@ export function ProgramForm() {
       description: data.get("description"),
       visibility: data.get("visibility"),
       participationMode: data.get("participationMode"),
-      registrationOpenAt: data.get("registrationOpenAt") || null,
-      registrationCloseAt: data.get("registrationCloseAt") || null,
-      startAt: data.get("startAt") || null,
-      endAt: data.get("endAt") || null,
+      registrationOpenAt: eventTimeToIso(data.get("registrationOpenAt")),
+      registrationCloseAt: eventTimeToIso(data.get("registrationCloseAt")),
+      startAt: eventTimeToIso(data.get("startAt")),
+      endAt: eventTimeToIso(data.get("endAt")),
       capacity: data.get("capacity") ? Number(data.get("capacity")) : null,
       teamMinSize: Number(data.get("teamMinSize") || 1),
       teamMaxSize: Number(data.get("teamMaxSize") || 1),
@@ -33,7 +34,7 @@ export function ProgramForm() {
       allowsDrafts: data.get("allowsDrafts") === "on",
       allowsEditAfterSubmit: data.get("allowsEditAfterSubmit") === "on",
       allowsWithdrawal: data.get("allowsWithdrawal") === "on",
-      editDeadline: data.get("editDeadline") || null,
+      editDeadline: eventTimeToIso(data.get("editDeadline")),
       requiresAuth: data.get("requiresAuth") === "on",
       blindReview: data.get("blindReview") === "on",
       allowedEmailDomains: String(data.get("allowedEmailDomains") ?? "")
@@ -81,6 +82,7 @@ export function ProgramForm() {
   }
   return (
     <form className="panel form-panel" onSubmit={submit}>
+      <p>All event and registration times are in India Standard Time (IST, UTC+05:30).</p>
       <div className="form-grid">
         <div className="field">
           <label htmlFor="name">Program name</label>
@@ -208,7 +210,8 @@ export function ProgramForm() {
           </div>
         )}
         <p className="field-help field-full">
-          New programs start as drafts. After creation, publish the form, then launch registration from the program overview.
+          New programs start as drafts. After creation, publish the form, then launch registration from the program
+          overview.
         </p>
         <div className="form-actions">
           <Link className="button button-secondary" href="/admin/programs">

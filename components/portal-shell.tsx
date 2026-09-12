@@ -4,6 +4,7 @@ import { PortalNav } from "@/components/portal-nav";
 import { MobilePortalNav } from "@/components/mobile-portal-nav";
 import { AnnouncementPopover } from "@/components/announcement-popover";
 import { db } from "@/lib/db";
+import { BackButton } from "@/components/back-button";
 
 const navSets = {
   participant: [
@@ -86,6 +87,9 @@ export async function PortalShell({
           <SignOutButton />
         </header>
         <div className="portal-content" id="portal-content" tabIndex={-1}>
+          <div className="page-back">
+            <BackButton fallback={mode === "admin" ? "/admin/programs" : "/dashboard"} />
+          </div>
           {announcement && (
             <AnnouncementPopover item={{ ...announcement, createdAt: announcement.createdAt.toISOString() }} />
           )}

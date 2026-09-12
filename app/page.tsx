@@ -17,6 +17,9 @@ import Link from "next/link";
 import { PublicHeader } from "@/components/public-header";
 import { SparkField } from "@/components/spark-field";
 import { ButtonLink } from "@/components/ui";
+import { HomePrograms } from "@/components/home-programs";
+
+export const dynamic = "force-dynamic";
 
 const initiatives = [
   {
@@ -81,8 +84,8 @@ export default function Home() {
               </ButtonLink>
             </div>
             <div className="social-row">
-              
-              <a  href="https://www.instagram.com/ecell_iiits/"
+              <a
+                href="https://www.instagram.com/ecell_iiits/"
                 target="_blank"
                 rel="noreferrer"
                 className="social-link"
@@ -90,8 +93,9 @@ export default function Home() {
               >
                 <Instagram size={18} />
               </a>
-              
-               <a href="https://www.linkedin.com/company/ecell_iiits/"
+
+              <a
+                href="https://www.linkedin.com/company/ecell_iiits/"
                 target="_blank"
                 rel="noreferrer"
                 className="social-link"
@@ -99,8 +103,9 @@ export default function Home() {
               >
                 <Linkedin size={18} />
               </a>
-              
-               <a href="https://chat.whatsapp.com/GxghMWE4anWIl4I57lFQXK"
+
+              <a
+                href="https://chat.whatsapp.com/GxghMWE4anWIl4I57lFQXK"
                 target="_blank"
                 rel="noreferrer"
                 className="social-link"
@@ -279,6 +284,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        <HomePrograms />
       </main>
       <footer className="site-footer">
         <div className="footer-main">

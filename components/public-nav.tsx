@@ -22,6 +22,9 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
   return (
     <nav className="public-nav" aria-label="Primary navigation">
       <div className="public-nav-desktop">
+        <Link className={`public-nav-link ${active("/programs") ? "active" : ""}`} href="/programs">
+          Programs
+        </Link>
         <div
           className="public-nav-menu"
           onMouseEnter={() => setWorkshopsOpen(true)}
@@ -83,6 +86,13 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
       {mobileOpen && (
         <div className="public-nav-mobile-panel" id="public-mobile-menu">
           <Link
+            className={`public-nav-mobile-link ${active("/programs") ? "active" : ""}`}
+            href="/programs"
+            onClick={closeMobile}
+          >
+            Programs
+          </Link>
+          <Link
             className={`public-nav-mobile-link ${active("/financial-literacy-workshop") ? "active" : ""}`}
             href="/financial-literacy-workshop"
             onClick={closeMobile}
@@ -109,19 +119,11 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
             SSIP
           </Link>
           {signedIn ? (
-            <Link
-              className="button button-secondary public-nav-mobile-portal"
-              href="/dashboard"
-              onClick={closeMobile}
-            >
+            <Link className="button button-secondary public-nav-mobile-portal" href="/dashboard" onClick={closeMobile}>
               My portal
             </Link>
           ) : (
-            <Link
-              className="button button-secondary public-nav-mobile-portal"
-              href="/signin"
-              onClick={closeMobile}
-            >
+            <Link className="button button-secondary public-nav-mobile-portal" href="/signin" onClick={closeMobile}>
               Sign in
             </Link>
           )}

@@ -11,7 +11,7 @@ export default async function ProgramOverview({ params }: { params: Promise<{ id
     where: { id },
     include: {
       _count: { select: { applications: true, managers: true } },
-      form: { include: { versions: { orderBy: { version: "desc" }, take: 1 } } },
+      form: { include: { versions: { where: { status: "PUBLISHED" }, orderBy: { version: "desc" }, take: 1 } } },
       stages: true,
       rubrics: true,
     },
@@ -54,6 +54,8 @@ export default async function ProgramOverview({ params }: { params: Promise<{ id
         status={program.status}
         formPublished={program.form?.versions[0]?.status === "PUBLISHED"}
         formVersion={program.form?.versions[0]?.version}
+        registrationCloseAt={program.registrationCloseAt?.toISOString()}
+        visibility={program.visibility}
       />
     </>
   );

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const input = bookingSchema.parse(await request.json());
     const workshop = await db.workshop.findFirst({
-      where: { slug: input.workshopId, archivedAt: null },
+      where: { slug: input.workshopId },
       select: {
         id: true,
         slug: true,
@@ -32,11 +32,12 @@ export async function POST(request: Request) {
         registrationOpenAt: true,
         registrationCloseAt: true,
         status: true,
+        archivedAt: true,
       },
     });
     const workshopKey = workshop?.slug ?? (input.workshopId === "financial-literacy" ? "financial-literacy" : null);
     if (!workshopKey) throw new AppError("This workshop is not available", 404, "WORKSHOP_NOT_FOUND");
-    if (workshop && workshop.status !== "PUBLISHED")
+    if (workshop && (workshop.archivedAt || workshop.status !== "PUBLISHED"))
       return Response.json({ error: "Bookings are not open for this workshop" }, { status: 422 });
     const now = new Date();
     if (workshop?.registrationOpenAt && workshop.registrationOpenAt > now)

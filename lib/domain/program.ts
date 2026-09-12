@@ -6,10 +6,28 @@ export function registrationState(
   program: { status: string; registrationOpenAt: Date | null; registrationCloseAt: Date | null },
   now = new Date(),
 ): RegistrationState {
+  if (["REGISTRATION_CLOSED", "IN_PROGRESS", "COMPLETED"].includes(program.status)) return "CLOSED";
   if (!["PUBLISHED", "REGISTRATION_OPEN"].includes(program.status)) return "UNAVAILABLE";
   if (program.registrationOpenAt && now < program.registrationOpenAt) return "UPCOMING";
-  if (program.registrationCloseAt && now > program.registrationCloseAt) return "CLOSED";
+  if (program.registrationCloseAt && now >= program.registrationCloseAt) return "CLOSED";
   return "OPEN";
+}
+
+export function launchWindow(mode: "now" | "schedule", closesAt: Date, scheduledOpening?: Date, now = new Date()) {
+  const opensAt = mode === "now" ? now : scheduledOpening;
+  if (
+    !opensAt ||
+    !Number.isFinite(opensAt.getTime()) ||
+    !Number.isFinite(closesAt.getTime()) ||
+    (mode === "schedule" && opensAt <= now) ||
+    closesAt <= opensAt
+  )
+    throw new AppError(
+      "Choose a future closing time after opening. Scheduled opening must be in the future.",
+      422,
+      "INVALID_DATES",
+    );
+  return { registrationOpenAt: opensAt, registrationCloseAt: closesAt };
 }
 
 export function assertDeadline(

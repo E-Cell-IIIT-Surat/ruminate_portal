@@ -3,6 +3,8 @@ import { Badge, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { BookOpenCheck } from "lucide-react";
+import { DeleteEventButton } from "@/components/delete-event-button";
+import { WorkshopLaunch } from "@/components/workshop-launch";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,7 @@ export default async function AdminWorkshopsPage() {
                   <th>Schedule</th>
                   <th>Status</th>
                   <th>Bookings</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -73,6 +76,10 @@ export default async function AdminWorkshopsPage() {
                       </Badge>
                     </td>
                     <td>{workshop._count.bookings}</td>
+                    <td>
+                      <WorkshopLaunch id={workshop.id} closesAt={workshop.registrationCloseAt?.toISOString() ?? null} />
+                      <DeleteEventButton endpoint={`/api/workshops/${workshop.id}`} name={workshop.name} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

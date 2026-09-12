@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { eventTimeToIso } from "@/lib/domain/event-time";
 
 export function AdminWorkshopForm() {
   const router = useRouter();
@@ -15,6 +16,9 @@ export function AdminWorkshopForm() {
     try {
       const form = new FormData(formElement);
       const body = Object.fromEntries(form.entries());
+      for (const field of ["registrationOpenAt", "registrationCloseAt", "startsAt", "endsAt"]) {
+        body[field] = eventTimeToIso(form.get(field)) ?? "";
+      }
       const response = await fetch("/api/workshops", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -34,6 +38,7 @@ export function AdminWorkshopForm() {
   }
   return (
     <form className="panel form-panel" onSubmit={submit}>
+      <p>All workshop times are in India Standard Time (IST, UTC+05:30).</p>
       <div className="form-grid">
         <div className="field">
           <label htmlFor="workshop-name">Workshop name</label>

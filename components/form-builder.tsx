@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
 
 type BuilderField = {
@@ -173,7 +175,52 @@ const templates: Record<string, BuilderSection[]> = {
   ],
 };
 
+templates["KTB / Pitch event"] = [
+  ...structuredClone(templates["Basic registration"]),
+  {
+    title: "Your business idea",
+    fields: [
+      { key: "business_name", label: "Business / team name", type: "SHORT_TEXT", required: true, allowedFileTypes: [] },
+      {
+        key: "business_overview",
+        label: "What problem does your business solve?",
+        type: "LONG_TEXT",
+        required: true,
+        allowedFileTypes: [],
+      },
+      {
+        key: "proposal",
+        label: "Business proposal (PDF or DOCX)",
+        type: "FILE",
+        required: true,
+        allowedFileTypes: [
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ],
+        maxFileSizeBytes: 10485760,
+      },
+    ],
+  },
+];
+templates.Hackathon = [
+  ...structuredClone(templates["Basic registration"]),
+  {
+    title: "Project",
+    fields: [
+      { key: "project_name", label: "Project name", type: "SHORT_TEXT", required: true, allowedFileTypes: [] },
+      {
+        key: "project_idea",
+        label: "Project idea and technology",
+        type: "LONG_TEXT",
+        required: true,
+        allowedFileTypes: [],
+      },
+    ],
+  },
+];
+
 export function FormBuilder({ programId, initial }: { programId: string; initial: BuilderSection[] }) {
+  const router = useRouter();
   const [sections, setSections] = useState<BuilderSection[]>(
     initial.length ? initial : [{ title: "Personal details", fields: [blankField()] }],
   );
@@ -236,6 +283,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
       const response = await fetch(`/api/admin/programs/${programId}/form`, { method: "POST" });
       const result = await response.json();
       setState(response.ok ? `Version ${result.version.version} published` : (result.error ?? "Could not publish"));
+      if (response.ok) router.refresh();
     } catch {
       setState("Could not reach the server");
     } finally {
@@ -245,12 +293,25 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
   return (
     <div className="builder-layout">
       <section>
+        <p>
+          Publishing saves the form for applicants. Next, return to the launch panel to open or schedule registration.
+        </p>
+        <Link className="button button-secondary" href={`/admin/programs/${programId}`}>
+          Back to program · Launch / schedule
+        </Link>
         <div className="template-row">
           <span>Start from a template</span>
           {Object.keys(templates).map((name) => (
             <button
               key={name}
+              disabled={busy}
               onClick={() => {
+                if (
+                  !window.confirm(
+                    "Replace the current editor contents with this template? Saved and published versions stay unchanged until you save or publish.",
+                  )
+                )
+                  return;
                 setSections(structuredClone(templates[name]));
                 setState("Template applied · Unsaved");
               }}
@@ -437,6 +498,21 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                       )}
                       {field.type === "FILE" && (
                         <>
+                          <button
+                            type="button"
+                            className="button button-secondary"
+                            onClick={() =>
+                              patchField(sectionIndex, fieldIndex, {
+                                allowedFileTypes: [
+                                  "application/pdf",
+                                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                ],
+                                maxFileSizeBytes: field.maxFileSizeBytes ?? 10485760,
+                              })
+                            }
+                          >
+                            Allow PDF & DOCX
+                          </button>
                           <input
                             aria-label="Allowed MIME types"
                             value={field.allowedFileTypes.join(", ")}

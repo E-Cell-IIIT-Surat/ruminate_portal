@@ -6,6 +6,7 @@ import { publicPrograms, PublicDataError } from "@/lib/data/public";
 import { hasDatabaseConfig } from "@/lib/env";
 import { registrationState } from "@/lib/domain/program";
 import Link from "next/link";
+import { BackButton } from "@/components/back-button";
 
 export const metadata: Metadata = { title: "Programs" };
 export const dynamic = "force-dynamic";
@@ -50,6 +51,9 @@ export default async function ProgramsPage({
     <div className="public-page">
       <PublicHeader />
       <main className="public-container">
+        <div className="page-back">
+          <BackButton />
+        </div>
         <PageHeader
           eyebrow="Discover"
           title="Programs at Ruminate"

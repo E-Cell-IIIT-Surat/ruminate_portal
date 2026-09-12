@@ -3,6 +3,8 @@ import { userAuthorization } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { Badge, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { Blocks } from "lucide-react";
+import Link from "next/link";
+import { registrationState } from "@/lib/domain/program";
 
 export const dynamic = "force-dynamic";
 export default async function AdminProgramsPage() {
@@ -10,7 +12,10 @@ export default async function AdminProgramsPage() {
   if (!session?.user) return null;
   const authorization = await userAuthorization(session.user.id);
   const programs = await db.program.findMany({
-    where: authorization.isSuperAdmin ? {} : { id: { in: [...authorization.managedProgramIds] } },
+    where: {
+      archivedAt: null,
+      ...(authorization.isSuperAdmin ? {} : { id: { in: [...authorization.managedProgramIds] } }),
+    },
     select: {
       id: true,
       slug: true,
@@ -18,6 +23,7 @@ export default async function AdminProgramsPage() {
       type: true,
       status: true,
       registrationCloseAt: true,
+      registrationOpenAt: true,
       _count: { select: { applications: true } },
     },
     orderBy: { updatedAt: "desc" },
@@ -35,6 +41,11 @@ export default async function AdminProgramsPage() {
           ) : undefined
         }
       />
+      <p>
+        <Link className="button button-secondary" href="/admin/programs/guide">
+          How to create and launch an event
+        </Link>
+      </p>
       <div className="panel">
         {programs.length ? (
           <div className="table-wrap">
@@ -57,7 +68,11 @@ export default async function AdminProgramsPage() {
                     <td>{program.type.replaceAll("_", " ")}</td>
                     <td>
                       <Badge tone={program.status === "REGISTRATION_OPEN" ? "green" : "neutral"}>
-                        {program.status.replaceAll("_", " ")}
+                        {["PUBLISHED", "REGISTRATION_OPEN"].includes(program.status)
+                          ? registrationState(program) === "UPCOMING"
+                            ? "SCHEDULED"
+                            : registrationState(program)
+                          : program.status.replaceAll("_", " ")}
                       </Badge>
                     </td>
                     <td>{program._count.applications}</td>

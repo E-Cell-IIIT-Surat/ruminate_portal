@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/ui";
 import { ProgramSettings } from "@/components/program-settings";
 import { requirePermission } from "@/lib/authz";
 import { db } from "@/lib/db";
+import { eventTimeInput } from "@/lib/domain/event-time";
 
 export const dynamic = "force-dynamic";
 
@@ -29,16 +30,16 @@ export default async function ProgramSettingsPage({ params }: { params: Promise<
           visibility: program.visibility,
           type: program.type,
           participationMode: program.participationMode,
-          registrationOpenAt: program.registrationOpenAt?.toISOString().slice(0, 16) ?? null,
-          registrationCloseAt: program.registrationCloseAt?.toISOString().slice(0, 16) ?? null,
-          startAt: program.startAt?.toISOString().slice(0, 16) ?? null,
-          endAt: program.endAt?.toISOString().slice(0, 16) ?? null,
+          registrationOpenAt: eventTimeInput(program.registrationOpenAt?.toISOString()),
+          registrationCloseAt: eventTimeInput(program.registrationCloseAt?.toISOString()),
+          startAt: eventTimeInput(program.startAt?.toISOString()),
+          endAt: eventTimeInput(program.endAt?.toISOString()),
           capacity: program.capacity,
           waitlistEnabled: program.waitlistEnabled,
           teamMinSize: program.teamMinSize,
           teamMaxSize: program.teamMaxSize,
           allowsEditAfterSubmit: program.allowsEditAfterSubmit,
-          editDeadline: program.editDeadline?.toISOString().slice(0, 16) ?? null,
+          editDeadline: eventTimeInput(program.editDeadline?.toISOString()),
           requiresReview: program.requiresReview,
           allowsDrafts: program.allowsDrafts,
           requiresAuth: program.requiresAuth,
