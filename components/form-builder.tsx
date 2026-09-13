@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
+import { formBuilderInput, formBuilderIssues } from "@/lib/validation/form-builder";
 
 type BuilderField = {
   key: string;
@@ -45,8 +46,8 @@ const types = [
   "HEADING",
   "HELP_TEXT",
 ];
-const blankField = (): BuilderField => ({
-  key: `field_${Date.now()}`,
+const blankField = (key = `field_${crypto.randomUUID().replaceAll("-", "")}`): BuilderField => ({
+  key,
   label: "New field",
   type: "SHORT_TEXT",
   required: false,
@@ -223,20 +224,23 @@ templates.Hackathon = [
 export function FormBuilder({ programId, initial }: { programId: string; initial: BuilderSection[] }) {
   const router = useRouter();
   const [sections, setSections] = useState<BuilderSection[]>(
-    initial.length ? initial : [{ title: "Personal details", fields: [blankField()] }],
+    initial.length ? initial : [{ title: "Personal details", fields: [blankField("field_1")] }],
   );
   const [state, setState] = useState("Unsaved changes");
   const [busy, setBusy] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify(initial));
+  const [issues, setIssues] = useState<{ path: string; message: string }[]>([]);
+  const dirty = JSON.stringify(sections) !== savedSnapshot;
   const totalFields = useMemo(() => sections.reduce((total, section) => total + section.fields.length, 0), [sections]);
   const fieldKeys = useMemo(() => sections.flatMap((section) => section.fields.map((field) => field.key)), [sections]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (!state.includes("Unsaved") && !state.includes("Saving")) return;
+      if (!dirty && !busy) return;
       event.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [state]);
+  }, [dirty, busy]);
   function patchSection(index: number, patch: Partial<BuilderSection>) {
     setSections((current) => current.map((section, i) => (i === index ? { ...section, ...patch } : section)));
     setState("Unsaved changes");
@@ -264,27 +268,37 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
   }
   async function save(publish = false) {
     if (busy) return;
+    const parsed = formBuilderInput.safeParse({ sections });
+    if (!parsed.success) {
+      setIssues(formBuilderIssues(parsed.error));
+      setState("Please fix the listed fields. Your edits are still here.");
+      return;
+    }
+    setIssues([]);
+    const snapshot = JSON.stringify(sections);
     setBusy(true);
     setState(publish ? "Publishing…" : "Saving…");
     try {
       const draftResponse = await fetch(`/api/admin/programs/${programId}/form`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sections }),
+        body: JSON.stringify({ ...parsed.data, publish }),
       });
       const draftResult = await draftResponse.json();
       if (!draftResponse.ok) {
-        setState(draftResult.error ?? "Could not save");
+        setIssues(draftResult.issues ?? []);
+        setState(
+          `${draftResult.error ?? "Could not save"}${draftResult.requestId ? ` · Support reference: ${draftResult.requestId}` : ""}. Your edits are still here.`,
+        );
         return;
       }
-      if (!publish) {
-        setState(`Draft v${draftResult.version.version} saved`);
-        return;
-      }
-      const response = await fetch(`/api/admin/programs/${programId}/form`, { method: "POST" });
-      const result = await response.json();
-      setState(response.ok ? `Version ${result.version.version} published` : (result.error ?? "Could not publish"));
-      if (response.ok) router.refresh();
+      setSavedSnapshot(snapshot);
+      setState(
+        publish
+          ? `Version ${draftResult.version.version} published. Open registration from the launch panel.`
+          : `Draft v${draftResult.version.version} saved`,
+      );
+      router.refresh();
     } catch {
       setState("Could not reach the server");
     } finally {
@@ -293,7 +307,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
   }
   return (
     <div className="builder-layout">
-      <section>
+      <fieldset disabled={busy} style={{ minWidth: 0, border: 0, padding: 0, margin: 0 }}>
         <p>
           Publishing saves the form for applicants. Next, return to the launch panel to open or schedule registration.
         </p>
@@ -326,7 +340,10 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
             <strong>
               {sections.length} sections · {totalFields} fields
             </strong>
-            <small>{state}</small>
+            <small role="status">
+              {state}
+              {dirty && !state.includes("Unsaved") ? " · Unsaved edits" : ""}
+            </small>
           </div>
           <button className="button button-secondary" onClick={() => save(false)} disabled={busy}>
             <Save size={15} /> Save draft
@@ -335,8 +352,18 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
             Publish form
           </button>
         </div>
+        {issues.length > 0 && (
+          <div role="alert" className="form-error">
+            <strong>The form was not saved. Check these fields:</strong>
+            <ul>
+              {issues.map((issue, index) => (
+                <li key={`${issue.path}-${index}`}>{issue.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {sections.map((section, sectionIndex) => (
-          <article className="builder-section" key={`${section.title}-${sectionIndex}`}>
+          <article className="builder-section" key={sectionIndex}>
             <header>
               <div>
                 <input
@@ -363,7 +390,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
             </header>
             <div className="builder-fields">
               {section.fields.map((field, fieldIndex) => (
-                <div className="builder-field" key={`${field.key}-${fieldIndex}`}>
+                <div className="builder-field" key={fieldIndex}>
                   <span className="drag-index">{fieldIndex + 1}</span>
                   <div className="builder-field-main">
                     <input
@@ -384,7 +411,26 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                       <select
                         aria-label="Field type"
                         value={field.type}
-                        onChange={(event) => patchField(sectionIndex, fieldIndex, { type: event.target.value })}
+                        onChange={(event) =>
+                          patchField(sectionIndex, fieldIndex, {
+                            type: event.target.value,
+                            minLength: null,
+                            maxLength: null,
+                            minNumber: null,
+                            maxNumber: null,
+                            ...(event.target.value === "FILE"
+                              ? {
+                                  allowedFileTypes: field.allowedFileTypes.length
+                                    ? field.allowedFileTypes
+                                    : [
+                                        "application/pdf",
+                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                      ],
+                                  maxFileSizeBytes: field.maxFileSizeBytes ?? 10485760,
+                                }
+                              : {}),
+                          })
+                        }
                       >
                         {types.map((type) => (
                           <option key={type}>{type}</option>
@@ -431,14 +477,11 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                       {["DROPDOWN", "MULTI_SELECT", "RADIO"].includes(field.type) && (
                         <input
                           aria-label="Options"
-                          value={(field.options ?? []).join(", ")}
+                          value={(field.options ?? []).join(",")}
                           placeholder="Options, separated by commas"
                           onChange={(event) =>
                             patchField(sectionIndex, fieldIndex, {
-                              options: event.target.value
-                                .split(",")
-                                .map((item) => item.trim())
-                                .filter(Boolean),
+                              options: event.target.value.split(","),
                             })
                           }
                         />
@@ -516,14 +559,11 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                           </button>
                           <input
                             aria-label="Allowed MIME types"
-                            value={field.allowedFileTypes.join(", ")}
+                            value={field.allowedFileTypes.join(",")}
                             placeholder="application/pdf, image/png"
                             onChange={(event) =>
                               patchField(sectionIndex, fieldIndex, {
-                                allowedFileTypes: event.target.value
-                                  .split(",")
-                                  .map((item) => item.trim())
-                                  .filter(Boolean),
+                                allowedFileTypes: event.target.value.split(","),
                               })
                             }
                           />
@@ -620,7 +660,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
         >
           <Plus size={16} /> Add section
         </button>
-      </section>
+      </fieldset>
       <aside className="builder-preview">
         <span>Live preview</span>
         <h2>

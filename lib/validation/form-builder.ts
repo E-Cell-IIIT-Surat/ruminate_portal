@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 const field = z.object({
-  key: z.string().regex(/^[a-z][a-z0-9_]*$/),
+  key: z
+    .string()
+    .regex(
+      /^[a-z][a-z0-9_]*$/,
+      "Start the field key with a letter; use only lowercase letters, numbers and underscores",
+    ),
   type: z.enum([
     "SHORT_TEXT",
     "LONG_TEXT",
@@ -29,8 +34,14 @@ const field = z.object({
   maxLength: z.number().int().positive().nullable().optional(),
   minNumber: z.number().nullable().optional(),
   maxNumber: z.number().nullable().optional(),
-  options: z.array(z.string().min(1)).optional(),
-  allowedFileTypes: z.array(z.string()).default([]),
+  options: z
+    .array(z.string())
+    .transform((items) => items.map((item) => item.trim()).filter(Boolean))
+    .optional(),
+  allowedFileTypes: z
+    .array(z.string())
+    .default([])
+    .transform((items) => items.map((item) => item.trim()).filter(Boolean)),
   maxFileSizeBytes: z
     .number()
     .int()
@@ -104,3 +115,16 @@ export const formBuilderInput = z
       });
     });
   });
+
+/** Preserve nested locations instead of flattening all builder errors to "sections". */
+export function formBuilderIssues(error: z.ZodError) {
+  return error.issues.map((issue) => {
+    const section = issue.path[1];
+    const field = issue.path[3];
+    const location =
+      typeof section === "number"
+        ? `Section ${section + 1}${typeof field === "number" ? `, field ${field + 1}` : ""}`
+        : "Form";
+    return { path: issue.path.join("."), message: `${location} (${issue.path.at(-1)}): ${issue.message}` };
+  });
+}
