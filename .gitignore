@@ -39,6 +39,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/.local-backups/
 *.tsbuildinfo
 
 .next/

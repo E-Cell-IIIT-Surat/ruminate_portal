@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { AppError, notFound, safeError } from "@/lib/errors";
 import { programActionInput, programSettingsInput } from "@/lib/validation/program-settings";
 import { launchWindow } from "@/lib/domain/program";
+import { reserveProgramSlug } from "@/lib/services/program-slug";
 
 const transitions: Record<string, string[]> = {
   DRAFT: ["PUBLISHED", "REGISTRATION_OPEN", "ARCHIVED"],
@@ -42,6 +43,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         throw new AppError("Publish the application form before opening registration", 409, "FORM_NOT_PUBLISHED");
     }
     const program = await db.$transaction(async (tx) => {
+      if (input.slug) await reserveProgramSlug(tx, input.slug, actor.id, id);
       const updated = await tx.program.update({
         where: { id },
         data: {
@@ -235,6 +237,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     if (!source) throw notFound("Program");
     const duplicate = await db.$transaction(async (tx) => {
+      await reserveProgramSlug(tx, action.slug, actor.id);
       const created = await tx.program.create({
         data: {
           slug: action.slug,

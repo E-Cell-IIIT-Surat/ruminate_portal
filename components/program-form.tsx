@@ -4,15 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { eventTimeToIso } from "@/lib/domain/event-time";
+import { ActionToast } from "@/components/action-toast";
 
 export function ProgramForm({ initialType = "EVENT" }: { initialType?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [slugError, setSlugError] = useState("");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
+    setSlugError("");
     const data = new FormData(event.currentTarget);
     const body = {
       name: data.get("name"),
@@ -54,6 +57,11 @@ export function ProgramForm({ initialType = "EVENT" }: { initialType?: string })
         program?: { id: string };
       };
       if (!response.ok) {
+        if (result.fields?.slug) {
+          const message = result.fields.slug;
+          setSlugError(Array.isArray(message) ? message.join(" ") : String(message));
+          document.getElementById("slug")?.focus();
+        }
         const fieldErrors = result.fields
           ? Object.entries(result.fields)
               .flatMap(([field, messages]) =>
@@ -82,6 +90,7 @@ export function ProgramForm({ initialType = "EVENT" }: { initialType?: string })
   }
   return (
     <form className="panel form-panel" onSubmit={submit}>
+      <ActionToast message={error} onDismiss={() => setError("")} />
       <p>All event and registration times are in India Standard Time (IST, UTC+05:30).</p>
       <div className="form-grid">
         <div className="field">
@@ -89,8 +98,26 @@ export function ProgramForm({ initialType = "EVENT" }: { initialType?: string })
           <input className="input" id="name" name="name" required minLength={3} placeholder="UDHBHAV 2026" />
         </div>
         <div className="field">
-          <label htmlFor="slug">Slug</label>
-          <input className="input" id="slug" name="slug" required pattern={"[a-z0-9\\-]+"} placeholder="udbhav-2026" />
+          <label htmlFor="slug">Program address (slug)</label>
+          <input
+            className="input"
+            id="slug"
+            name="slug"
+            required
+            pattern={"[a-z0-9\\-]+"}
+            placeholder="udbhav-2026"
+            aria-invalid={!!slugError}
+            aria-describedby={slugError ? "slug-error slug-help" : "slug-help"}
+            onChange={() => setSlugError("")}
+          />
+          <small id="slug-help">
+            The last part of the event link, for example /programs/ktb-2026. Deleted events&apos; addresses can be reused.
+          </small>
+          {slugError && (
+            <p id="slug-error" role="alert">
+              {slugError}
+            </p>
+          )}
         </div>
         <div className="field">
           <label htmlFor="type">Program type</label>
