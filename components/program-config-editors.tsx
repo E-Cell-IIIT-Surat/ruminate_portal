@@ -1,4 +1,5 @@
 "use client";
+import { AdminHelp } from "@/components/admin-help";
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -25,7 +26,9 @@ export function StageEditor({
   return (
     <div className="panel config-editor">
       <div className="panel-header">
-        <h2>Ordered stages</h2>
+        <h2>
+          Ordered stages <AdminHelp title="Ordered stages" />
+        </h2>
         <button className="button button-primary" onClick={save}>
           Save stages
         </button>

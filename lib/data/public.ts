@@ -17,7 +17,7 @@ export async function publicPrograms(filters: { type?: string; state?: string; y
         visibility: "PUBLIC",
         archivedAt: null,
         status: { notIn: ["DRAFT", "ARCHIVED"] },
-        ...(filters.type ? { type: filters.type as never } : {}),
+        type: filters.type && filters.type !== "WORKSHOP" ? (filters.type as never) : { not: "WORKSHOP" },
         ...(filters.year
           ? {
               startAt: {

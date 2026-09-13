@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminHelp } from "@/components/admin-help";
 import { Info, type LucideIcon } from "lucide-react";
 
 export function ButtonLink({
@@ -67,7 +68,9 @@ export function PageHeader({
     <header className="page-header">
       <div>
         {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-        <h1>{title}</h1>
+        <h1>
+          {title} <AdminHelp title={title} />
+        </h1>
         {description && <p>{description}</p>}
       </div>
       {action}

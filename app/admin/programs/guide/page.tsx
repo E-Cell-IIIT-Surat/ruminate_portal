@@ -37,8 +37,8 @@ export default async function ProgramGuide() {
           <li>
             <h2>Publish the form, then launch the program</h2>
             <p>
-              Click Publish form, then Back to program · Launch / schedule. Publishing a form prepares the questions; it
-              does not open registration. A saved draft revision does not remove the existing published form.
+              Click Publish form, then Launch / schedule registration. Publishing a form prepares the questions; it does
+              not open registration. A saved draft revision does not remove the existing published form.
             </p>
           </li>
           <li>

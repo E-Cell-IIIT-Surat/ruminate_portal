@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DeleteEventButton } from "@/components/delete-event-button";
+import { AdminHelp } from "@/components/admin-help";
 import { eventTimeInput, eventTimeToIso } from "@/lib/domain/event-time";
 
 type ProgramLaunchChecklistProps = {
@@ -88,7 +89,13 @@ export function ProgramLaunchChecklist({
       <div className="launch-checklist-header">
         <div>
           <p className="eyebrow">Launch checklist</p>
-          <h2 id="launch-checklist-title">Create once, then open registration</h2>
+          <h2 id="launch-checklist-title">
+            Create once, then open registration{" "}
+            <AdminHelp
+              title="Launch registration"
+              description="Publish the form first. Launch now opens registration immediately; Schedule opens it at the chosen IST time. Set a closing date and Public visibility if the event should appear in its directory."
+            />
+          </h2>
           <p>Complete the form, publish it, and use this panel whenever you want to open or close applications.</p>
         </div>
         <span className={`launch-status launch-status-${launched ? "ready" : "draft"}`}>

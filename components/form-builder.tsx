@@ -1,4 +1,5 @@
 "use client";
+import { AdminHelp } from "@/components/admin-help";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -297,7 +298,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
           Publishing saves the form for applicants. Next, return to the launch panel to open or schedule registration.
         </p>
         <Link className="button button-secondary" href={`/admin/programs/${programId}`}>
-          Back to program · Launch / schedule
+          Launch / schedule registration
         </Link>
         <div className="template-row">
           <span>Start from a template</span>
@@ -622,7 +623,9 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
       </section>
       <aside className="builder-preview">
         <span>Live preview</span>
-        <h2>Application form</h2>
+        <h2>
+          Application form <AdminHelp title="Application form" />
+        </h2>
         {sections.map((section, index) => (
           <div key={index}>
             <h3>{section.title}</h3>

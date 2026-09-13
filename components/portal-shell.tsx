@@ -64,7 +64,7 @@ export async function PortalShell({
         })
     : null;
   return (
-    <div className="portal-layout">
+    <div className={`portal-layout portal-${mode}`}>
       <a className="skip-link" href="#portal-content">
         Skip to content
       </a>

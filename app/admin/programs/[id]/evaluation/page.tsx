@@ -21,7 +21,9 @@ export default async function EvaluationPage({ params }: { params: Promise<{ id:
       {program?.rubrics.map((rubric) => (
         <div className="panel" key={rubric.id}>
           <div className="panel-header">
-            <h2>{rubric.name}</h2>
+            <h2>
+              {rubric.name} <AdminHelp title="Evaluation rubric" />
+            </h2>
             <span>{rubric.stage?.name ?? "All stages"}</span>
           </div>
           <div className="compact-list">
@@ -39,3 +41,4 @@ export default async function EvaluationPage({ params }: { params: Promise<{ id:
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

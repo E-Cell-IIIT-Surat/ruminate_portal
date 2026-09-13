@@ -9,7 +9,16 @@ import { WorkshopLaunch } from "@/components/workshop-launch";
 export const dynamic = "force-dynamic";
 
 export default async function AdminWorkshopsPage() {
-  await requirePermission("program:update");
+  const actor = await requirePermission("program:update");
+  const customWorkshops = await db.program.findMany({
+    where: {
+      type: "WORKSHOP",
+      archivedAt: null,
+      ...(actor.isSuperAdmin ? {} : { id: { in: [...actor.managedProgramIds] } }),
+    },
+    select: { id: true, name: true, status: true, _count: { select: { applications: true } } },
+    orderBy: { updatedAt: "desc" },
+  });
   const workshops = await db.workshop.findMany({
     where: { archivedAt: null },
     include: { _count: { select: { bookings: true } } },
@@ -28,9 +37,32 @@ export default async function AdminWorkshopsPage() {
         }
       />
       <AdminWorkshopForm />
+      <section className="panel form-panel">
+        <h2>
+          Workshops with custom forms <AdminHelp title="Workshops with custom forms" />
+        </h2>
+        <p>Use these for workshops that need extra questions, team details, or document uploads.</p>
+        <ButtonLink href="/admin/programs/new?type=WORKSHOP" variant="secondary">
+          Create workshop with a custom form
+        </ButtonLink>
+        <div className="program-grid">
+          {customWorkshops.map((workshop) => (
+            <div className="program-card" key={workshop.id}>
+              <h3>{workshop.name}</h3>
+              <Badge>{workshop.status.replaceAll("_", " ")}</Badge>
+              <p>{workshop._count.applications} applications</p>
+              <ButtonLink href={`/admin/programs/${workshop.id}`} variant="secondary">
+                Manage workshop
+              </ButtonLink>
+            </div>
+          ))}
+        </div>
+      </section>
       <div className="panel">
         <div className="panel-header">
-          <h2>Workshop history</h2>
+          <h2>
+            Workshop history <AdminHelp title="Workshop history" />
+          </h2>
           <span>{workshops.length} total</span>
         </div>
         {workshops.length ? (
@@ -96,3 +128,4 @@ export default async function AdminWorkshopsPage() {
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

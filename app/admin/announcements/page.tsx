@@ -33,7 +33,9 @@ export default async function AdminAnnouncementsPage() {
       <div className="announcement-how panel">
         <div>
           <span className="eyebrow">How announcements work</span>
-          <h2>One message, the right audience.</h2>
+          <h2>
+            One message, the right audience. <AdminHelp title="One message, the right audience." />
+          </h2>
           <p>
             Choose a program, target all applicants or a specific status/stage, and publish. Email delivery is queued
             for the configured email worker.
@@ -53,7 +55,9 @@ export default async function AdminAnnouncementsPage() {
       </div>
       <div className="panel announcement-programs">
         <div className="panel-header">
-          <h2>Choose a program to publish</h2>
+          <h2>
+            Choose a program to publish <AdminHelp title="Choose a program to publish" />
+          </h2>
         </div>
         {programs.length ? (
           programs.map((program) => (
@@ -100,3 +104,4 @@ export default async function AdminAnnouncementsPage() {
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

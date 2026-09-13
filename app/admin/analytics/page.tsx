@@ -27,7 +27,9 @@ export default async function AdminAnalyticsPage() {
       </div>
       <div className="panel">
         <div className="panel-header">
-          <h2>Status distribution</h2>
+          <h2>
+            Status distribution <AdminHelp title="Status distribution" />
+          </h2>
         </div>
         <div className="compact-list">
           {grouped.map((row) => (
@@ -41,3 +43,4 @@ export default async function AdminAnalyticsPage() {
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

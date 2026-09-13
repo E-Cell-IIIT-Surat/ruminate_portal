@@ -48,7 +48,9 @@ export default async function AdminDashboard() {
       </div>
       <section className="panel">
         <div className="panel-header">
-          <h2>Recent activity</h2>
+          <h2>
+            Recent activity <AdminHelp title="Recent activity" />
+          </h2>
           <a href="/admin/audit-logs">View audit log</a>
         </div>
         {recent.length ? (
@@ -74,3 +76,4 @@ export default async function AdminDashboard() {
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

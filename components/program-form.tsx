@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { eventTimeToIso } from "@/lib/domain/event-time";
 
-export function ProgramForm() {
+export function ProgramForm({ initialType = "EVENT" }: { initialType?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -94,7 +94,7 @@ export function ProgramForm() {
         </div>
         <div className="field">
           <label htmlFor="type">Program type</label>
-          <select className="select" id="type" name="type">
+          <select className="select" id="type" name="type" defaultValue={initialType}>
             <option value="STARTUP_COMPETITION">Startup competition</option>
             <option value="EVENT">Event</option>
             <option value="SSIP">SSIP</option>

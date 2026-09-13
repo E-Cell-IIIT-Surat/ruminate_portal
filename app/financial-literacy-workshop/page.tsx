@@ -9,21 +9,12 @@ import { hasDatabaseConfig } from "@/lib/env";
 import { registrationState } from "@/lib/domain/program";
 
 export const metadata: Metadata = {
-  title: "Workshops & events",
-  description: "Explore Ruminate workshops, competitions, hackathons, and learning events.",
+  title: "Workshops",
+  description: "Explore upcoming and past Ruminate workshops and practical learning sessions.",
 };
 export const dynamic = "force-dynamic";
 
-const programmeTypes = [
-  "EVENT",
-  "WORKSHOP",
-  "HACKATHON",
-  "STARTUP_COMPETITION",
-  "PITCH_EVENT",
-  "INDUSTRY_VISIT",
-  "MENTORSHIP",
-  "SSIP",
-] as const;
+const programmeTypes = ["WORKSHOP"] as const;
 
 function workshopsQuery() {
   return db.workshop.findMany({
@@ -88,10 +79,10 @@ export default async function FinancialLiteracyWorkshopPage() {
           <span className="kicker">
             <BookOpenCheck size={15} /> Ruminate learning series
           </span>
-          <h1>Workshops, competitions &amp; events</h1>
+          <h1>Workshops</h1>
           <p>
-            Learn by doing. Browse upcoming sessions, innovation challenges, hackathons, and the workshops that help
-            Ruminate students turn curiosity into momentum.
+            Learn by doing. Browse practical sessions and hands-on workshops, then choose one to view its details and
+            register.
           </p>
           <div className="workshop-hero-banner">
             <div className="workshop-hero-mark">
@@ -102,7 +93,7 @@ export default async function FinancialLiteracyWorkshopPage() {
               <span>Open an event card to read its details and access its registration form.</span>
             </div>
             <a className="button button-secondary" href="#upcoming">
-              Browse events <ArrowRight size={16} />
+              Browse workshops <ArrowRight size={16} />
             </a>
           </div>
         </section>
@@ -111,16 +102,19 @@ export default async function FinancialLiteracyWorkshopPage() {
           <article className="rich-panel">
             <h2>What you will find here</h2>
             <p>
-              From financial literacy and founder sessions to UDHBHAV-style idea challenges, every listing has a clear
-              overview, dates, eligibility, and a single place to register. Forms stay hidden until you choose the
-              specific event, so the catalogue remains easy to scan on desktop and mobile.
+              Find workshop topics, dates, eligibility and registration details here. For competitions, hackathons,
+              industry visits and other events, visit the <Link href="/programs">Programs directory</Link>.
             </p>
 
             <h2 id="upcoming">Upcoming workshops</h2>
             {upcoming.length ? (
               <div className="workshop-catalogue">
                 {upcoming.map((workshop) => (
-                  <Link className="workshop-card" href={`/financial-literacy-workshop/${workshop.slug}`} key={workshop.id}>
+                  <Link
+                    className="workshop-card"
+                    href={`/financial-literacy-workshop/${workshop.slug}`}
+                    key={workshop.id}
+                  >
                     {workshop.bannerUrl && (
                       <Image
                         className="workshop-card-banner"
@@ -132,7 +126,9 @@ export default async function FinancialLiteracyWorkshopPage() {
                       />
                     )}
                     <div className="workshop-card-top">
-                      <Badge tone="green">Registration open</Badge>
+                      <Badge tone={registrationState(workshop) === "OPEN" ? "green" : "neutral"}>
+                        {registrationState(workshop)}
+                      </Badge>
                       <span>{workshop.batch ?? "All batches"}</span>
                     </div>
                     <h3>{workshop.name}</h3>
@@ -140,7 +136,9 @@ export default async function FinancialLiteracyWorkshopPage() {
                     <small>
                       {formatDate(workshop.startsAt)} · {workshop.venue ?? "Venue to be announced"}
                     </small>
-                    <span className="workshop-card-link">View details &amp; reserve a seat <ArrowRight size={15} /></span>
+                    <span className="workshop-card-link">
+                      View details &amp; reserve a seat <ArrowRight size={15} />
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -152,7 +150,7 @@ export default async function FinancialLiteracyWorkshopPage() {
               />
             )}
 
-            <h2>Programmes, competitions &amp; hackathons</h2>
+            <h2>Workshops with application forms</h2>
             {programmeCards.length ? (
               <div className="workshop-catalogue">
                 {programmeCards.map((programme) => {
@@ -168,22 +166,26 @@ export default async function FinancialLiteracyWorkshopPage() {
                       <h3>{programme.name}</h3>
                       <p>{programme.shortDescription}</p>
                       <small>{formatDate(programme.startAt)}</small>
-                      <span className="workshop-card-link">View programme <ArrowRight size={15} /></span>
+                      <span className="workshop-card-link">
+                        View programme <ArrowRight size={15} />
+                      </span>
                     </Link>
                   );
                 })}
               </div>
             ) : (
-              <p className="muted-copy">Published competitions and hackathons will appear here.</p>
+              <p className="muted-copy">Workshops with custom registration questions will appear here.</p>
             )}
 
-            <h2>Previous workshops &amp; events</h2>
+            <h2>Previous workshops</h2>
             {previous.length || previousProgrammes.length ? (
               <div className="workshop-history-list">
                 {previous.map((workshop) => (
                   <Link href={`/financial-literacy-workshop/${workshop.slug}`} key={workshop.id}>
                     <strong>{workshop.name}</strong>
-                    <span>{formatDate(workshop.startsAt)} · {workshop.venue ?? "Ruminate"}</span>
+                    <span>
+                      {formatDate(workshop.startsAt)} · {workshop.venue ?? "Ruminate"}
+                    </span>
                     <p>{workshop.description}</p>
                   </Link>
                 ))}
@@ -204,7 +206,7 @@ export default async function FinancialLiteracyWorkshopPage() {
             <div>
               <Layers3 />
               <span>Formats</span>
-              <strong>Workshops, challenges &amp; events</strong>
+              <strong>Practical learning sessions</strong>
             </div>
             <div>
               <Clock3 />

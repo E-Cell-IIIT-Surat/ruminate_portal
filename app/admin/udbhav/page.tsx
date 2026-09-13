@@ -63,7 +63,9 @@ export default async function AdminUdbhavPage() {
       </div>
       <div className="panel">
         <div className="panel-header">
-          <h2>Submitted ideas</h2>
+          <h2>
+            Submitted ideas <AdminHelp title="Submitted ideas" />
+          </h2>
           <span>{submissions.length} records</span>
         </div>
         {submissions.length ? (
@@ -122,7 +124,9 @@ export default async function AdminUdbhavPage() {
       <div className="panel settings-help">
         <FileText size={20} />
         <div>
-          <h2>How access works</h2>
+          <h2>
+            How access works <AdminHelp title="How access works" />
+          </h2>
           <p>
             The configured Nishad Deshpande email is granted super-admin access on sign-in. Other reviewers are managed
             from Users &amp; Roles and can score ideas through the reviewer workspace.
@@ -132,3 +136,4 @@ export default async function AdminUdbhavPage() {
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

@@ -10,7 +10,7 @@ The older creation/settings forms also sent timezone-less dates, which a UTC pro
 
 1. Open Admin → Programs → KNOW THE BUSINESS → Form.
 2. Review the questions. Use the existing form or a template. Publish form saves your questions for applicants.
-3. Click **Back to program · Launch / schedule**.
+3. Click **Launch / schedule registration**.
 4. Select **Launch now** and a future closing time, then click **Launch now**. To schedule instead, choose a future opening and closing time. Event administration consistently uses India Standard Time (IST, UTC+05:30).
 5. Confirm Visibility is Public in Settings if it should appear in the homepage and Programs directory.
 6. Visit Programs in the public navbar and open the event details. Participants sign in and register through the existing application flow.

@@ -42,7 +42,9 @@ export default async function AdminSettingsPage() {
                 {ready ? <CheckCircle2 size={14} /> : "!"} {ready ? "Configured" : "Action required"}
               </span>
             </div>
-            <h2>{label}</h2>
+            <h2>
+              {label} <AdminHelp title={label} />
+            </h2>
             <p>{description}</p>
           </article>
         ))}
@@ -50,7 +52,9 @@ export default async function AdminSettingsPage() {
       <div className="settings-help panel">
         <div>
           <span className="eyebrow">What belongs here?</span>
-          <h2>System readiness, not content management.</h2>
+          <h2>
+            System readiness, not content management. <AdminHelp title="System readiness, not content management." />
+          </h2>
           <p>
             Use program workspaces for forms, stages, rubrics, reviewers, and announcements. Use this page to confirm
             that the infrastructure those workflows depend on is connected.
@@ -63,3 +67,4 @@ export default async function AdminSettingsPage() {
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

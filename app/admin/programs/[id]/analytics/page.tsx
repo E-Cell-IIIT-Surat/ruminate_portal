@@ -12,7 +12,9 @@ function Distribution({ title, rows }: { title: string; rows: { label: string; c
   return (
     <div className="panel status-bars">
       <div className="panel-header">
-        <h2>{title}</h2>
+        <h2>
+          {title} <AdminHelp title={title} />
+        </h2>
       </div>
       {rows.length ? (
         rows.map((row) => (
@@ -115,7 +117,9 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
       </div>
       <div className="panel table-wrap">
         <div className="panel-header">
-          <h2>Reviewer completion</h2>
+          <h2>
+            Reviewer completion <AdminHelp title="Reviewer completion" />
+          </h2>
         </div>
         <table>
           <thead>
@@ -141,3 +145,4 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ id: 
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

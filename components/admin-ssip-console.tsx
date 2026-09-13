@@ -1,4 +1,5 @@
 "use client";
+import { AdminHelp } from "@/components/admin-help";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -111,7 +112,9 @@ export function AdminSSIPConsole({
         <div className="panel-header">
           <div>
             <p className="eyebrow">Submission window</p>
-            <h2>Control SSIP applications</h2>
+            <h2>
+              Control SSIP applications <AdminHelp title="SSIP registration window" />
+            </h2>
           </div>
           <span className={`badge ${settings.isOpen ? "badge-green" : "badge-orange"}`}>
             {settings.isOpen ? "OPEN" : "CLOSED"}
@@ -158,7 +161,9 @@ export function AdminSSIPConsole({
         <div className="panel-header">
           <div>
             <p className="eyebrow">Idea pipeline</p>
-            <h2>Submitted SSIP ideas</h2>
+            <h2>
+              Submitted SSIP ideas <AdminHelp title="SSIP submissions" />
+            </h2>
           </div>
           <span>{submissions.length} records</span>
         </div>

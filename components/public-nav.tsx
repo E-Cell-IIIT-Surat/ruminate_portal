@@ -49,8 +49,8 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
                   <BookOpenCheck size={20} />
                 </span>
                 <span>
-                  <strong>Financial Literacy Workshop</strong>
-                  <small>Learn money basics, save your seat, and build confidence.</small>
+                  <strong>All workshops</strong>
+                  <small>Find practical sessions, view details, and reserve your place.</small>
                 </span>
                 <ArrowUpRight size={16} />
               </Link>
@@ -102,7 +102,7 @@ export function PublicNav({ signedIn }: { signedIn: boolean }) {
             <ArrowUpRight size={15} />
           </Link>
           <Link className="public-nav-mobile-subitem" href="/financial-literacy-workshop" onClick={closeMobile}>
-            Financial Literacy Workshop
+            All workshops
           </Link>
           <Link
             className={`public-nav-mobile-link ${active("/udbhav") ? "active" : ""}`}

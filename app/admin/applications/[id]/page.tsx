@@ -79,7 +79,9 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
         <section>
           <div className="panel" id="responses">
             <div className="panel-header">
-              <h2>Responses</h2>
+              <h2>
+                Responses <AdminHelp title="Responses" />
+              </h2>
             </div>
             {application.answers.map((answer) => (
               <div className="response-row" key={answer.id}>
@@ -113,7 +115,9 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
           )}
           <div className="panel" id="reviews">
             <div className="panel-header">
-              <h2>Reviews</h2>
+              <h2>
+                Reviews <AdminHelp title="Reviews" />
+              </h2>
             </div>
             <div className="compact-list">
               {application.reviewerAssignments.map((assignment) => (
@@ -129,7 +133,9 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
           </div>
           <div className="panel" id="comments">
             <div className="panel-header">
-              <h2>Comments</h2>
+              <h2>
+                Comments <AdminHelp title="Comments" />
+              </h2>
             </div>
             <div className="compact-list">
               {application.comments.map((comment) => (
@@ -148,7 +154,9 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
         <aside>
           <div className="panel side-panel">
             <div className="panel-header">
-              <h2>Change status</h2>
+              <h2>
+                Change status <AdminHelp title="Change status" />
+              </h2>
             </div>
             <StatusControl
               applicationId={application.id}
@@ -159,7 +167,9 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
           </div>
           <div className="panel" id="documents">
             <div className="panel-header">
-              <h2>Private documents</h2>
+              <h2>
+                Private documents <AdminHelp title="Private documents" />
+              </h2>
             </div>
             <div className="compact-list">
               {application.files.map((file) => (
@@ -174,7 +184,9 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
           </div>
           <div className="panel" id="history">
             <div className="panel-header">
-              <h2>History</h2>
+              <h2>
+                History <AdminHelp title="History" />
+              </h2>
             </div>
             <div className="compact-list">
               {application.statusHistory.map((event) => (
@@ -200,3 +212,4 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

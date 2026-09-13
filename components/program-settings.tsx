@@ -1,4 +1,5 @@
 "use client";
+import { AdminHelp } from "@/components/admin-help";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -348,7 +349,9 @@ export function ProgramSettings({ program }: ProgramSettingsProps) {
       <div className="panel form-panel">
         <div className="panel-header">
           <div>
-            <h2>Results</h2>
+            <h2>
+              Results <AdminHelp title="Results" />
+            </h2>
             <p>
               {program.resultsPublishedAt
                 ? "Results are visible to participants."
@@ -386,7 +389,9 @@ function DuplicateProgram({
     <div className="panel form-panel">
       <div className="panel-header">
         <div>
-          <h2>Duplicate configuration</h2>
+          <h2>
+            Duplicate configuration <AdminHelp title="Duplicate configuration" />
+          </h2>
           <p>Copies the form, stages, rubrics, and settings—not applications or reviews.</p>
         </div>
       </div>

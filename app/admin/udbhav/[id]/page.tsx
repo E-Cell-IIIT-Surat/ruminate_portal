@@ -58,7 +58,9 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
         <section>
           <div className="panel response-panel">
             <div className="panel-header">
-              <h2>Idea details</h2>
+              <h2>
+                Idea details <AdminHelp title="Idea details" />
+              </h2>
               <span>
                 {submission.cycle.month}/{submission.cycle.year}
               </span>
@@ -94,7 +96,9 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
           </div>
           <div className="panel">
             <div className="panel-header">
-              <h2>Reviewers</h2>
+              <h2>
+                Reviewers <AdminHelp title="Reviewers" />
+              </h2>
               <span>{submission.reviewerAssignments.length} assigned</span>
             </div>
             <UdbhavReviewerAssignment
@@ -105,7 +109,9 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
           </div>
           <div className="panel">
             <div className="panel-header">
-              <h2>Team</h2>
+              <h2>
+                Team <AdminHelp title="Team" />
+              </h2>
               <span>{members.length + 1} member(s)</span>
             </div>
             <div className="compact-list">
@@ -129,7 +135,9 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
           <UdbhavFileUpload submissionId={submission.id} hasFile={Boolean(submission.supportingFileKey)} />
           <div className="panel">
             <div className="panel-header">
-              <h2>Reviewer scores</h2>
+              <h2>
+                Reviewer scores <AdminHelp title="Reviewer scores" />
+              </h2>
               <span>{submission.reviews.length} review(s)</span>
             </div>
             <div className="compact-list">
@@ -157,7 +165,9 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
           />
           <div className="panel">
             <div className="panel-header">
-              <h2>Status history</h2>
+              <h2>
+                Status history <AdminHelp title="Status history" />
+              </h2>
             </div>
             <div className="compact-list">
               {submission.statusLog.map((event) => (
@@ -177,3 +187,4 @@ export default async function AdminUdbhavDetail({ params }: { params: Promise<{ 
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

@@ -1,4 +1,5 @@
 "use client";
+import { AdminHelp } from "@/components/admin-help";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -52,7 +53,9 @@ export function AdminTeamConsole({ teams }: { teams: AdminTeam[] }) {
       <div className="panel-header">
         <div>
           <span className="eyebrow">Team governance</span>
-          <h2>Team requests and public directory</h2>
+          <h2>
+            Team requests and public directory <AdminHelp title="Team requests and public directory" />
+          </h2>
         </div>
         <Badge tone="orange">{teams.filter((team) => team.status === "PENDING_APPROVAL").length} pending</Badge>
       </div>

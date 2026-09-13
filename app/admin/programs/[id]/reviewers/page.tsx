@@ -49,7 +49,9 @@ export default async function ProgramReviewersPage({ params }: { params: Promise
       </div>
       <div className="panel">
         <div className="panel-header">
-          <h2>Reviewer workload</h2>
+          <h2>
+            Reviewer workload <AdminHelp title="Reviewer workload" />
+          </h2>
         </div>
         <div className="compact-list">
           {[...grouped.values()].map((row) => (
@@ -64,7 +66,9 @@ export default async function ProgramReviewersPage({ params }: { params: Promise
       </div>
       <div className="panel">
         <div className="panel-header">
-          <h2>Program managers</h2>
+          <h2>
+            Program managers <AdminHelp title="Program managers" />
+          </h2>
         </div>
         <div className="compact-list">
           {program.managers.map(({ user }) => (
@@ -79,3 +83,4 @@ export default async function ProgramReviewersPage({ params }: { params: Promise
     </>
   );
 }
+import { AdminHelp } from "@/components/admin-help";

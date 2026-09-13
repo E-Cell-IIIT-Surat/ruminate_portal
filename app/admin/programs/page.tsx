@@ -14,6 +14,7 @@ export default async function AdminProgramsPage() {
   const programs = await db.program.findMany({
     where: {
       archivedAt: null,
+      type: { not: "WORKSHOP" },
       ...(authorization.isSuperAdmin ? {} : { id: { in: [...authorization.managedProgramIds] } }),
     },
     select: {

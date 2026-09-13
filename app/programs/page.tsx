@@ -64,7 +64,6 @@ export default async function ProgramsPage({
             <option value="">All types</option>
             {[
               "EVENT",
-              "WORKSHOP",
               "INDUSTRY_VISIT",
               "HACKATHON",
               "STARTUP_COMPETITION",

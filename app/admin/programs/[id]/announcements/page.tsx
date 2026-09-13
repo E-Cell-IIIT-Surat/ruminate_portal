@@ -21,7 +21,9 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
       {program?.announcements.map((item) => (
         <div className="panel announcement-card" key={item.id}>
           <BadgeLine date={item.publishedAt} />
-          <h2>{item.title}</h2>
+          <h2>
+            {item.title} <AdminHelp title="Announcement" />
+          </h2>
           <p>{item.body}</p>
           <small>Audience: {item.targetType.replaceAll("_", " ").toLowerCase()}</small>
         </div>
@@ -32,3 +34,4 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
 function BadgeLine({ date }: { date: Date | null }) {
   return <small>{date ? date.toLocaleString("en-IN") : "Draft"}</small>;
 }
+import { AdminHelp } from "@/components/admin-help";
