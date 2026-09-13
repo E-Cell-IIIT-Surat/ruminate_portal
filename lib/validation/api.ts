@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const answersInput = z.record(z.string(), z.unknown()).superRefine((value, context) => {
-  if (Object.keys(value).length > 200) context.addIssue({ code: "custom", message: "Too many answer fields" });
+  if (Object.keys(value).length > 3000) context.addIssue({ code: "custom", message: "Too many answer fields" });
   if (JSON.stringify(value).length > 1_000_000)
     context.addIssue({ code: "custom", message: "Application draft is too large" });
 });

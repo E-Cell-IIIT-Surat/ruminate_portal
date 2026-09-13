@@ -59,7 +59,14 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
       />
       <ApplicationForm
         applicationId={application.id}
-        sections={application.formVersion.sections}
+        sections={application.formVersion.sections.map((section) => ({
+          ...section,
+          fields: section.fields.map((field) => ({
+            ...field,
+            minNumber: field.minNumber?.toNumber() ?? null,
+            maxNumber: field.maxNumber?.toNumber() ?? null,
+          })),
+        }))}
         initialAnswers={initialAnswers}
         locked={locked}
         initialFiles={application.files}

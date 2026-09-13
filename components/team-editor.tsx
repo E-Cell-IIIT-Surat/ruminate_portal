@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ActionToast } from "@/components/action-toast";
 
 type Member = { name: string; email: string; phone?: string; institution?: string; role?: string; isLeader: boolean };
 export function TeamEditor({
@@ -22,12 +23,14 @@ export function TeamEditor({
   const [members, setMembers] = useState(initialMembers);
   const [state, setState] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   function update(index: number, key: keyof Member, value: string | boolean) {
     setMembers((current) => current.map((item, i) => (i === index ? { ...item, [key]: value } : item)));
   }
   async function save() {
     if (busy) return;
     setBusy(true);
+    setError("");
     setState("Saving team…");
     try {
       const response = await fetch(`/api/applications/${applicationId}/team`, {
@@ -36,8 +39,13 @@ export function TeamEditor({
         body: JSON.stringify({ name, members }),
       });
       const result = await response.json();
+      if (!response.ok)
+        setError(
+          `${result.error ?? "Could not save team"}${result.fields ? `: ${Object.values(result.fields).flat().join(" ")}` : ""}${result.requestId ? ` (support reference: ${result.requestId})` : ""}`,
+        );
       setState(response.ok ? "Team saved" : (result.error ?? "Save failed"));
     } catch {
+      setError("Could not save your team. Check your connection and try again.");
       setState("Save failed");
     } finally {
       setBusy(false);
@@ -45,12 +53,14 @@ export function TeamEditor({
   }
   return (
     <section className="panel form-panel">
+      <ActionToast message={error} onDismiss={() => setError("")} />
       <div className="panel-header">
         <div>
           <h2>Team details</h2>
           <p>
             {min}–{max} members, including the team leader.
           </p>
+          <p>Save these team details before submitting your application.</p>
         </div>
       </div>
       <div className="form-grid">
@@ -65,7 +75,7 @@ export function TeamEditor({
           />
         </div>
         {members.map((member, index) => (
-          <div className="panel field-full" key={`${index}-${member.email}`}>
+          <div className="panel field-full" key={index}>
             <div className="form-grid">
               <div className="field">
                 <label htmlFor={`member-${index}-name`}>Name</label>

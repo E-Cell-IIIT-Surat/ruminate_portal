@@ -13,6 +13,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const result = await saveDraft(id, access.current.id, answers);
     return Response.json(result);
   } catch (error) {
-    return safeError(error);
+    return safeError(error, { route: "/api/applications/[id]/draft", method: "PUT" });
   }
 }

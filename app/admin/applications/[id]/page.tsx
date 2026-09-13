@@ -20,7 +20,10 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
       user: true,
       stage: true,
       team: { include: { members: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] } } },
-      answers: { include: { field: { include: { section: true } } } },
+      answers: {
+        include: { field: { include: { section: true } } },
+        orderBy: [{ field: { section: { order: "asc" } } }, { field: { order: "asc" } }],
+      },
       files: { where: { deletedAt: null } },
       reviewerAssignments: { include: { reviewer: { select: { name: true, email: true } }, evaluation: true } },
       statusHistory: { include: { changedBy: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
@@ -64,7 +67,7 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
       <PageHeader
         eyebrow={application.referenceId}
         title={application.team?.name ?? application.user.name ?? application.user.email}
-        description={`${application.program.name} · ${application.stage?.name ?? "No stage"}`}
+        description={`${application.program.name} · ${application.stage?.name ?? "No stage"} · ${application.submittedAt ? `Submitted ${application.submittedAt.toLocaleString("en-IN")}` : "Draft — not submitted yet"}`}
         action={<Badge tone="orange">{application.status.replaceAll("_", " ")}</Badge>}
       />
       <nav className="tabs">
@@ -83,12 +86,23 @@ export default async function AdminApplicationDetail({ params }: { params: Promi
                 Responses <AdminHelp title="Responses" />
               </h2>
             </div>
+            {application.answers.length === 0 && <p className="muted">No answers have been saved yet.</p>}
             {application.answers.map((answer) => (
               <div className="response-row" key={answer.id}>
                 <small>
                   {answer.field.section.title} · {answer.field.label}
                 </small>
-                <p>{Array.isArray(answer.value) ? answer.value.join(", ") : String(answer.value)}</p>
+                <p>
+                  {answer.value == null || answer.value === ""
+                    ? "Not answered"
+                    : typeof answer.value === "boolean"
+                      ? answer.value
+                        ? "Yes"
+                        : "No"
+                      : Array.isArray(answer.value)
+                        ? answer.value.join(", ")
+                        : String(answer.value)}
+                </p>
               </div>
             ))}
           </div>

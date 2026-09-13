@@ -13,8 +13,12 @@ function validSecret(request: Request) {
 export async function POST(request: Request) {
   try {
     if (!validSecret(request)) throw unauthorized();
-    return Response.json(await processEmailQueue());
+    return Response.json(await processEmailQueue(5));
   } catch (error) {
     return safeError(error);
   }
 }
+
+export const maxDuration = 60;
+// Vercel Cron invokes GET; use the same bearer-secret guard as manual processing.
+export const GET = POST;

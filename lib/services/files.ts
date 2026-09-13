@@ -134,7 +134,9 @@ export async function finalizeUpload(input: {
     new GetObjectCommand({
       Bucket: r2Env().R2_PRIVATE_BUCKET,
       Key: input.objectKey,
-      Range: input.mimeType.includes("openxmlformats") ? "bytes=0-1048575" : "bytes=0-31",
+      // OOXML's central directory is at the end, not necessarily in the first MB.
+      // These uploads are already capped at 25 MB by the upload API.
+      Range: input.mimeType.includes("openxmlformats") ? undefined : "bytes=0-31",
     }),
   );
   const bytes = object.Body ? await object.Body.transformToByteArray() : new Uint8Array();

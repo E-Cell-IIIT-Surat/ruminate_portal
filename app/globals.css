@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 :root {
   --ink: #070706;
   --surface: #11110f;
@@ -46,7 +45,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2 , h3{ font-family: var(--font-heading), Inter, sans-serif; font-weight: 700; }
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading), Inter, sans-serif;
+  font-weight: 700;
+}
 
 a {
   color: inherit;
@@ -75,7 +79,10 @@ select {
   background-repeat: no-repeat;
   background-position: right 12px center;
   background-size: 16px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
 }
 
 select:hover {
@@ -3368,12 +3375,12 @@ td {
   font-size: 12px;
   font-weight: 800;
 }
-.initiative-cta svg{
+.initiative-cta svg {
   transition: transform 0.2s ease;
 }
- .initiative-card :hover .initiative-cta svg{
+.initiative-card :hover .initiative-cta svg {
   transform: translateX(4px);
- }
+}
 .closing-cta {
   max-width: 1184px;
   min-height: 190px;
@@ -3455,10 +3462,15 @@ td {
 }
 .footer-links a {
   display: inline-block;
-  transition: color 0.2s ease, transform 0.2s ease;
-} 
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
 
-.footer-links a:hover { color: #f5a15e; transform: translateX(3px); }
+.footer-links a:hover {
+  color: #f5a15e;
+  transform: translateX(3px);
+}
 
 .footer-bottom {
   padding-top: 18px;
@@ -3861,6 +3873,41 @@ td {
   color: #888078;
   font-size: 13px;
   margin-bottom: 0;
+}
+.action-toast {
+  position: fixed;
+  z-index: 1000;
+  top: 24px;
+  right: 24px;
+  width: min(440px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  background: #281715;
+  color: #fff0e9;
+  border: 1px solid #bd6653;
+  border-radius: 14px;
+  box-shadow: 0 12px 35px #0006;
+}
+.dynamic-field[aria-invalid="true"] {
+  border-left: 3px solid #ed8d79;
+  padding-left: 12px;
+}
+.action-toast p {
+  margin: 0;
+  max-height: 30vh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  flex: 1;
+  font-size: 14px;
+}
+.action-toast > svg {
+  flex-shrink: 0;
+}
+.action-toast button {
+  padding: 4px;
+  flex-shrink: 0;
 }
 .builder-layout {
   display: grid;
@@ -5307,11 +5354,13 @@ td {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: #000000; 
-  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.24); 
+  background: #000000;
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.24);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.06); }
+.brand:hover .brand-mark {
+  transform: rotate(-8deg) scale(1.06);
+}
 
 .brand-logo {
   width: 100%;
@@ -5486,7 +5535,7 @@ td {
     opacity: 0.5;
   }
 }
- 
+
 /* Premium polish pass */
 
 .value-card,
@@ -5571,7 +5620,9 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 16px;
   background: linear-gradient(145deg, rgba(249, 115, 22, 0.08), rgba(255, 255, 255, 0.015)), #12110f;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .udbhav-info-card:hover {
@@ -5735,7 +5786,9 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.008)), #12110f;
-  transition: transform 0.25s ease, border-color 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .howto-card:hover {
@@ -5947,7 +6000,11 @@ h3 {
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #a89e93;
   background: rgba(255, 255, 255, 0.03);
-  transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
 .social-link:hover {

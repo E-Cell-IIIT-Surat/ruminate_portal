@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { requireApplicationAccess } from "@/lib/authz";
 import { db } from "@/lib/db";
-import { assertTeamSize } from "@/lib/domain/program";
-import { safeError } from "@/lib/errors";
+import { assertTeamSize, canEditSubmitted } from "@/lib/domain/program";
+import { AppError, safeError } from "@/lib/errors";
 
 const schema = z
   .object({
@@ -44,20 +44,34 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (leader.email.toLowerCase() !== owner.email.toLowerCase())
       return Response.json({ error: "The signed-in applicant must remain the team leader" }, { status: 422 });
     assertTeamSize(program.participationMode, program.teamMinSize, program.teamMaxSize, input.members.length);
-    const team = await db.$transaction(async (tx) => {
-      const saved = await tx.team.upsert({
-        where: { applicationId: id },
-        create: { applicationId: id, programId: program.id, leaderId: access.current.id, name: input.name },
-        update: { name: input.name },
-      });
-      await tx.teamMember.deleteMany({ where: { teamId: saved.id } });
-      await tx.teamMember.createMany({
-        data: input.members.map((member, order) => ({ ...member, teamId: saved.id, order: order + 1 })),
-      });
-      return saved;
-    });
+    const team = await db.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`application:${id}`}))`;
+        const application = await tx.application.findUniqueOrThrow({ where: { id } });
+        if (
+          !["DRAFT", "CHANGES_REQUESTED"].includes(application.status) &&
+          !canEditSubmitted(program, application.editOverrideUntil)
+        )
+          throw new AppError(
+            "This application has already been submitted. Team editing is closed.",
+            409,
+            "EDIT_LOCKED",
+          );
+        const saved = await tx.team.upsert({
+          where: { applicationId: id },
+          create: { applicationId: id, programId: program.id, leaderId: access.current.id, name: input.name },
+          update: { name: input.name },
+        });
+        await tx.teamMember.deleteMany({ where: { teamId: saved.id } });
+        await tx.teamMember.createMany({
+          data: input.members.map((member, order) => ({ ...member, teamId: saved.id, order: order + 1 })),
+        });
+        return saved;
+      },
+      { maxWait: 5000, timeout: 20000 },
+    );
     return Response.json({ team });
   } catch (error) {
-    return safeError(error);
+    return safeError(error, { route: "/api/applications/[id]/team", method: "PUT" });
   }
 }

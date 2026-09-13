@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FileUp, Save } from "lucide-react";
+import { ActionToast } from "@/components/action-toast";
+import { isFieldVisible, validateDynamicAnswers } from "@/lib/validation/dynamic-form";
 
 type Field = {
   id: string;
@@ -18,16 +20,21 @@ type Field = {
   conditionValue: unknown;
   allowedFileTypes: string[];
   maxFileSizeBytes: number | null;
+  minLength?: number | null;
+  maxLength?: number | null;
+  minNumber?: number | null;
+  maxNumber?: number | null;
 };
 type Section = { id: string; title: string; description: string | null; fields: Field[] };
 type ApiResponse = Record<string, unknown>;
 type UploadedFile = { id: string; fieldId: string; originalFilename: string };
 
-function visible(field: Field, answers: Record<string, unknown>) {
-  if (!field.conditionFieldKey) return true;
-  return field.conditionOperator === "!="
-    ? answers[field.conditionFieldKey] !== field.conditionValue
-    : answers[field.conditionFieldKey] === field.conditionValue;
+function responseMessage(result: ApiResponse, status: number) {
+  if (status === 401)
+    return "Your session has expired. Sign in again to continue; keep this page open to retain your answers.";
+  const fields =
+    result.fields && typeof result.fields === "object" ? Object.values(result.fields).flat().join(" ") : "";
+  return `${String(result.error ?? "The request failed. Please try again.")}${fields ? `: ${fields}` : ""}${typeof result.requestId === "string" ? ` (support reference: ${result.requestId})` : ""}`;
 }
 
 async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
@@ -72,58 +79,129 @@ export function ApplicationForm({
   const [uploadStage, setUploadStage] = useState("");
   const [files, setFiles] = useState(initialFiles);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [receipt, setReceipt] = useState("");
+  const [savedAnswers, setSavedAnswers] = useState(JSON.stringify(initialAnswers));
+  const saveQueue = useRef<Promise<boolean>>(Promise.resolve(true));
+  const latestAnswers = useRef(initialAnswers);
   const first = useRef(true);
-  async function persistAnswers() {
-    setSaveState("Saving…");
-    try {
-      const response = await fetch(`/api/applications/${applicationId}/draft`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(answers),
-      });
-      setSaveState(response.ok ? "Saved just now" : "Save failed");
-      return response.ok;
-    } catch {
-      setSaveState("Save failed");
-      return false;
-    }
+  function persistAnswers() {
+    const snapshot = JSON.stringify(answers);
+    const task = saveQueue.current.then(async () => {
+      setSaveState("Saving…");
+      try {
+        const response = await fetchWithTimeout(
+          `/api/applications/${applicationId}/draft`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: snapshot,
+          },
+          30000,
+        );
+        if (!response.ok) {
+          const result = await readJson(response);
+          setError(responseMessage(result, response.status));
+        }
+        if (response.ok) setSavedAnswers(snapshot);
+        setSaveState(
+          response.ok
+            ? snapshot === JSON.stringify(latestAnswers.current)
+              ? "Saved just now"
+              : "Unsaved"
+            : "Save failed",
+        );
+        return response.ok;
+      } catch {
+        setError(
+          "Could not save your draft. Check your connection and try again. Your answers are still on this page.",
+        );
+        setSaveState("Save failed");
+        return false;
+      }
+    });
+    saveQueue.current = task;
+    return task;
   }
   useEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
-    if (locked) return;
+    if (locked || submitting || receipt) return;
     const timer = setTimeout(async () => {
       await persistAnswers();
     }, 900);
     return () => clearTimeout(timer);
     // persistAnswers intentionally follows the latest answer state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers, applicationId, locked]);
+  }, [answers, applicationId, locked, submitting, receipt]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
-      if (locked || (!saveState.startsWith("Unsaved") && !saveState.startsWith("Saving"))) return;
+      if (locked || receipt || JSON.stringify(answers) === savedAnswers) return;
       event.preventDefault();
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [locked, saveState]);
+  }, [locked, answers, savedAnswers, receipt]);
   const visibleSections = useMemo(
     () =>
-      sections.map((section) => ({ ...section, fields: section.fields.filter((field) => visible(field, answers)) })),
+      sections.map((section) => ({
+        ...section,
+        fields: section.fields.filter((field) => isFieldVisible(field, answers)),
+      })),
     [answers, sections],
   );
   const currentStep = Math.min(step, Math.max(0, visibleSections.length - 1));
   function set(key: string, value: unknown) {
     setSaveState("Unsaved");
-    setAnswers((current) => ({ ...current, [key]: value }));
+    latestAnswers.current = { ...latestAnswers.current, [key]: value };
+    setAnswers(latestAnswers.current);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
   }
   async function manualSave() {
+    if (submitting || locked) return;
+    setError("");
     await persistAnswers();
+  }
+  function validate() {
+    const issues = validateDynamicAnswers(
+      sections.flatMap((section) => section.fields),
+      answers,
+      files,
+    );
+    setFieldErrors(issues);
+    if (!Object.keys(issues).length) return true;
+    setError(Object.values(issues).join(" "));
+    setReview(false);
+    const index = sections.findIndex((section) => section.fields.some((field) => issues[field.key]));
+    if (index >= 0) setStep(index);
+    return false;
   }
   async function upload(field: Field, file?: File) {
     if (!file) return;
+    if (uploadingField || submitting) return;
+    if (!file.size || file.size > (field.maxFileSizeBytes ?? 25 * 1024 * 1024)) {
+      setError(
+        `${field.label}: choose a non-empty file up to ${(field.maxFileSizeBytes ?? 25 * 1024 * 1024) / 1024 / 1024} MB.`,
+      );
+      return;
+    }
+    const mimeType =
+      file.type ||
+      (file.name.toLowerCase().endsWith(".pdf")
+        ? "application/pdf"
+        : file.name.toLowerCase().endsWith(".docx")
+          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : "");
+    if (!field.allowedFileTypes.includes(mimeType)) {
+      setError(`${field.label}: this file type is not allowed.`);
+      return;
+    }
     setUploadingField(field.id);
     setUploadStage("Preparing upload…");
     setError("");
@@ -138,7 +216,7 @@ export function ApplicationForm({
             applicationId,
             fieldId: field.id,
             filename: file.name,
-            mimeType: file.type,
+            mimeType,
             size: file.size,
           }),
         },
@@ -171,7 +249,7 @@ export function ApplicationForm({
             applicationId,
             fieldId: field.id,
             filename: file.name,
-            mimeType: file.type,
+            mimeType,
             size: file.size,
             objectKey: signed.objectKey,
           }),
@@ -211,14 +289,31 @@ export function ApplicationForm({
       setError("Wait for the file upload to finish before submitting.");
       return;
     }
+    if (!validate()) return;
     setSubmitting(true);
     setError("");
+    setFieldErrors({});
     try {
-      if (!(await persistAnswers())) throw new Error("Save the application before submitting.");
-      const response = await fetchWithTimeout(`/api/applications/${applicationId}/submit`, { method: "POST" }, 30_000);
+      await saveQueue.current;
+      const response = await fetchWithTimeout(
+        `/api/applications/${applicationId}/submit`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ answers }),
+        },
+        60000,
+      );
       const result = await readJson(response);
       if (!response.ok) {
         if (result.code === "VALIDATION_ERROR" && result.fields && typeof result.fields === "object") {
+          const validationFields = Object.fromEntries(
+            Object.entries(result.fields as Record<string, unknown>).map(([key, value]) => [key, String(value)]),
+          );
+          setFieldErrors(validationFields);
+          setReview(false);
+          const index = sections.findIndex((section) => section.fields.some((field) => validationFields[field.key]));
+          if (index >= 0) setStep(index);
           const missing = Object.values(result.fields as Record<string, unknown>)
             .map(String)
             .filter(Boolean)
@@ -229,19 +324,35 @@ export function ApplicationForm({
               : "Complete every required field, including uploaded documents, before submitting.",
           );
         }
-        throw new Error(String(result.error ?? "Submission failed"));
+        throw new Error(responseMessage(result, response.status));
       }
-      location.reload();
+      const application = result.application as { referenceId?: string } | undefined;
+      setReceipt(application?.referenceId ?? applicationId);
+      setSavedAnswers(JSON.stringify(answers));
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Submission failed");
       setSubmitting(false);
     }
   }
+  if (receipt)
+    return (
+      <section className="panel form-panel" role="status">
+        <h2>Application received</h2>
+        <p>
+          Your reference is <strong>{receipt}</strong>. The program team can now review your answers and documents.
+        </p>
+        <p>A confirmation email has been requested for your account email address.</p>
+        <a className="button button-primary" href={`/applications/${applicationId}`}>
+          View application
+        </a>
+      </section>
+    );
   if (review)
     return (
       <div className="application-editor">
+        <ActionToast message={error} onDismiss={() => setError("")} />
         <div className="save-bar">
-          <button className="button button-secondary" onClick={() => setReview(false)}>
+          <button className="button button-secondary" onClick={() => setReview(false)} disabled={submitting}>
             Back to edit
           </button>
           <span>Review application</span>
@@ -280,9 +391,14 @@ export function ApplicationForm({
     );
   return (
     <div className="application-editor">
+      <ActionToast message={error} onDismiss={() => setError("")} />
       <div className="save-bar">
         <span className={saveState.includes("failed") ? "error" : ""}>{saveState}</span>
-        <button className="button button-secondary" onClick={manualSave} disabled={locked}>
+        <button
+          className="button button-secondary"
+          onClick={manualSave}
+          disabled={locked || submitting || saveState === "Saving…"}
+        >
           <Save size={14} /> Save draft
         </button>
       </div>
@@ -315,10 +431,11 @@ export function ApplicationForm({
                 value={answers[field.key]}
                 onChange={(value) => set(field.key, value)}
                 onFile={(file) => upload(field, file)}
+                error={fieldErrors[field.key]}
                 files={files.filter((file) => file.fieldId === field.id)}
                 uploading={uploadingField === field.id}
                 uploadStage={uploadingField === field.id ? uploadStage : ""}
-                locked={locked}
+                locked={locked || submitting || Boolean(uploadingField)}
               />
             ))}
           </div>
@@ -338,7 +455,10 @@ export function ApplicationForm({
             <button
               type="button"
               className="button button-primary"
-              onClick={() => setStep((current) => Math.min(visibleSections.length - 1, current + 1))}
+              onClick={async () => {
+                if (await persistAnswers()) setStep((current) => Math.min(visibleSections.length - 1, current + 1));
+              }}
+              disabled={saveState === "Saving…" || submitting}
             >
               Save and continue
             </button>
@@ -356,7 +476,14 @@ export function ApplicationForm({
           </small>
         </div>
         {!locked && currentStep === visibleSections.length - 1 && (
-          <button className="button button-primary" onClick={() => setReview(true)} disabled={Boolean(uploadingField)}>
+          <button
+            className="button button-primary"
+            onClick={() => {
+              setError("");
+              if (validate()) setReview(true);
+            }}
+            disabled={Boolean(uploadingField) || submitting}
+          >
             Review application
           </button>
         )}
@@ -374,6 +501,7 @@ function DynamicInput({
   uploading,
   uploadStage,
   locked,
+  error,
 }: {
   field: Field;
   value: unknown;
@@ -383,12 +511,13 @@ function DynamicInput({
   uploading: boolean;
   uploadStage: string;
   locked: boolean;
+  error?: string;
 }) {
   if (field.type === "HEADING") return <h3 className="content-heading">{field.label}</h3>;
   if (field.type === "HELP_TEXT") return <p className="content-help">{field.description ?? field.label}</p>;
   const options = Array.isArray(field.options) ? field.options.map(String) : [];
   return (
-    <div className="field dynamic-field">
+    <div className="field dynamic-field" aria-invalid={Boolean(error)}>
       <label htmlFor={field.id}>
         {field.label}
         {field.required && <b> *</b>}
@@ -398,6 +527,8 @@ function DynamicInput({
         <textarea
           className="textarea"
           id={field.id}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${field.id}-error` : undefined}
           disabled={locked}
           value={String(value ?? "")}
           placeholder={field.placeholder ?? ""}
@@ -407,6 +538,8 @@ function DynamicInput({
         <select
           className="select"
           id={field.id}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${field.id}-error` : undefined}
           disabled={locked}
           value={String(value ?? "")}
           onChange={(event) => onChange(event.target.value)}
@@ -459,6 +592,7 @@ function DynamicInput({
           </div>
           <input
             aria-label={field.label}
+            id={field.id}
             type="file"
             disabled={locked || uploading}
             accept={field.allowedFileTypes.join(",")}
@@ -469,6 +603,8 @@ function DynamicInput({
         <input
           className="input"
           id={field.id}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${field.id}-error` : undefined}
           disabled={locked}
           required={field.required}
           type={
@@ -500,6 +636,11 @@ function DynamicInput({
         />
       )}
       {field.helpText && !["CONSENT", "CHECKBOX"].includes(field.type) && <small>{field.helpText}</small>}
+      {error && (
+        <small id={`${field.id}-error`} className="error" role="alert">
+          {error}
+        </small>
+      )}
     </div>
   );
 }

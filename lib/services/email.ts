@@ -224,15 +224,31 @@ export async function deliverEmail(id: string) {
 export async function processEmailQueue(limit = 20) {
   const pending = await db.emailDelivery.findMany({
     where: {
-      status: { in: ["QUEUED", "FAILED"] },
       attempts: { lt: 5 },
-      OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: new Date() } }],
+      OR: [
+        { status: { in: ["QUEUED", "FAILED"] }, OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: new Date() } }] },
+        { status: "PROCESSING", claimedAt: { lt: new Date(Date.now() - 2 * 60 * 1000) } },
+      ],
     },
     orderBy: { createdAt: "asc" },
     take: Math.min(Math.max(limit, 1), 50),
     select: { id: true },
   });
   const results = [];
-  for (const item of pending) results.push(await deliverEmail(item.id));
+  // Bound SMTP concurrency; process independent messages even if one configuration fails.
+  for (let offset = 0; offset < pending.length; offset += 5) {
+    results.push(
+      ...(await Promise.all(
+        pending.slice(offset, offset + 5).map(async (item) => {
+          try {
+            return await deliverEmail(item.id);
+          } catch (error) {
+            console.error("[email retry failed]", { deliveryId: item.id, error });
+            return null;
+          }
+        }),
+      )),
+    );
+  }
   return { processed: pending.length, delivered: results.filter(Boolean).length };
 }
