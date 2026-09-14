@@ -422,3 +422,280 @@
 .portal-admin .panel > .table-wrap {
   border-radius: inherit;
 }
+
+/* Comfortable reading across administrative and faculty workspaces. */
+:is(.portal-admin, .portal-reviewer) .portal-content {
+  font-size: 16px;
+  line-height: 1.6;
+}
+:is(.portal-admin, .portal-reviewer)
+  :is(.panel p, .page-header p, td, .config-state, .status-control, .review-notes label) {
+  font-size: 15px;
+  line-height: 1.65;
+}
+:is(.portal-admin, .portal-reviewer)
+  :is(small, th, .badge, .eyebrow, .tabs a, .criteria-list strong, .criteria-list small) {
+  font-size: 14px;
+  line-height: 1.5;
+}
+:is(.portal-admin, .portal-reviewer) :is(small, .muted, .config-state, .criteria-list small) {
+  color: #bdb4a9;
+}
+:is(.portal-admin, .portal-reviewer) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  font-size: 16px;
+  min-height: 44px;
+  line-height: 1.5;
+  color: #ede5db;
+  max-width: 100%;
+}
+:is(.portal-admin, .portal-reviewer) :is(input, textarea)::placeholder {
+  color: #a89e92;
+  opacity: 1;
+}
+:is(.portal-admin, .portal-reviewer) .button {
+  font-size: 14px;
+  min-height: 44px;
+}
+:is(.portal-admin, .portal-reviewer) :is(input, select, textarea, button, summary):focus-visible {
+  outline: 2px solid #ffad70;
+  outline-offset: 3px;
+}
+:is(.portal-admin, .portal-reviewer) :is(td, .panel-header, .team-card, .review-notes) {
+  overflow-wrap: anywhere;
+}
+:is(.portal-admin, .portal-reviewer) .status-control {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.delete-team-button {
+  color: #ffb4ab !important;
+  border-color: #78423d !important;
+  margin-top: 8px;
+}
+
+/* The form editor takes the entire workspace; navigation returns on other pages. */
+.portal-admin:has(.builder-layout) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.portal-admin:has(.builder-layout) > .sidebar {
+  display: none;
+}
+.portal-admin:has(.builder-layout) .portal-topbar .brand {
+  display: flex;
+}
+.portal-admin:has(.builder-layout) .portal-content {
+  max-width: 1720px;
+  margin-inline: auto;
+  padding: clamp(16px, 3vw, 40px);
+}
+.portal-admin .builder-layout {
+  grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr);
+  gap: 28px;
+  align-items: start;
+}
+.portal-admin .builder-toolbar {
+  top: 12px;
+  padding: 18px;
+  box-shadow: 0 8px 24px #0006;
+}
+.portal-admin .builder-toolbar strong {
+  font-size: 16px;
+}
+.portal-admin .builder-toolbar small {
+  font-size: 14px;
+  color: #c2b8ac;
+}
+.portal-admin .builder-section {
+  margin-top: 24px;
+}
+.portal-admin .builder-section > header {
+  padding: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #191713;
+}
+.portal-admin .builder-section > header > div:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.portal-admin .builder-section > header input {
+  width: 100%;
+  font-size: 20px;
+}
+.portal-admin .builder-section > header span {
+  font-size: 12px;
+  color: #beb3a5;
+}
+.portal-admin .builder-section button {
+  min-width: 40px;
+  min-height: 40px;
+  color: #c8beb1;
+}
+.portal-admin .builder-field {
+  grid-template-columns: 26px minmax(0, 1fr) 40px;
+  padding: 24px 18px;
+  align-items: start;
+  gap: 12px;
+}
+.portal-admin .drag-index {
+  font-size: 14px;
+  color: #ffad70;
+  padding-top: 12px;
+}
+.portal-admin .builder-field-main {
+  gap: 16px;
+}
+.portal-admin .builder-field-main > input {
+  border: 1px solid #494137;
+  background: #11100e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 18px;
+  width: 100%;
+}
+.portal-admin .builder-field-main > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+.portal-admin .builder-field-main :is(input:not([type="checkbox"]), select) {
+  height: auto;
+  min-height: 46px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  color: #ede5db;
+  border-color: #494137;
+}
+.portal-admin .builder-field-main label {
+  font-size: 14px;
+  color: #d5cabe;
+  align-items: center;
+  line-height: 1.5;
+}
+.portal-admin .builder-field-main input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.builder-advanced {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.builder-advanced summary {
+  cursor: pointer;
+  color: #e3ba97;
+  font-size: 14px;
+  padding-block: 6px;
+}
+.portal-admin .builder-field-options {
+  margin-top: 16px;
+}
+.portal-admin :is(.add-field, .add-section, .template-row button, .template-row > span) {
+  font-size: 14px;
+}
+.portal-admin .builder-preview {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: clamp(20px, 2.5vw, 36px);
+}
+.portal-admin .builder-preview > span {
+  font-size: 12px;
+}
+.portal-admin .builder-preview h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+.portal-admin .builder-preview h3 {
+  font-size: 19px;
+  margin-top: 28px;
+}
+.portal-admin .builder-preview :is(p, small, label) {
+  font-size: 14px;
+  color: #c6bcb0;
+  line-height: 1.6;
+}
+.portal-admin .builder-preview .preview-question > label {
+  font-size: 16px;
+  color: #eee3d5;
+  display: block;
+  margin-bottom: 8px;
+}
+.preview-question {
+  margin-block: 22px;
+}
+.preview-question > small {
+  display: block;
+  margin-top: 8px;
+}
+.portal-admin .builder-preview :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #494137;
+  border-radius: 8px;
+  background: #191713;
+  opacity: 1;
+}
+.portal-admin .builder-preview textarea {
+  min-height: 110px;
+}
+.portal-admin .builder-preview .preview-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+@media (max-width: 1050px) {
+  .portal-admin .builder-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .portal-admin .builder-preview {
+    position: static;
+    max-height: none;
+  }
+}
+@media (max-width: 600px) {
+  .portal-admin .builder-field {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px;
+  }
+  .portal-admin .drag-index {
+    display: none;
+  }
+  .portal-admin .builder-field-actions {
+    flex-direction: row;
+  }
+  .portal-admin .builder-field-main > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .portal-admin .builder-toolbar {
+    position: static;
+  }
+  .portal-admin .builder-toolbar .button {
+    flex: 1 1 auto;
+  }
+}
+.portal-admin .builder-field-main .builder-setting {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.portal-admin .builder-setting > span {
+  font-size: 14px;
+  color: #c6bcb0;
+}
+.portal-admin .builder-field-main > .builder-setting input {
+  font-size: 18px;
+  font-weight: 600;
+}
+.portal-admin .builder-section > header .builder-setting {
+  display: grid;
+  gap: 6px;
+}
+.portal-admin .builder-field-main > .builder-setting input {
+  background: #11100e;
+  border: 1px solid #494137;
+  border-radius: 8px;
+}

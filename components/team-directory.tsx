@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, Clock3, Send, UsersRound, X } from "lucide-react";
 import { Badge, InfoTip } from "@/components/ui";
+import { DeleteTeamButton } from "@/components/delete-team-button";
 
 type PublicTeam = {
   id: string;
@@ -279,6 +280,9 @@ export function TeamDirectory({
                   <small>
                     {team.status.replaceAll("_", " ")} · {team.memberCount}/{team.requiredMembers} members
                   </small>
+                  {team.isLeader && (
+                    <DeleteTeamButton teamId={team.id} teamName={team.name} disabled={Boolean(busyKey)} />
+                  )}
                 </div>
               ))
             ) : (

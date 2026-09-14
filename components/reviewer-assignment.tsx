@@ -24,7 +24,7 @@ export function ReviewerAssignment({
       const response = await fetch(`/api/applications/${applicationId}/reviewers`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ reviewerId, rubricId, dueAt: dueAt || null }),
+        body: JSON.stringify({ reviewerId, rubricId, dueAt: dueAt ? new Date(dueAt).toISOString() : null }),
       });
       const result = await response.json();
       setState(response.ok ? "Reviewer assigned" : (result.error ?? "Assignment failed"));

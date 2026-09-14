@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, Lock, X } from "lucide-react";
 import { Badge } from "@/components/ui";
+import { DeleteTeamButton } from "@/components/delete-team-button";
 
 type AdminTeam = {
   id: string;
@@ -93,6 +94,7 @@ export function AdminTeamConsole({ teams }: { teams: AdminTeam[] }) {
               </div>
             )}
             <div className="request-actions">
+              <DeleteTeamButton teamId={team.id} teamName={team.name} disabled={Boolean(busy)} />
               {team.status === "PENDING_APPROVAL" && (
                 <>
                   <button

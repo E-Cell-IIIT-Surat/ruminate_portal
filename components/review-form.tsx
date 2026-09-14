@@ -106,7 +106,8 @@ export function ReviewForm({
             </div>
             <label>
               <input
-                disabled={submitted}
+                disabled={submitted || busy}
+                aria-label={`Score for ${criterion.name}`}
                 type="number"
                 min="0"
                 max={criterion.maxScore}
@@ -114,7 +115,13 @@ export function ReviewForm({
                 value={scores[criterion.id] ?? ""}
                 onChange={(event) => {
                   setDirty(true);
-                  setScores((current) => ({ ...current, [criterion.id]: Number(event.target.value) }));
+                  const value = event.target.value;
+                  setScores((current) => {
+                    const next = { ...current };
+                    if (value === "") delete next[criterion.id];
+                    else next[criterion.id] = Number(value);
+                    return next;
+                  });
                 }}
               />
               <span>/ {criterion.maxScore}</span>
@@ -126,7 +133,7 @@ export function ReviewForm({
         <label>
           Internal comments
           <textarea
-            disabled={submitted}
+            disabled={submitted || busy}
             value={internalNotes}
             onChange={(event) => {
               setDirty(true);
@@ -138,7 +145,7 @@ export function ReviewForm({
         <label>
           Applicant-visible feedback
           <textarea
-            disabled={submitted}
+            disabled={submitted || busy}
             value={feedback}
             onChange={(event) => {
               setDirty(true);

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { AppError, notFound } from "@/lib/errors";
 import { calculateWeightedScore } from "@/lib/domain/evaluation";
 
@@ -8,8 +9,9 @@ type EvaluationInput = {
   feedback?: string;
 };
 
-async function assignmentForReview(assignmentId: string, reviewerId: string) {
-  const assignment = await db.reviewerAssignment.findUnique({
+async function assignmentForReview(tx: Prisma.TransactionClient, assignmentId: string, reviewerId: string) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`review:${assignmentId}`}))`;
+  const assignment = await tx.reviewerAssignment.findUnique({
     where: { id: assignmentId, reviewerId },
     include: { rubric: { include: { criteria: true } }, application: { select: { programId: true } } },
   });
@@ -35,11 +37,19 @@ function validatedScores(
   if (complete && seen.size !== criteria.length) throw new AppError("Score every criterion", 422);
 }
 
-export async function saveEvaluationDraft(assignmentId: string, reviewerId: string, input: EvaluationInput) {
-  const assignment = await assignmentForReview(assignmentId, reviewerId);
-  if (assignment.status === "COMPLETED") throw new AppError("This review is already submitted", 409);
-  validatedScores(assignment.rubric.criteria, input, false);
-  return db.$transaction(async (tx) => {
+export async function saveEvaluationDraft(
+  assignmentId: string,
+  reviewerId: string,
+  input: EvaluationInput,
+  client: Pick<PrismaClient, "$transaction"> = db,
+) {
+  return client.$transaction(async (tx) => {
+    const assignment = await assignmentForReview(tx, assignmentId, reviewerId);
+    if (assignment.status === "COMPLETED") throw new AppError("This review is already submitted", 409);
+    validatedScores(assignment.rubric.criteria, input, false);
+    await tx.evaluationScore.deleteMany({
+      where: { evaluation: { assignmentId }, criterionId: { notIn: input.scores.map((score) => score.criterionId) } },
+    });
     const evaluation = await tx.evaluation.upsert({
       where: { assignmentId },
       create: {
@@ -69,19 +79,24 @@ export async function saveEvaluationDraft(assignmentId: string, reviewerId: stri
   });
 }
 
-export async function submitEvaluation(assignmentId: string, reviewerId: string, input: EvaluationInput) {
-  const assignment = await assignmentForReview(assignmentId, reviewerId);
-  if (assignment.status === "COMPLETED") throw new AppError("This review is already submitted", 409);
-  validatedScores(assignment.rubric.criteria, input, true);
-  const scoreMap = new Map(input.scores.map((item) => [item.criterionId, item]));
-  const weighted = calculateWeightedScore(
-    assignment.rubric.criteria.map((criterion) => ({
-      score: scoreMap.get(criterion.id)!.score,
-      maxScore: criterion.maxScore.toNumber(),
-      weight: criterion.weight.toNumber(),
-    })),
-  );
-  return db.$transaction(async (tx) => {
+export async function submitEvaluation(
+  assignmentId: string,
+  reviewerId: string,
+  input: EvaluationInput,
+  client: Pick<PrismaClient, "$transaction"> = db,
+) {
+  return client.$transaction(async (tx) => {
+    const assignment = await assignmentForReview(tx, assignmentId, reviewerId);
+    if (assignment.status === "COMPLETED") throw new AppError("This review is already submitted", 409);
+    validatedScores(assignment.rubric.criteria, input, true);
+    const scoreMap = new Map(input.scores.map((item) => [item.criterionId, item]));
+    const weighted = calculateWeightedScore(
+      assignment.rubric.criteria.map((criterion) => ({
+        score: scoreMap.get(criterion.id)!.score,
+        maxScore: criterion.maxScore.toNumber(),
+        weight: criterion.weight.toNumber(),
+      })),
+    );
     const evaluation = await tx.evaluation.upsert({
       where: { assignmentId },
       create: {

@@ -40,7 +40,7 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
   const [sections, setSections] = useState<BuilderSection[]>(
     initial.length ? initial : [{ title: "Personal details", fields: [blankField("field_1")] }],
   );
-  const [state, setState] = useState("Unsaved changes");
+  const [state, setState] = useState(initial.length ? "All changes saved" : "Unsaved changes");
   const [busy, setBusy] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify(initial));
   const [issues, setIssues] = useState<{ path: string; message: string }[]>([]);
@@ -180,11 +180,14 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
           <article className="builder-section" key={sectionIndex}>
             <header>
               <div>
-                <input
-                  aria-label="Section title"
-                  value={section.title}
-                  onChange={(event) => patchSection(sectionIndex, { title: event.target.value })}
-                />
+                <label className="builder-setting">
+                  <span>Section title</span>
+                  <input
+                    aria-label="Section title"
+                    value={section.title}
+                    onChange={(event) => patchSection(sectionIndex, { title: event.target.value })}
+                  />
+                </label>
                 <span>Section {sectionIndex + 1}</span>
               </div>
               <div>
@@ -207,49 +210,60 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                 <div className="builder-field" key={fieldIndex}>
                   <span className="drag-index">{fieldIndex + 1}</span>
                   <div className="builder-field-main">
-                    <input
-                      aria-label="Field label"
-                      value={field.label}
-                      onChange={(event) => patchField(sectionIndex, fieldIndex, { label: event.target.value })}
-                    />
-                    <div>
+                    <label className="builder-setting">
+                      <span>Field label</span>
                       <input
-                        aria-label="Field key"
-                        value={field.key}
-                        onChange={(event) =>
-                          patchField(sectionIndex, fieldIndex, {
-                            key: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
-                          })
-                        }
+                        aria-label="Field label"
+                        value={field.label}
+                        onChange={(event) => patchField(sectionIndex, fieldIndex, { label: event.target.value })}
                       />
-                      <select
-                        aria-label="Field type"
-                        value={field.type}
-                        onChange={(event) =>
-                          patchField(sectionIndex, fieldIndex, {
-                            type: event.target.value,
-                            minLength: null,
-                            maxLength: null,
-                            minNumber: null,
-                            maxNumber: null,
-                            ...(event.target.value === "FILE"
-                              ? {
-                                  allowedFileTypes: field.allowedFileTypes.length
-                                    ? field.allowedFileTypes
-                                    : [
-                                        "application/pdf",
-                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                      ],
-                                  maxFileSizeBytes: field.maxFileSizeBytes ?? 10485760,
-                                }
-                              : {}),
-                          })
-                        }
-                      >
-                        {types.map((type) => (
-                          <option key={type}>{type}</option>
-                        ))}
-                      </select>
+                    </label>
+                    <div>
+                      <label className="builder-setting">
+                        <span>Field key</span>
+                        <input
+                          aria-label="Field key"
+                          value={field.key}
+                          onChange={(event) =>
+                            patchField(sectionIndex, fieldIndex, {
+                              key: event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"),
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="builder-setting">
+                        <span>Field type</span>
+                        <select
+                          aria-label="Field type"
+                          value={field.type}
+                          onChange={(event) =>
+                            patchField(sectionIndex, fieldIndex, {
+                              type: event.target.value,
+                              minLength: null,
+                              maxLength: null,
+                              minNumber: null,
+                              maxNumber: null,
+                              ...(event.target.value === "FILE"
+                                ? {
+                                    allowedFileTypes: field.allowedFileTypes.length
+                                      ? field.allowedFileTypes
+                                      : [
+                                          "application/pdf",
+                                          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                        ],
+                                    maxFileSizeBytes: field.maxFileSizeBytes ?? 10485760,
+                                  }
+                                : {}),
+                            })
+                          }
+                        >
+                          {types.map((type) => (
+                            <option key={type} value={type}>
+                              {type.toLowerCase().replaceAll("_", " ")}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <label>
                         <input
                           type="checkbox"
@@ -269,177 +283,225 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
                         Hide in blind review
                       </label>
                     </div>
-                    <div className="builder-field-options">
-                      <input
-                        aria-label="Field description"
-                        value={field.description ?? ""}
-                        placeholder="Description"
-                        onChange={(event) => patchField(sectionIndex, fieldIndex, { description: event.target.value })}
-                      />
-                      <input
-                        aria-label="Help text"
-                        value={field.helpText ?? ""}
-                        placeholder="Help text"
-                        onChange={(event) => patchField(sectionIndex, fieldIndex, { helpText: event.target.value })}
-                      />
-                      <input
-                        aria-label="Placeholder"
-                        value={field.placeholder ?? ""}
-                        placeholder="Placeholder"
-                        onChange={(event) => patchField(sectionIndex, fieldIndex, { placeholder: event.target.value })}
-                      />
-                      {["DROPDOWN", "MULTI_SELECT", "RADIO"].includes(field.type) && (
-                        <input
-                          aria-label="Options"
-                          value={(field.options ?? []).join(",")}
-                          placeholder="Options, separated by commas"
-                          onChange={(event) =>
-                            patchField(sectionIndex, fieldIndex, {
-                              options: event.target.value.split(","),
-                            })
-                          }
-                        />
-                      )}
-                      {["SHORT_TEXT", "LONG_TEXT", "PHONE"].includes(field.type) && (
-                        <>
+                    <details className="builder-advanced">
+                      <summary>Description, validation & visibility</summary>
+                      <div className="builder-field-options">
+                        <label className="builder-setting">
+                          <span>Field description</span>
                           <input
-                            aria-label="Minimum length"
-                            type="number"
-                            min="0"
-                            value={field.minLength ?? ""}
-                            placeholder="Minimum length"
+                            aria-label="Field description"
+                            value={field.description ?? ""}
+                            placeholder="Description"
                             onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, {
-                                minLength: event.target.value ? Number(event.target.value) : null,
-                              })
+                              patchField(sectionIndex, fieldIndex, { description: event.target.value })
                             }
                           />
+                        </label>
+                        <label className="builder-setting">
+                          <span>Help text</span>
                           <input
-                            aria-label="Maximum length"
-                            type="number"
-                            min="1"
-                            value={field.maxLength ?? ""}
-                            placeholder="Maximum length"
+                            aria-label="Help text"
+                            value={field.helpText ?? ""}
+                            placeholder="Help text"
+                            onChange={(event) => patchField(sectionIndex, fieldIndex, { helpText: event.target.value })}
+                          />
+                        </label>
+                        <label className="builder-setting">
+                          <span>Placeholder</span>
+                          <input
+                            aria-label="Placeholder"
+                            value={field.placeholder ?? ""}
+                            placeholder="Placeholder"
                             onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, {
-                                maxLength: event.target.value ? Number(event.target.value) : null,
-                              })
+                              patchField(sectionIndex, fieldIndex, { placeholder: event.target.value })
                             }
                           />
-                        </>
-                      )}
-                      {field.type === "NUMBER" && (
-                        <>
-                          <input
-                            aria-label="Minimum number"
-                            type="number"
-                            value={field.minNumber ?? ""}
-                            placeholder="Minimum"
-                            onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, {
-                                minNumber: event.target.value ? Number(event.target.value) : null,
-                              })
-                            }
-                          />
-                          <input
-                            aria-label="Maximum number"
-                            type="number"
-                            value={field.maxNumber ?? ""}
-                            placeholder="Maximum"
-                            onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, {
-                                maxNumber: event.target.value ? Number(event.target.value) : null,
-                              })
-                            }
-                          />
-                        </>
-                      )}
-                      {field.type === "FILE" && (
-                        <>
-                          <button
-                            type="button"
-                            className="button button-secondary"
-                            onClick={() =>
-                              patchField(sectionIndex, fieldIndex, {
-                                allowedFileTypes: [
-                                  "application/pdf",
-                                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                ],
-                                maxFileSizeBytes: field.maxFileSizeBytes ?? 10485760,
-                              })
-                            }
-                          >
-                            Allow PDF & DOCX
-                          </button>
-                          <input
-                            aria-label="Allowed MIME types"
-                            value={field.allowedFileTypes.join(",")}
-                            placeholder="application/pdf, image/png"
-                            onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, {
-                                allowedFileTypes: event.target.value.split(","),
-                              })
-                            }
-                          />
-                          <input
-                            aria-label="Maximum file size in megabytes"
-                            type="number"
-                            min="1"
-                            max="25"
-                            value={field.maxFileSizeBytes ? field.maxFileSizeBytes / 1024 / 1024 : ""}
-                            placeholder="Maximum MB"
-                            onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, {
-                                maxFileSizeBytes: event.target.value ? Number(event.target.value) * 1024 * 1024 : null,
-                              })
-                            }
-                          />
-                        </>
-                      )}
-                      <select
-                        aria-label="Conditional field"
-                        value={field.conditionFieldKey ?? ""}
-                        onChange={(event) =>
-                          patchField(sectionIndex, fieldIndex, {
-                            conditionFieldKey: event.target.value || null,
-                            conditionOperator: event.target.value ? (field.conditionOperator ?? "==") : null,
-                          })
-                        }
-                      >
-                        <option value="">Always visible</option>
-                        {fieldKeys
-                          .filter((key) => key !== field.key)
-                          .map((key) => (
-                            <option key={key} value={key}>
-                              {key}
-                            </option>
-                          ))}
-                      </select>
-                      {field.conditionFieldKey && (
-                        <>
+                        </label>
+                        {["DROPDOWN", "MULTI_SELECT", "RADIO"].includes(field.type) && (
+                          <label className="builder-setting">
+                            <span>Options</span>
+                            <input
+                              aria-label="Options"
+                              value={(field.options ?? []).join(",")}
+                              placeholder="Options, separated by commas"
+                              onChange={(event) =>
+                                patchField(sectionIndex, fieldIndex, {
+                                  options: event.target.value.split(","),
+                                })
+                              }
+                            />
+                          </label>
+                        )}
+                        {["SHORT_TEXT", "LONG_TEXT", "PHONE"].includes(field.type) && (
+                          <>
+                            <label className="builder-setting">
+                              <span>Minimum length</span>
+                              <input
+                                aria-label="Minimum length"
+                                type="number"
+                                min="0"
+                                value={field.minLength ?? ""}
+                                placeholder="Minimum length"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    minLength: event.target.value ? Number(event.target.value) : null,
+                                  })
+                                }
+                              />
+                            </label>
+                            <label className="builder-setting">
+                              <span>Maximum length</span>
+                              <input
+                                aria-label="Maximum length"
+                                type="number"
+                                min="1"
+                                value={field.maxLength ?? ""}
+                                placeholder="Maximum length"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    maxLength: event.target.value ? Number(event.target.value) : null,
+                                  })
+                                }
+                              />
+                            </label>
+                          </>
+                        )}
+                        {field.type === "NUMBER" && (
+                          <>
+                            <label className="builder-setting">
+                              <span>Minimum number</span>
+                              <input
+                                aria-label="Minimum number"
+                                type="number"
+                                value={field.minNumber ?? ""}
+                                placeholder="Minimum"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    minNumber: event.target.value ? Number(event.target.value) : null,
+                                  })
+                                }
+                              />
+                            </label>
+                            <label className="builder-setting">
+                              <span>Maximum number</span>
+                              <input
+                                aria-label="Maximum number"
+                                type="number"
+                                value={field.maxNumber ?? ""}
+                                placeholder="Maximum"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    maxNumber: event.target.value ? Number(event.target.value) : null,
+                                  })
+                                }
+                              />
+                            </label>
+                          </>
+                        )}
+                        {field.type === "FILE" && (
+                          <>
+                            <button
+                              type="button"
+                              className="button button-secondary"
+                              onClick={() =>
+                                patchField(sectionIndex, fieldIndex, {
+                                  allowedFileTypes: [
+                                    "application/pdf",
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                  ],
+                                  maxFileSizeBytes: field.maxFileSizeBytes ?? 10485760,
+                                })
+                              }
+                            >
+                              Allow PDF & DOCX
+                            </button>
+                            <label className="builder-setting">
+                              <span>Allowed MIME types</span>
+                              <input
+                                aria-label="Allowed MIME types"
+                                value={field.allowedFileTypes.join(",")}
+                                placeholder="application/pdf, image/png"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    allowedFileTypes: event.target.value.split(","),
+                                  })
+                                }
+                              />
+                            </label>
+                            <label className="builder-setting">
+                              <span>Maximum file size in megabytes</span>
+                              <input
+                                aria-label="Maximum file size in megabytes"
+                                type="number"
+                                min="1"
+                                max="25"
+                                value={field.maxFileSizeBytes ? field.maxFileSizeBytes / 1024 / 1024 : ""}
+                                placeholder="Maximum MB"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    maxFileSizeBytes: event.target.value
+                                      ? Number(event.target.value) * 1024 * 1024
+                                      : null,
+                                  })
+                                }
+                              />
+                            </label>
+                          </>
+                        )}
+                        <label className="builder-setting">
+                          <span>Conditional field</span>
                           <select
-                            aria-label="Condition operator"
-                            value={field.conditionOperator ?? "=="}
+                            aria-label="Conditional field"
+                            value={field.conditionFieldKey ?? ""}
                             onChange={(event) =>
                               patchField(sectionIndex, fieldIndex, {
-                                conditionOperator: event.target.value as "==" | "!=",
+                                conditionFieldKey: event.target.value || null,
+                                conditionOperator: event.target.value ? (field.conditionOperator ?? "==") : null,
                               })
                             }
                           >
-                            <option value="==">equals</option>
-                            <option value="!=">does not equal</option>
+                            <option value="">Always visible</option>
+                            {fieldKeys
+                              .filter((key) => key !== field.key)
+                              .map((key) => (
+                                <option key={key} value={key}>
+                                  {key}
+                                </option>
+                              ))}
                           </select>
-                          <input
-                            aria-label="Condition value"
-                            value={String(field.conditionValue ?? "")}
-                            placeholder="Condition value"
-                            onChange={(event) =>
-                              patchField(sectionIndex, fieldIndex, { conditionValue: event.target.value })
-                            }
-                          />
-                        </>
-                      )}
-                    </div>
+                        </label>
+                        {field.conditionFieldKey && (
+                          <>
+                            <label className="builder-setting">
+                              <span>Condition operator</span>
+                              <select
+                                aria-label="Condition operator"
+                                value={field.conditionOperator ?? "=="}
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, {
+                                    conditionOperator: event.target.value as "==" | "!=",
+                                  })
+                                }
+                              >
+                                <option value="==">equals</option>
+                                <option value="!=">does not equal</option>
+                              </select>
+                            </label>
+                            <label className="builder-setting">
+                              <span>Condition value</span>
+                              <input
+                                aria-label="Condition value"
+                                value={String(field.conditionValue ?? "")}
+                                placeholder="Condition value"
+                                onChange={(event) =>
+                                  patchField(sectionIndex, fieldIndex, { conditionValue: event.target.value })
+                                }
+                              />
+                            </label>
+                          </>
+                        )}
+                      </div>
+                    </details>
                   </div>
                   <div className="builder-field-actions">
                     <button aria-label="Move field up" onClick={() => moveField(sectionIndex, fieldIndex, -1)}>
@@ -480,23 +542,76 @@ export function FormBuilder({ programId, initial }: { programId: string; initial
         <h2>
           Application form <AdminHelp title="Application form" />
         </h2>
+        <p className="preview-note">
+          A visual preview of your questions. All fields are shown, including conditional questions.
+        </p>
         {sections.map((section, index) => (
           <div key={index}>
             <h3>{section.title}</h3>
-            {section.fields.map((field) => (
-              <label key={field.key}>
-                {field.label}
-                {field.required && <b> *</b>}
+            {section.description && <p>{section.description}</p>}
+            {section.fields.map((field, fieldIndex) => (
+              <div className="preview-question" key={fieldIndex}>
+                {field.type === "HEADING" ? (
+                  <h3>{field.label}</h3>
+                ) : field.type === "HELP_TEXT" ? (
+                  <p>{field.label}</p>
+                ) : (
+                  <label htmlFor={`preview-${index}-${fieldIndex}`}>
+                    {field.label}
+                    {field.required && <b> *</b>}
+                  </label>
+                )}
+                {field.description && <p>{field.description}</p>}
                 <span>
-                  {["LONG_TEXT"].includes(field.type) ? (
-                    <textarea disabled />
+                  {["HEADING", "HELP_TEXT"].includes(field.type) ? null : field.type === "LONG_TEXT" ? (
+                    <textarea id={`preview-${index}-${fieldIndex}`} disabled placeholder={field.placeholder} />
+                  ) : field.type === "DROPDOWN" ? (
+                    <select id={`preview-${index}-${fieldIndex}`} disabled>
+                      <option>Select an option</option>
+                      {field.options?.map((option, i) => (
+                        <option key={i}>{option}</option>
+                      ))}
+                    </select>
+                  ) : ["RADIO", "MULTI_SELECT"].includes(field.type) ? (
+                    <div role="group" aria-label={field.label}>
+                      {field.options?.map((option, i) => (
+                        <label className="preview-choice" key={i}>
+                          <input type={field.type === "RADIO" ? "radio" : "checkbox"} disabled />
+                          {option}
+                        </label>
+                      ))}
+                    </div>
                   ) : field.type === "CONSENT" || field.type === "CHECKBOX" ? (
-                    <input type="checkbox" disabled />
+                    <input id={`preview-${index}-${fieldIndex}`} type="checkbox" disabled />
                   ) : (
-                    <input disabled placeholder={field.placeholder} />
+                    <input
+                      id={`preview-${index}-${fieldIndex}`}
+                      type={
+                        (
+                          {
+                            EMAIL: "email",
+                            PHONE: "tel",
+                            URL: "url",
+                            NUMBER: "number",
+                            DATE: "date",
+                            FILE: "file",
+                          } as Record<string, string>
+                        )[field.type] ?? "text"
+                      }
+                      disabled
+                      placeholder={field.placeholder}
+                    />
                   )}
                 </span>
-              </label>
+                {field.helpText && <small>{field.helpText}</small>}
+                {field.conditionFieldKey && (
+                  <small>
+                    Shown when {field.conditionFieldKey}{" "}
+                    {field.conditionOperator === "!=" ? "does not equal" : "equals"}{" "}
+                    {String(field.conditionValue ?? "")}
+                  </small>
+                )}
+              </div>
             ))}
           </div>
         ))}

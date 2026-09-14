@@ -15,7 +15,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const actor = await requirePermission("reviewer:assign", access.application.programId);
     const input = schema.parse(await request.json());
     const rubric = await db.rubric.findFirst({
-      where: { id: input.rubricId, programId: access.application.programId },
+      where: { id: input.rubricId, programId: access.application.programId, active: true },
     });
     if (!rubric) return Response.json({ error: "Rubric not found for this program" }, { status: 404 });
     const application = await db.application.findUniqueOrThrow({ where: { id }, select: { stageId: true } });
@@ -46,7 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           assignedById: actor.id,
           dueAt: input.dueAt,
         },
-        update: { dueAt: input.dueAt, status: "ASSIGNED" },
+        update: { dueAt: input.dueAt },
       });
       if (["SUBMITTED", "SHORTLISTED"].includes(access.application.status)) {
         await tx.application.update({ where: { id }, data: { status: "UNDER_REVIEW" } });
